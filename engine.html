@@ -507,6 +507,7 @@ $def with (name)
         this.hand = new Stack(this.board, -1) // passing in Player board
         this.cursor_speed = X_SPEED
         this.score = 0
+        this.control_scheme = 0
 
         this.sprite_sheet = new jaws.SpriteSheet({
           image: "./static/images/CURSOR.gif", frame_size: [40,20]})
@@ -563,6 +564,7 @@ $def with (name)
           jaws.on_keydown(["left","a"], function() {
             if (pause || game_end != "") return
             X_SPEED = SLOW
+            player.control_scheme = 0
             if(player.x > 0) {
               if (player.canMoveX(-1)) player.moveX(-1)
               else {
@@ -579,6 +581,7 @@ $def with (name)
           jaws.on_keydown(["right","d"], function() {
             if (pause || game_end != "") return
             X_SPEED = SLOW
+            player.control_scheme = 0
             if(player.x < BOARD_WIDTH - 1) {
               if (player.canMoveX(1)) player.moveX(1)
               else {
@@ -595,13 +598,14 @@ $def with (name)
           })
           jaws.on_keydown(["up","w"], function() {
             if (pause || game_end != "") return
+            player.control_scheme = 0
             if(player.y < BOARD_HEIGHT-1)player.y += 1
             console.log("player (" + player.x + " , " + player.y + ")")
           })
           jaws.on_keydown(["down","s"], function() {
 
             if (pause || game_end != "") return
-
+            player.control_scheme = 0
             if(player.hand.items.length>0) {
               player.drop(player.board.stacks[player.x],player.hand.items.length)              
             } else if(player.y > 0) player.y -= 1
@@ -616,6 +620,7 @@ $def with (name)
             } else {
               player.drop(player.board.stacks[player.x],player.hand.items.length)
             }
+            player.control_scheme = 0
           })
           jaws.on_keydown(["x","j","space"], function() {
             if (pause || game_end != "") return
@@ -627,6 +632,7 @@ $def with (name)
               //drop
               player.drop(player.board.stacks[player.x],1)
             }
+            player.control_scheme = 0
           })
 
 
@@ -803,6 +809,7 @@ $def with (name)
 
           // normal gameplay
           if (!level_edit) {
+            this.control_scheme = 1
             if (click_x < 0) click_x = 0
             else if (click_x >= BOARD_WIDTH) click_x = BOARD_WIDTH-1
 
@@ -928,8 +935,11 @@ $def with (name)
 
           if (control_scheme == 2 && this.hand.items.length == 0)
             return
-          this.cursor_top.draw()
-          this.cursor_bottom.draw()
+
+          if (this.control_scheme == 0 || this.hand.items.length > 0) {
+            this.cursor_top.draw()
+            this.cursor_bottom.draw()
+          }
         }
 
       }
