@@ -107,6 +107,9 @@ $def with (name)
       var winlose = false
       var raise_level_time = MAX_RAISE_LEVEL_TIME
       var restart_menu_item = new MenuItem(pause_menu,"Restart",function() {
+        var record = buildRecordString(player.board,"R")
+        saveRecord(record)
+        game_end = "R"
         jaws.start(Game)
       })
 
@@ -189,6 +192,9 @@ $def with (name)
         // winlose menu
         var winlose_menu_items = new Array()
           winlose_menu_items.push(new MenuItem(winlose_menu,"",function() {
+            var record = buildRecordString(this,"R")
+            saveRecord(record)
+            game_end = "R"
             jaws.start(Game)
           }))
           winlose_menu_items.push(new MenuItem(winlose_menu,"Quit",function() {
@@ -555,6 +561,9 @@ $def with (name)
               var this_sound = player.board.sounds[i]
               this_sound.stop()
             }
+            var record = buildRecordString(player.board,"R")
+            saveRecord(record)
+            game_end = "R"
             jaws.start(Game)
           })
 
@@ -2679,15 +2688,15 @@ $def with (name)
           if (game_end == "") this.ticker++
           if (this.ticker >= 60) {
             this.ticker = 0
-            this.seconds++ 
-            this.raise_level_frequency_timer++     
+            this.seconds++
+            this.raise_level_frequency_timer++
 
             if (this.raise_level_frequency_timer >= FREQ_RAISE_LEVEL_TIME) {
               if (raise_level_time > MIN_RAISE_LEVEL_TIME)
                 raise_level_time--
               console.log("raise_level_time = " + raise_level_time)
               this.raise_level_frequency_timer = 0
-            }      
+            }
 
             if (marathon && MAX_RAISE_LEVEL_TIME > 0 && !this.player.board.stacksBreaking())
               this.raise_level_timer--
@@ -2765,6 +2774,11 @@ $def with (name)
       }))
       pause_menu.items.push(((level_edit) ? save_menu_item : restart_menu_item))
       pause_menu.items.push(new MenuItem(pause_menu,"Quit",function() {
+        if (!level_edit) {
+          var record = buildRecordString(player.board,"Q")
+          saveRecord(record)
+          game_end = "Q"
+        }
         jaws.start(MainMenu)
       }))
 
@@ -3258,10 +3272,6 @@ $def with (name)
         level_select_menu.sprites.push(level_select_menu.up_arrow)
         level_select_menu.sprites.push(level_select_menu.down_arrow)
 
-        // level select OK sub menu
-        // var level_select_ok = new MenuBox("",level_select_menu,level_select_menu.x, level_select_menu.y + level_select_menu.height, 150, [new MenuItem(level_select_ok,"OK",function() {
-        //   jaws.start(Game)
-        // })])
         var level_select_ok = new OkSubMenu("",level_select_menu,function() {
           console.log("hawaiian bread")
           level_select_menu.items[menu.index].action(jaws)
