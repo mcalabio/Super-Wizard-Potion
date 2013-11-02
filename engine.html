@@ -5,6 +5,7 @@ $def with (name)
     <script src="./static/jawsjs/jaws.js"></script>
     <script src="./static/jawsjs/audio.js"></script>
     <script src="./static/json/json.js"></script>
+    <script src="./static/howler/howler.js"></script>
     <script type="text/javascript" src="./static/jquery/jquery-1.10.2.min.js"></script>
     <link type="text/css" rel="stylesheet" href="./static/style.css" />
     <title>Super Wizard Potion</title>
@@ -533,11 +534,17 @@ $def with (name)
         this.moves = 0
 
         // player sound effects
-        this.sound_fx = new jaws.Audio({
-          audio:"./static/sfx/grab.mp3",
+        this.grab_sound = new Howl({
+          urls: ['./static/sfx/grab.mp3','./static/sfx/grab.ogg'],
           volume:.3
         })
-        this.board.sounds.push(this.sound_fx)
+        this.board.sounds.push(this.grab_sound)
+
+        this.drop_sound = new Howl({
+          urls: ['./static/sfx/drop.mp3','./static/sfx/drop.ogg'],
+          volume:.3
+        })
+        this.board.sounds.push(this.drop_sound)
 
         this.addScore = function(points) {
           if (level_edit)
@@ -762,9 +769,8 @@ $def with (name)
 
           // play sound effect
           if (depth > 0) {
-            this.sound_fx.stop()
-            this.sound_fx.setAudio("./static/sfx/drop.mp3")
-            this.sound_fx.play()
+            this.grab_sound.stop()
+            this.drop_sound.play()
           }
         }
 
@@ -808,9 +814,8 @@ $def with (name)
             this.y = stack_items.length - depth // at item at bottom of hand stack
 
           // play sound effects
-          this.sound_fx.stop()
-          this.sound_fx.setAudio("./static/sfx/grab.mp3")
-          this.sound_fx.play()
+          this.drop_sound.stop()
+          this.grab_sound.play()
 
         }
 
@@ -2329,13 +2334,13 @@ $def with (name)
           board.flask_count[color] += 1
 
           // flask sound effects
-          this.break_audio = new jaws.Audio({
-            audio:"./static/sfx/robot_death.mp3",
+          this.break_audio = new Howl({
+            urls: ["./static/sfx/robot_death.mp3","./static/sfx/robot_death.ogg"],
             volume:.25
           })
           board.sounds.push(this.break_audio)
-          this.brew_audio = new jaws.Audio({
-            audio:"./static/sfx/brew.mp3",
+          this.brew_audio = new Howl({
+            urls: ["./static/sfx/brew.mp3","./static/sfx/brew.ogg"],
             volume:.25
           })
           board.sounds.push(this.brew_audio)
@@ -2554,10 +2559,10 @@ $def with (name)
         this.y = y
         this.index = index
         this.delay = delay // delay animation until counter goes to 0
-        this.sound_fx = new jaws.Audio({
-          audio:"./static/sfx/break.mp3",
-          volume:1
-        })
+        this.sound_fx = new Howl({
+            urls: ["./static/sfx/break.mp3","./static/sfx/break.ogg"],
+            volume:1
+          })
         this.stack.board.sounds.push(this.sound_fx)
 
 
@@ -2638,7 +2643,6 @@ $def with (name)
           if (this.delay == 0) {
             console.log("playing break sfx")
             this.sound_fx.stop()
-            this.sound_fx.setAudio("./static/sfx/break.mp3")
             this.sound_fx.play()
           }
 
