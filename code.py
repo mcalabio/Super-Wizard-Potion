@@ -90,6 +90,37 @@ class engine:
 			web.debug("returning level_string = " + level_string)
 			return level_string
 
+		# loadLevels()
+		elif (data["type"] == "loadLevels"):
+
+			levels_data = {"levels": []}
+
+			level = 0
+
+			while (level < 2):
+
+				levels_data["levels"].append([])
+
+				stage = 1
+				while (stage < 100):
+
+					try:
+
+						f = open('levels/' + str(level) + '-' + str(stage))
+						levels_data["levels"][level].append(f.read())
+						f.close()
+
+						stage += 1
+
+					except:
+
+						break
+
+				level += 1
+
+
+			return json.JSONEncoder().encode(levels_data)
+
 		# saveLevel()
 		elif (data["type"] == "saveLevel"):
 			level = str(data["level"][0]) + "-" + str(data["level"][1])

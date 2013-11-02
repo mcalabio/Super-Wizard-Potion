@@ -2893,6 +2893,20 @@ $def with (name)
 
     }
 
+    function loadLevels (callback) {
+      var json_data = JSON.stringify({'type': "loadLevels"})
+
+      console.log("loading levels")
+      jQuery.ajax({
+        type: "POST",
+        data: json_data,
+        success: function(data) {
+          console.log("retrieved level data from server" + data)
+          callback(data)
+        }
+      })
+    }
+
     function deleteLevel (level,stage,callback) {
 
       var json_data = JSON.stringify({'type': "deleteLevel", 'level': [level,stage,latest_edit]})
@@ -3145,10 +3159,10 @@ $def with (name)
 
       var active_menu
       var menus = new Array()
-      findEditLevels(function(latest) {
-        latest_edit = latest
-        player_progress[0] = latest - 1
-      })
+      // findEditLevels(function(latest) {
+      //   latest_edit = latest
+      //   player_progress[0] = latest - 1
+      // })
       var level_select_string = (player_progress.length-1) + "-" + player_progress[player_progress.length-1]
 
       this.back = function() {
@@ -3858,10 +3872,24 @@ $def with (name)
       jaws.unpack()
       jaws.assets.add(["./static/images/CURSOR.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/sfx/drop.mp3","./static/sfx/grab.mp3"])
 
-      if (name_entered)
-        jaws.start(MainMenu)  // Our convenience function jaws.start() will load assets, call setup and loop update/draw in 60 FPS
-      else
-        jaws.start(PlayerNameState)
+      console.log("loading levels TEST")
+      loadLevels(function(data) {
+        var level_data = JSON.parse(data)
+        console.log("DATA = ")
+        console.dir(level_data)
+
+        console.log("latest_edit = " + level_data.levels[0].length)
+
+        latest_edit = level_data.levels[0].length + 1
+
+        player_progress[0] = latest_edit - 1
+
+        if (name_entered)
+          jaws.start(MainMenu)  // Our convenience function jaws.start() will load assets, call setup and loop update/draw in 60 FPS
+        else
+          jaws.start(PlayerNameState)
+      })
+
     }
 
   </script>
