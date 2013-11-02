@@ -82,6 +82,7 @@ $def with (name)
     var Y_SPEED = FAST
     var name_entered = false
     var player_name = "zonky"
+    var level_data
     var player_level = 1
     var player_stage = 1
     var player_progress = [0,14]
@@ -1338,56 +1339,56 @@ $def with (name)
 
         this.fillLevel = function(level,stage) {
 
-          loadLevel(level,stage, this, function(data, this_board) {
+          var data = level_data.levels[level][stage-1]
 
-            // SANITY CHECK
-            if (data == "\n\n\n\n\n\n" && !level_edit) {
+          // SANITY CHECK
+          if ((data == "\n\n\n\n\n\n" || data == undefined) && !level_edit) {
 
-              player_level = 1
-              player_stage = 1
-              jaws.start(MainMenu)
-            }
+            player_level = 1
+            player_stage = 1
+            jaws.start(MainMenu)
+          }
 
-            // array of stacks in string form
-            var stacks_string = data.split('\n')
-            var items
+          // array of stacks in string form
+          var stacks_string = data.split('\n')
+          var items
 
-            // go through each stack
-            for (var s=0; s < BOARD_WIDTH; s++) {
+          // go through each stack
+          for (var s=0; s < BOARD_WIDTH; s++) {
 
-              this_board.stacks.push(new Stack(this_board,level,s))
+            this.stacks.push(new Stack(this,level,s))
 
-              var this_stack = this_board.stacks[s]
+            var this_stack = this.stacks[s]
 
-              // array of items in string form
-              items = stacks_string[s].split(',')
+            // array of items in string form
+            items = stacks_string[s].split(',')
 
-              // skip empty stacks
-              if (items == "")
-                continue
+            // skip empty stacks
+            if (items == "")
+              continue
 
-              // go through each item in this stack
-              for (var i=0; i < items.length; i++) {
+            // go through each item in this stack
+            for (var i=0; i < items.length; i++) {
 
-                var item = items[i]
-                var item_string = item.split('|')
+              var item = items[i]
+              var item_string = item.split('|')
 
-                var type = item_string[0]
-                var color = item_string[1]
+              var type = item_string[0]
+              var color = item_string[1]
 
-                console.log("stack(" + s + ") looking though item of type = " + type + ", color = " + color)
+              console.log("stack(" + s + ") looking though item of type = " + type + ", color = " + color)
 
-                this_stack.items.push(new Item(this_stack,type,color,s,i))
-
-              }
+              this_stack.items.push(new Item(this_stack,type,color,s,i))
 
             }
 
-            console.log("block_count = " + this_board.block_count)
-            console.log("flask_count = " + this_board.flask_count)
-            console.log("robot_count = " + this_board.robot_count)
+          }
 
-          })
+          console.log("block_count = " + this.block_count)
+          console.log("flask_count = " + this.flask_count)
+          console.log("robot_count = " + this.robot_count)
+
+
 
         }
 
@@ -1697,6 +1698,9 @@ $def with (name)
 
             winlose_menu.title = "YOU WIN!"
             winlose_menu.items[0].text = "Continue"
+            winlose_menu.items[0].action = function() {
+              jaws.start(Game)
+            }
           } else if (game_end == "L") {
             winlose_menu.title = "YOU LOSE!"
             winlose_menu.items[0].text = "Retry"
@@ -3874,7 +3878,7 @@ $def with (name)
 
       console.log("loading levels TEST")
       loadLevels(function(data) {
-        var level_data = JSON.parse(data)
+        level_data = JSON.parse(data)
         console.log("DATA = ")
         console.dir(level_data)
 
