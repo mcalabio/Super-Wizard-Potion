@@ -117,9 +117,10 @@ $def with (name)
 
       var save_menu_item = new MenuItem(pause_menu,"Save Level",function() {
         saveLevel(player_level,player_stage,player.board,function() {
-          findEditLevels(function(latest) {
-            latest_edit = latest
-            player_progress[0] = latest - 1
+          loadLevels(function(data) {            
+            level_data = JSON.parse(data)
+            latest_edit = level_data.levels[0].length + 1
+            player_progress[0] = latest_edit - 1
           })
         })
       })
@@ -226,12 +227,10 @@ $def with (name)
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
             console.log("Save")
             saveLevel(player_level,player_stage,player.board,function() {
-              findEditLevels(function(latest) {
-                console.log("callback for findEditLevels, latest = " + latest)
-                latest_edit = latest
-                level_select_menu.stage = latest
-                player_progress[0] = latest
-                player_stage = latest - 1
+              loadLevels(function(data) {            
+                level_data = JSON.parse(data)
+                latest_edit = level_data.levels[0].length + 1
+                player_progress[0] = latest_edit - 1
               })
             })
           }))
@@ -3822,14 +3821,9 @@ $def with (name)
 
       console.log("loading levels TEST")
       loadLevels(function(data) {
+
         level_data = JSON.parse(data)
-        console.log("DATA = ")
-        console.dir(level_data)
-
-        console.log("latest_edit = " + level_data.levels[0].length)
-
         latest_edit = level_data.levels[0].length + 1
-
         player_progress[0] = latest_edit - 1
 
         if (name_entered)
