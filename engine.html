@@ -3322,8 +3322,8 @@ $def with (name)
 
         // add level menu items
         var item_count = 0
-        for (var i = 0; i < player_progress.length; i++) {
-          for (var j = 0; j < player_progress[i] + 1; j++) {
+        for (var i = 0; i < level_data.levels.length; i++) {
+          for (var j = 0; j < level_data.levels[i].length; j++) {
             if (i == 1 && j+1 == 1)
               level_select_menu.index = item_count
             level_select_menu.items.push(new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
