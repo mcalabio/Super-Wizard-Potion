@@ -87,7 +87,7 @@ $def with (name)
     var player_level = 1
     var player_stage = 1
     var player_progress = [0,0]
-    var star_progress = [[0],[0]]
+    var star_progress = [{},{}]
     var control_scheme = 1
     var game_mode = 1
     var game_record = ""
@@ -129,6 +129,7 @@ $def with (name)
       var randomization_array = new Array()
 
       var screen_data
+      var star_score
 
       /* Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
@@ -1371,6 +1372,7 @@ $def with (name)
           // array of stacks in string form
           var stacks_string = data.split('\n')
           var items
+          star_score = stacks_string[6]
 
           // go through each stack
           for (var s=0; s < BOARD_WIDTH; s++) {
@@ -1703,7 +1705,22 @@ $def with (name)
               player_progress[player_level] = player_stage
 
             // update star progress
-            star_progress[player_level][player_stage-1] = 1
+            var these_stars = 1
+
+            if (player.score >= star_score)
+              these_stars += 1
+
+            var stage_star_progress = star_progress[player_level][player_stage.toString()] 
+
+            console.log("stage_star_progress = ")
+            console.dir(stage_star_progress)
+
+            if (stage_star_progress == undefined || stage_star_progress < these_stars)
+              star_progress[player_level][player_stage.toString()]  = these_stars
+
+            console.log("this level star progress = ")
+            console.dir(star_progress)
+
             player.stars = starTotal()
             screen_data.items[3].text = "*x" + player.stars
 
@@ -2833,8 +2850,8 @@ $def with (name)
 
       var total = 0
       for (var i = 0; i < star_progress.length; i++) {
-        for (var j = 0; j < star_progress[i].length; j++) {
-          total += star_progress[i][j]
+        for (var key in star_progress[i]) {
+          total += star_progress[i][key]
         }
       }
 
