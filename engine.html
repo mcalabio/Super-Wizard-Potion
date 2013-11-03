@@ -117,7 +117,7 @@ $def with (name)
 
       var save_menu_item = new MenuItem(pause_menu,"Save Level",function() {
         saveLevel(player_level,player_stage,player.board,function() {
-          loadLevels(function(data) {            
+          loadLevels(function(data) {
             level_data = JSON.parse(data)
             latest_edit = level_data.levels[0].length + 1
             player_progress[0] = latest_edit - 1
@@ -227,7 +227,7 @@ $def with (name)
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
             console.log("Save")
             saveLevel(player_level,player_stage,player.board,function() {
-              loadLevels(function(data) {            
+              loadLevels(function(data) {
                 level_data = JSON.parse(data)
                 latest_edit = level_data.levels[0].length + 1
                 player_progress[0] = latest_edit - 1
@@ -549,7 +549,7 @@ $def with (name)
           if (level_edit)
             return
           this.score += points
-          screen_data.items[2].text = "$$" + this.score
+          screen_data.items[2].text = '\u03BB' + this.score
         }
 
         // player controls
@@ -2978,7 +2978,7 @@ $def with (name)
       // calculate height
       if (this.scrolling)
         this.height = 70
-      else 
+      else
         this.height = 20 * (items.length + ((this.title == "") ? 0 : 1)) + 30
 
       this.sprites = new Array()
@@ -3106,7 +3106,7 @@ $def with (name)
 
       this.update = function() {
 
-        if (this.scrolling) {          
+        if (this.scrolling) {
           // update arrow sprites
           for (var s=0; s < this.sprites.length; s++) {
             var this_sprite = this.sprites[s]
