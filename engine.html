@@ -194,13 +194,25 @@ $def with (name)
 
         // winlose menu
         var winlose_menu_items = new Array()
-          winlose_menu_items.push(new MenuItem(winlose_menu,"",function() {
-            var record = buildRecordString(this,"R")
-            saveRecord(record)
-            game_end = "R"
+          winlose_menu_items.push(new MenuItem(winlose_menu,"Continue",function() {
+
+            // advance the player to the next level
+            if (player_stage < (player_level == 0) ? latest_edit : 14) {
+              player_stage++
+            } else {
+              player_level++
+              player_stage = 1
+            }
+
+            // reset board
+            jaws.start(Game)
+            
+          }))
+          winlose_menu_items[0].active = false
+          winlose_menu_items.push(new MenuItem(winlose_menu,"Restart",function() {
             jaws.start(Game)
           }))
-          winlose_menu_items.push(new MenuItem(winlose_menu,"Quit",function() {
+          winlose_menu_items.push(new MenuItem(winlose_menu,"Back to Menu",function() {
             jaws.start(MainMenu)
           }))
         winlose_menu = new MenuBox(" ",winlose_menu,menu_x, menu_y,4*ITEM_WIDTH,winlose_menu_items)
@@ -1683,32 +1695,16 @@ $def with (name)
 
           if (game_end == "W") {
 
-            if (player_stage < (player_level == 0) ? latest_edit : 14) {
-              player_stage++
+            // update player progress
+            if (player_progress[player_level] < player_stage)
+              player_progress[player_level] = player_stage
 
-              // update player progress
-              if(player_progress[player_level] < player_stage)
-                player_progress[player_level] = player_stage
-
-            } else {
-              player_level++
-              player_stage = 1
-
-              // update player progress
-              if(player_progress.length - 1 < player_level)
-                player_progress.push(player_stage)
-
-            }
-
+            // allow player to continue to next level
             winlose_menu.title = "YOU WIN!"
-            winlose_menu.items[0].text = "Continue"
-            winlose_menu.items[0].action = function() {
-              jaws.start(Game)
-            }
+            winlose_menu.items[0].active = true
+
           } else if (game_end == "L") {
             winlose_menu.title = "YOU LOSE!"
-            winlose_menu.items[0].text = "Retry"
-            // jaws.start(Game)
           }
 
           // color timer to be red to indicate game end
@@ -2951,6 +2947,10 @@ $def with (name)
       this.menu = menu
       this.text = text
       this.action = action
+      this.active = true
+
+      this.locked = false
+      this.stars = 0
 
     }
 
@@ -3174,6 +3174,9 @@ $def with (name)
 
           // draw menu items
           for (var i=0; i < this.items.length; i++) {
+
+            if (!this.items[i].active)
+              continue
 
             jaws.context.font = "bold 12pt Monaco";
             jaws.context.lineWidth = 10
