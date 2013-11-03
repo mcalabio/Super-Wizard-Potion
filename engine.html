@@ -180,7 +180,7 @@ $def with (name)
         // pause menu
         pause = false
 
-        var menu_x = player.board.board.x + player.board.board.width/2 - 2*ITEM_WIDTH
+        var menu_x = player.board.board.x + player.board.board.width/2 - (4*ITEM_WIDTH+15)/2
         var menu_y = player.board.board.y + player.board.board.height/2 - 3*ITEM_WIDTH
 
         var pause_menu_items = new Array()
@@ -189,11 +189,11 @@ $def with (name)
           player.controls()
         }))
         pause_menu_items.push(((level_edit) ? save_menu_item : restart_menu_item))
-        pause_menu_items.push(new MenuItem(pause_menu,"Quit",function() {
+        pause_menu_items.push(new MenuItem(pause_menu,"Back to Menu",function() {
           jaws.start(MainMenu)
         }))
 
-        pause_menu = new MenuBox("Pause!",pause_menu,menu_x, menu_y,4*ITEM_WIDTH,pause_menu_items)
+        pause_menu = new MenuBox("Pause!",pause_menu,menu_x, menu_y,4*ITEM_WIDTH+15,pause_menu_items)
 
         // winlose menu
         var winlose_menu_items = new Array()
@@ -218,7 +218,7 @@ $def with (name)
           winlose_menu_items.push(new MenuItem(winlose_menu,"Back to Menu",function() {
             jaws.start(MainMenu)
           }))
-        winlose_menu = new MenuBox(" ",winlose_menu,menu_x, menu_y,4*ITEM_WIDTH,winlose_menu_items)
+        winlose_menu = new MenuBox(" ",winlose_menu,menu_x, menu_y,4*ITEM_WIDTH+15,winlose_menu_items)
 
         // level editor
         if (level_edit) {
@@ -2802,7 +2802,7 @@ $def with (name)
         player.controls()
       }))
       pause_menu.items.push(((level_edit) ? save_menu_item : restart_menu_item))
-      pause_menu.items.push(new MenuItem(pause_menu,"Quit",function() {
+      pause_menu.items.push(new MenuItem(pause_menu,"Back to Menu",function() {
         if (!level_edit) {
           var record = buildRecordString(player.board,"Q")
           saveRecord(record)
@@ -3075,14 +3075,48 @@ $def with (name)
       this.up_action = function() {
 
         if (this.index > 0) 
-          if (this.items[this.index-1].active)
+          if (this.items[this.index-1].active) {
             this.index--
+            if (this.scrolling) {
+              for (var i = 0; i < this.star_sprites.length; i++) {
+                this.star_sprites[i].active = false
+              }
+              var level_name = this.items[this.index].text
+              level_name = level_name.split("-")
+              var level = parseInt(level_name[0])
+              var stage = level_name[1]
+              var these_stars = star_progress[level][stage]
+              console.log(these_stars)
+              console.dir(star_progress)
+              for (var i = 0; i < these_stars; i++) {
+                this.star_sprites[i].active = true
+              }
+              
+            }
+          }
       }
 
       this.down_action = function() {
         if (this.index < this.items.length - 1) 
-          if (this.items[this.index+1].active)
+          if (this.items[this.index+1].active) {
             this.index++
+            if (this.scrolling) {
+              for (var i = 0; i < this.star_sprites.length; i++) {
+                this.star_sprites[i].active = false
+              }
+              var level_name = this.items[this.index].text
+              level_name = level_name.split("-")
+              var level = parseInt(level_name[0])
+              var stage = level_name[1]
+              var these_stars = star_progress[level][stage]
+              console.log(these_stars)
+              console.dir(star_progress)
+              for (var i = 0; i < these_stars; i++) {
+                this.star_sprites[i].active = true
+              }
+              
+            }
+          }
       }
 
       this.controls = function(menu,ok_submenu,menus) {
@@ -3154,7 +3188,7 @@ $def with (name)
 
         if (this.scrolling) {
           // update arrow sprites
-          for (var s=0; s < this.sprites.length; s++) {
+          for (var s=0; s < 2; s++) {
             var this_sprite = this.sprites[s]
 
             if (jaws.mouse_x > this_sprite.x && jaws.mouse_x < this_sprite.x + this_sprite.width &&
@@ -3274,6 +3308,7 @@ $def with (name)
 
     function MainMenu() {
 
+      var player_data
       var active_menu
       var menus = new Array()
       var level_select_string = (player_progress.length-1) + "-" + player_progress[player_progress.length-1]
@@ -3284,6 +3319,17 @@ $def with (name)
       }
 
       this.setup = function() {
+
+        // player data
+        player_data = new MenuBox(
+          player_name,
+          player_data,
+          jaws.width - 125 - ITEM_WIDTH,
+          ITEM_WIDTH,
+          125,
+          [new MenuItem(player_data,"*x" + starTotal(),function(){})]
+        )
+        player_data.index = -1
 
         // main menu
         var main_menu_items = new Array()
@@ -3303,7 +3349,27 @@ $def with (name)
               level_count += parseInt(player_progress[i])
             }
             console.log("level_count = " + level_count)
-            level_select_menu.index = level_count + 1
+            console.dir(level_select_menu.items)
+            if (level_count + 1 >= level_select_menu.items.length)
+              level_select_menu.index = level_select_menu.items.length - 1
+            else
+              level_select_menu.index = level_count + 1
+          
+            for (var i = 0; i < level_select_menu.star_sprites.length; i++) {
+              level_select_menu.star_sprites[i].active = false
+            }
+            var level_name = level_select_menu.items[level_select_menu.index].text
+            level_name = level_name.split("-")
+            var level = parseInt(level_name[0])
+            var stage = level_name[1]
+            var these_stars = star_progress[level][stage]
+            console.log(these_stars)
+            console.dir(star_progress)
+            for (var i = 0; i < these_stars; i++) {
+              level_select_menu.star_sprites[i].active = true
+            }
+              
+
           }))
           main_menu_items.push(new MenuItem(main_menu,"Marathon",function() {
             level_edit = false
@@ -3373,6 +3439,22 @@ $def with (name)
         level_select_menu.sprites.push(level_select_menu.up_arrow)
         level_select_menu.sprites.push(level_select_menu.down_arrow)
 
+        // level select stars
+        level_select_menu.star_sprites = new Array()
+        var star_sprite_1 = new jaws.Sprite({x:level_select_menu.x-2,y:level_select_menu.y+36,image:"./static/images/STAR.gif",anchor:"left"})        
+        star_sprite_1.width = 15
+        star_sprite_1.height = 15
+        level_select_menu.sprites.push(star_sprite_1)
+        level_select_menu.star_sprites.push(star_sprite_1)
+        star_sprite_1.active = false
+
+        var star_sprite_2 = new jaws.Sprite({x:level_select_menu.x-2,y:level_select_menu.y+21,image:"./static/images/STAR.gif",anchor:"left"})        
+        star_sprite_2.width = 15
+        star_sprite_2.height = 15
+        level_select_menu.sprites.push(star_sprite_2)
+        level_select_menu.star_sprites.push(star_sprite_2)
+        star_sprite_2.active = false
+
         var level_select_ok = new OkSubMenu("",level_select_menu,function() {
           console.log("hawaiian bread")
           level_select_menu.items[menu.index].action(jaws)
@@ -3419,6 +3501,8 @@ $def with (name)
 
         jaws.context.fillStyle = "Black"
         jaws.context.fillRect(0,0,jaws.width,jaws.height)
+
+        player_data.draw()
 
         for (var i = 0; i < menus.length; i++) {
           menus[i].draw()
@@ -3870,7 +3954,7 @@ $def with (name)
     jaws.onload = function() {
       console.log("Bugs: need to check if there's enough flasks for lose condition")
       jaws.unpack()
-      jaws.assets.add(["./static/images/CURSOR.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/sfx/drop.mp3","./static/sfx/grab.mp3"])
+      jaws.assets.add(["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/sfx/drop.mp3","./static/sfx/grab.mp3"])
 
       console.log("loading levels TEST")
       loadLevels(function(data) {
