@@ -131,6 +131,7 @@ $def with (name)
 
       var player_data
       var screen_data
+      var star_time
       var star_score
 
       /* Called once when a game state is activated. Use it for one-time setup code. */
@@ -1395,7 +1396,8 @@ $def with (name)
           // array of stacks in string form
           var stacks_string = data.split('\n')
           var items
-          star_score = stacks_string[6]
+          star_time = stacks_string[6]
+          star_score = stacks_string[7]
 
           // go through each stack
           for (var s=0; s < BOARD_WIDTH; s++) {
@@ -1728,7 +1730,7 @@ $def with (name)
               player_progress[player_level] = player_stage
 
             // update star progress
-            updateStarProgress(player,player_level,player_stage,"",star_score)
+            updateStarProgress(player,player_level,player_stage,star_time,star_score)
 
             player.stars = starTotal()
             player_data.items[0].text = "  x " + player.stars
@@ -2872,26 +2874,38 @@ $def with (name)
     // update star for a stage
     function updateStarProgress(player,player_level,player_stage,star_time,star_score) {
 
-      var this_stage_progress = [1,0,0,0] // [complete,time,score,all]
+      var stage_star_progress = star_progress[player_level][player_stage.toString()]
+
+      if (stage_star_progress == undefined) {
+        star_progress[player_level][player_stage.toString()] = [1,0,0,0] // [complete,time,score,all]
+        stage_star_progress = star_progress[player_level][player_stage.toString()]
+      }
 
       var these_stars = 1
 
-      if (player.score >= star_score) {
-        console.log("achieved star score = " + star_score)
-        this_stage_progress[2] = 1
+      // check if player got star time
+      if (player.timer.clock_text <= star_time) {
+        console.log("achieved star time = " + star_time)
+        stage_star_progress[1] = 1
         these_stars++
       }
 
-      var stage_star_progress = star_progress[player_level][player_stage.toString()] 
+      // check if player got star score
+      if (player.score >= star_score) {
+        console.log("achieved star score = " + star_score)
+        stage_star_progress[2] = 1
+        these_stars++
+      }
+
+      // check if player got star time and star score
+      if (these_stars >= 3) {
+        console.log("achieved bonus star = " + star_score)
+        stage_star_progress[3] = 1
+        these_stars++
+      }
 
       console.log("stage_star_progress = ")
       console.dir(stage_star_progress)
-
-      // check for star score
-      star_progress[player_level][player_stage.toString()] = this_stage_progress
-
-      console.log("this level star progress = ")
-      console.dir(star_progress)
 
       return these_stars
 
@@ -3402,9 +3416,13 @@ $def with (name)
             level_name = level_name.split("-")
             var level = parseInt(level_name[0])
             var stage = level_name[1]
-            var these_stars = star_progress[level][stage]
-            console.log(these_stars)
-            console.dir(star_progress)
+            var these_stars = 0            
+            for (var i = 0; i < star_progress[level][stage].length; i++) {
+              these_stars += star_progress[level][stage][i]
+            }
+            for (var i = 0; i < these_stars; i++) {
+              this.star_sprites[i].active = true
+            }
             for (var i = 0; i < these_stars; i++) {
               level_select_menu.star_sprites[i].active = true
             }
