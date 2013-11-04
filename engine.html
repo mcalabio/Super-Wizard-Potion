@@ -3362,10 +3362,10 @@ $def with (name)
 
     function MainMenu() {
 
-      var player_data
       var active_menu
       var menus = new Array()
       var level_select_string = (player_progress.length-1) + "-" + player_progress[player_progress.length-1]
+      var star_total_sprite
 
       this.back = function() {
           var this_menu = menus.pop()
@@ -3373,17 +3373,6 @@ $def with (name)
       }
 
       this.setup = function() {
-
-        // player data
-        player_data = new MenuBox(
-          player_name,
-          player_data,
-          jaws.width - 125 - ITEM_WIDTH,
-          ITEM_WIDTH,
-          125,
-          [new MenuItem(player_data,"*x" + starTotal(),function(){})]
-        )
-        player_data.index = -1
 
         // main menu
         var main_menu_items = new Array()
@@ -3419,9 +3408,6 @@ $def with (name)
             var these_stars = 0            
             for (var i = 0; i < star_progress[level][stage].length; i++) {
               these_stars += star_progress[level][stage][i]
-            }
-            for (var i = 0; i < these_stars; i++) {
-              this.star_sprites[i].active = true
             }
             for (var i = 0; i < these_stars; i++) {
               level_select_menu.star_sprites[i].active = true
@@ -3513,6 +3499,26 @@ $def with (name)
         level_select_menu.star_sprites.push(star_sprite_2)
         star_sprite_2.active = false
 
+        var star_sprite_3 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+6,image:"./static/images/STAR.gif",anchor:"left"})        
+        star_sprite_3.width = 15
+        star_sprite_3.height = 15
+        level_select_menu.sprites.push(star_sprite_3)
+        level_select_menu.star_sprites.push(star_sprite_3)
+        star_sprite_3.active = false
+
+        var star_sprite_4 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+51,image:"./static/images/STAR.gif",anchor:"left"})        
+        star_sprite_4.width = 15
+        star_sprite_4.height = 15
+        level_select_menu.sprites.push(star_sprite_4)
+        level_select_menu.star_sprites.push(star_sprite_4)
+        star_sprite_4.active = false
+
+        star_total_sprite = new jaws.Sprite({x:ITEM_WIDTH+140,y:13,image:"./static/images/STAR.gif",anchor:"left"})        
+        star_total_sprite.width = 15
+        star_total_sprite.height = 15
+        console.log("star_total_sprite")
+        console.dir(star_total_sprite)
+
         var level_select_ok = new OkSubMenu("",level_select_menu,function() {
           console.log("hawaiian bread")
           level_select_menu.items[menu.index].action(jaws)
@@ -3560,7 +3566,23 @@ $def with (name)
         jaws.context.fillStyle = "Black"
         jaws.context.fillRect(0,0,jaws.width,jaws.height)
 
-        player_data.draw()
+        // player name
+        jaws.context.font = "bold 12pt Monaco";
+        jaws.context.lineWidth = 10
+        jaws.context.fillStyle =  "Red"
+        jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+        jaws.context.fillText(player_name, ITEM_WIDTH + 17, 28)
+
+        // star sprite
+        star_total_sprite.x = ITEM_WIDTH + 19 + player_name.length*12.5
+        star_total_sprite.draw()
+
+        // player star count
+        jaws.context.font = "bold 12pt Monaco";
+        jaws.context.lineWidth = 10
+        jaws.context.fillStyle =  "White"
+        jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+        jaws.context.fillText("x " + starTotal(), star_total_sprite.x + star_total_sprite.width + 10, 28)
 
         for (var i = 0; i < menus.length; i++) {
           menus[i].draw()
@@ -3709,7 +3731,8 @@ $def with (name)
 
       // enter name OK sub menu
       var enter_name_ok = new MenuBox("",enter_name,enter_name.x, enter_name.y + enter_name.height, 300, [new MenuItem(enter_name_ok,"          OK",function() {
-        jaws.switchGameState(MainMenu)
+        if (player_name.length > 0)
+          jaws.switchGameState(MainMenu)
       })])
       enter_name_ok.active = true
 
@@ -3777,7 +3800,8 @@ $def with (name)
         })
 
         jaws.on_keydown(["enter"],  function()  {
-          jaws.switchGameState(MainMenu)
+          if (player_name.length > 0)
+            jaws.switchGameState(MainMenu)
         } )
 
         jaws.on_keydown(["backspace"], function() {
