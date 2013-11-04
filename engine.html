@@ -1735,9 +1735,13 @@ $def with (name)
             player.stars = starTotal()
             player_data.items[0].text = "  x " + player.stars
 
-            // allow player to continue to next level
             winlose_menu.title = "YOU WIN!"
-            winlose_menu.items[0].active = true
+
+            // allow player to advance to next level if they have enough stars            
+            if (level_data.levels[player_level][player_stage] != undefined && player.stars >= level_data.levels[player_level][player_stage].split('\n')[8]) {
+              winlose_menu.items[0].active = true
+            } else
+              winlose_menu.index = 1
 
           } else if (game_end == "L") {
             winlose_menu.title = (marathon) ? "GAME OVER!" : "YOU LOSE!"
@@ -3184,7 +3188,7 @@ $def with (name)
         })
 
         jaws.on_keydown(["enter","space"], function() {
-          if (menu.items[menu.index].active) {
+          if (menu.items[menu.index].active && !menu.items[menu.index].locked) {
             console.log("performing action")
             menu.items[menu.index].action(jaws)
           }
@@ -3209,9 +3213,10 @@ $def with (name)
               console.log("click on down arrow")
               menu.up_action()
             }
-            else if (ok_submenu.menu_box.mouse_inside)
-              menu.items[menu.index].action()
-            else if (menu.mouse_inside)
+            else if (ok_submenu.menu_box.mouse_inside) {
+              if (!menu.items[menu.index].locked)
+                menu.items[menu.index].action()
+            } else if (menu.mouse_inside)
               return
             else {
               menus.pop()
@@ -3219,9 +3224,10 @@ $def with (name)
             }
 
           } else {
-            if(menu.mouse_inside)
-              menu.items[menu.index].action()
-            else
+            if(menu.mouse_inside) {
+              if(!menu.items[menu.index].locked)
+                menu.items[menu.index].action()
+            } else
               menu.back()
           }
 
@@ -3298,25 +3304,29 @@ $def with (name)
 
         if (this.scrolling) {
 
+          var this_item = this.items[this.index]
+
           jaws.context.font = "bold 12pt Monaco";
           jaws.context.lineWidth = 10
-          jaws.context.fillStyle =  "Red"
+          jaws.context.fillStyle =  (this_item.locked) ? "Brown" : "Red"
           jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-          jaws.context.fillText(this.items[this.index].text, this.x + 20, this.y + 20 * (1 + j) + 10)
+          jaws.context.fillText(this_item.text, this.x + 20, this.y + 20 * (1 + j) + 10)
 
         } else {
 
           // draw menu items
           for (var i=0; i < this.items.length; i++) {
 
-            if (!this.items[i].active)
+            var this_item = this.items[i]
+
+            if (!this_item.active)
               continue
 
             jaws.context.font = "bold 12pt Monaco";
             jaws.context.lineWidth = 10
-            jaws.context.fillStyle =  (this.index == i) ? "Red" : "White"
+            jaws.context.fillStyle =  (this.index == i) ? ((this_item.locked) ? "Brown" : "Red") : ((this_item.locked) ? "Grey" : "White")
             jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-            jaws.context.fillText(this.items[i].text, this.x + 20, this.y + 20 * (i + 1 + j) + 10)
+            jaws.context.fillText(this_item.text, this.x + 20, this.y + 20 * (i + 1 + j) + 10)
 
           }
         }
@@ -3420,6 +3430,7 @@ $def with (name)
             marathon = true
             jaws.start(Game)
           }))
+          main_menu_items[main_menu_items.length-1].locked = true
           main_menu_items.push(new MenuItem(main_menu,"Change Name",function() {
             jaws.start(PlayerNameState)
           }))
@@ -3453,13 +3464,16 @@ $def with (name)
           for (var j = 0; j < level_data.levels[i].length; j++) {
             if (i == 1 && j+1 == 1)
               level_select_menu.index = item_count
-            level_select_menu.items.push(new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
+            var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
                 var level_name = level_select_menu.items[level_select_menu.index].text
                 level_name = level_name.split("-")
                 player_level = level_name[0]
                 player_stage = level_name[1]
                 jaws.start(Game)
-            }))
+            })
+            var star_lock = level_data.levels[i][j].split('\n')[8]
+            this_level.locked = (starTotal() >= star_lock) ? false : true
+            level_select_menu.items.push(this_level)
             item_count++
           }
         }
