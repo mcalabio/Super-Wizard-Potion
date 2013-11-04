@@ -3045,7 +3045,7 @@ $def with (name)
       this.active = true
 
       this.locked = false
-      this.stars = 0
+      this.star_lock = 100
 
     }
 
@@ -3128,42 +3128,56 @@ $def with (name)
         return Math.round(index)
       }
 
+      this.scroll_action = function() {
+
+        console.log("scrolling action")
+        for (var i = 0; i < this.star_sprites.length; i++) {
+          this.star_sprites[i].active = false
+        }
+        var level_name = this.items[this.index].text
+
+        // activate ok submenu of this item is unlocked
+        var level_index = 0
+        for (var i = 0; i < this.items.length; i++)
+          if (this.items[i].text == level_name) {
+            level_index = i
+            break
+          }
+        if (this.items[level_index].locked) {
+          for (var i=0; i < this.submenus[0].menu_box.sprites.length; i++) {
+            this.submenus[0].menu_box.sprites[i].active = true
+          }
+          this.submenus[0].menu_box.items[0].text = "      x " + ((this.items[level_index].star_lock == undefined) ? "?" : this.items[level_index].star_lock)
+        } else {
+          for (var i=0; i < this.submenus[0].menu_box.sprites.length; i++) {
+            this.submenus[0].menu_box.sprites[i].active = false
+          }
+          this.submenus[0].menu_box.items[0].text = "OK"
+        }
+
+        // display how many stars player has earned for this level
+        level_name = level_name.split("-")
+        var level = parseInt(level_name[0])
+        var stage = level_name[1]
+        var these_stars = 0            
+        for (var i = 0; i < star_progress[level][stage].length; i++) {
+          these_stars += star_progress[level][stage][i]
+        }
+        for (var i = 0; i < these_stars; i++) {
+          this.star_sprites[i].active = true
+        }
+
+        // TODO: display star lock
+
+      }
+
       this.up_action = function() {
 
         if (this.index > 0) 
           if (this.items[this.index-1].active) {
             this.index--
             if (this.scrolling) {
-              console.log("scrolling action")
-              for (var i = 0; i < this.star_sprites.length; i++) {
-                this.star_sprites[i].active = false
-              }
-              var level_name = this.items[this.index].text
-
-              // activate ok submenu of this item is unlocked
-              var level_index = 0
-              for (var i = 0; i < this.items.length; i++)
-                if (this.items[i].text == level_name) {
-                  level_index = i
-                  break
-                }
-              if (this.items[level_index].locked) {
-                this.submenus[0].menu_box.items[0].active = false
-              } else
-                this.submenus[0].menu_box.items[0].active = true
-
-              // display how many stars player has earned for this level
-              level_name = level_name.split("-")
-              var level = parseInt(level_name[0])
-              var stage = level_name[1]
-              var these_stars = 0            
-              for (var i = 0; i < star_progress[level][stage].length; i++) {
-                these_stars += star_progress[level][stage][i]
-              }
-              for (var i = 0; i < these_stars; i++) {
-                this.star_sprites[i].active = true
-              }
-              
+              this.scroll_action()
             }
           }
       }
@@ -3173,35 +3187,7 @@ $def with (name)
           if (this.items[this.index+1].active) {
             this.index++
             if (this.scrolling) {
-              for (var i = 0; i < this.star_sprites.length; i++) {
-                this.star_sprites[i].active = false
-              }
-              var level_name = this.items[this.index].text
-              
-              // activate ok submenu of this item is unlocked
-              var level_index = 0
-              for (var i = 0; i < this.items.length; i++)
-                if (this.items[i].text == level_name) {
-                  level_index = i
-                  break
-                }
-              if (this.items[level_index].locked) {
-                this.submenus[0].menu_box.items[0].active = false
-              } else
-                this.submenus[0].menu_box.items[0].active = true
-
-              // display how many stars player has earned for this level
-              level_name = level_name.split("-")
-              var level = parseInt(level_name[0])
-              var stage = level_name[1]
-              var these_stars = 0            
-              for (var i = 0; i < star_progress[level][stage].length; i++) {
-                these_stars += star_progress[level][stage][i]
-              }
-              for (var i = 0; i < these_stars; i++) {
-                this.star_sprites[i].active = true
-              }
-              
+              this.scroll_action()              
             }
           }
       }
@@ -3441,17 +3427,7 @@ $def with (name)
             for (var i = 0; i < level_select_menu.star_sprites.length; i++) {
               level_select_menu.star_sprites[i].active = false
             }
-            var level_name = level_select_menu.items[level_select_menu.index].text
-            level_name = level_name.split("-")
-            var level = parseInt(level_name[0])
-            var stage = level_name[1]
-            var these_stars = 0            
-            for (var i = 0; i < star_progress[level][stage].length; i++) {
-              these_stars += star_progress[level][stage][i]
-            }
-            for (var i = 0; i < these_stars; i++) {
-              level_select_menu.star_sprites[i].active = true
-            }
+            level_select_menu.scroll_action()
               
 
           }))
@@ -3507,8 +3483,8 @@ $def with (name)
                 player_stage = level_name[1]
                 jaws.start(Game)
             })
-            var star_lock = level_data.levels[i][j].split('\n')[8]
-            this_level.locked = (starTotal() >= star_lock) ? false : true
+            this_level.star_lock = level_data.levels[i][j].split('\n')[8]
+            this_level.locked = (starTotal() >= this_level.star_lock) ? false : true
             level_select_menu.items.push(this_level)
             item_count++
           }
@@ -3568,6 +3544,22 @@ $def with (name)
         star_total_sprite.height = 15
         console.log("star_total_sprite")
         console.dir(star_total_sprite)
+
+        // lock sprite
+        var lock_sprite = new jaws.Sprite({x:ITEM_WIDTH+220,y:110,image:"./static/images/LOCK.gif",anchor:"left"})        
+        console.log("lock_sprite")
+        console.dir(lock_sprite)
+        level_select_ok.menu_box.sprites.push(lock_sprite)
+        lock_sprite.active = true
+
+        // star lock sprite
+        var star_lock_sprite = new jaws.Sprite({x:305,y:127,image:"./static/images/STAR.gif",anchor:"left"})        
+        star_lock_sprite.width = 15
+        star_lock_sprite.height = 15
+        console.log("star_lock_sprite")
+        console.dir(star_lock_sprite)
+        level_select_ok.menu_box.sprites.push(star_lock_sprite)
+        star_lock_sprite.active = true
 
         // options menu
         var options_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, [new MenuItem(options_menu, "Controls", function() {
