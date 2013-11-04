@@ -98,6 +98,7 @@ $def with (name)
 
     function Game() {
       var player
+      var star_sprites = new Array()
       var viewport
       var need_to_restart = false
       var game_end = ""
@@ -128,6 +129,7 @@ $def with (name)
 
       var randomization_array = new Array()
 
+      var player_data
       var screen_data
       var star_score
 
@@ -143,19 +145,36 @@ $def with (name)
         // initialize player
         player = new Player(3,0)
 
+
+        // setup player data in a menu box
+        player_data = new MenuBox(
+          player_name,
+          screen_data,
+          player.board.board.x + player.board.board.width + ITEM_WIDTH,
+          player.board.board.y,
+          125,
+          [new MenuItem(screen_data,"  x " + player.stars,function(){return})]
+        )
+        player_data.index = -1
+        var player_stars_sprite = new jaws.Sprite({x:player_data.x+20,y:player_data.y+36,image:"./static/images/STAR.gif",anchor:"left"})   
+        player_stars_sprite.width = 15
+        player_stars_sprite.height = 15
+        star_sprites.push(player_stars_sprite) 
+        console.log("starsprite")
+        console.dir(player_stars_sprite)       
+
         // setup screen data in a menu box
         var screen_data_items = new Array()
         screen_data_items.push(new MenuItem(screen_data,(marathon)?("Marathon"):(player_level + "-" + player_stage),function(){return}))
         if (!level_edit) {
           screen_data_items.push(new MenuItem(screen_data,player.timer.clock_text,function(){return}))
-          screen_data_items.push(new MenuItem(screen_data,player.score,function(){return}))
-          screen_data_items.push(new MenuItem(screen_data,"*x" + player.stars,function(){return}))
+          screen_data_items.push(new MenuItem(screen_data,'\u03BB'+player.score,function(){return}))
         }
         screen_data = new MenuBox(
-          player_name,
+          "Level",
           screen_data,
           player.board.board.x + player.board.board.width + ITEM_WIDTH,
-          player.board.board.y,
+          player_data.y + player_data.height + 1,
           125,
           screen_data_items
         )
@@ -507,7 +526,11 @@ $def with (name)
         // the viewport magic. wrap all draw()-calls inside viewport.apply and it will draw those relative to the viewport.
         viewport.apply( function() {
           player.draw()
+          player_data.draw()
           screen_data.draw()
+          for (var s=0; s < star_sprites.length; s++) {
+            star_sprites[s].draw()
+          }
           if(level_edit) {
             level_editor.draw()
             level_edit_menu.draw()
@@ -1705,24 +1728,10 @@ $def with (name)
               player_progress[player_level] = player_stage
 
             // update star progress
-            var these_stars = 1
-
-            if (player.score >= star_score)
-              these_stars += 1
-
-            var stage_star_progress = star_progress[player_level][player_stage.toString()] 
-
-            console.log("stage_star_progress = ")
-            console.dir(stage_star_progress)
-
-            if (stage_star_progress == undefined || stage_star_progress < these_stars)
-              star_progress[player_level][player_stage.toString()]  = these_stars
-
-            console.log("this level star progress = ")
-            console.dir(star_progress)
+            updateStarProgress(player,player_level,player_stage,"",star_score)
 
             player.stars = starTotal()
-            screen_data.items[3].text = "*x" + player.stars
+            player_data.items[0].text = "  x " + player.stars
 
             // allow player to continue to next level
             winlose_menu.title = "YOU WIN!"
@@ -2851,11 +2860,40 @@ $def with (name)
       var total = 0
       for (var i = 0; i < star_progress.length; i++) {
         for (var key in star_progress[i]) {
-          total += star_progress[i][key]
+          for (var j = 0; j < star_progress[i][key].length; j++)
+          total += star_progress[i][key][j]
         }
       }
 
       return total
+
+    }
+
+    // update star for a stage
+    function updateStarProgress(player,player_level,player_stage,star_time,star_score) {
+
+      var this_stage_progress = [1,0,0,0] // [complete,time,score,all]
+
+      var these_stars = 1
+
+      if (player.score >= star_score) {
+        console.log("achieved star score = " + star_score)
+        this_stage_progress[2] = 1
+        these_stars++
+      }
+
+      var stage_star_progress = star_progress[player_level][player_stage.toString()] 
+
+      console.log("stage_star_progress = ")
+      console.dir(stage_star_progress)
+
+      // check for star score
+      star_progress[player_level][player_stage.toString()] = this_stage_progress
+
+      console.log("this level star progress = ")
+      console.dir(star_progress)
+
+      return these_stars
 
     }
 
@@ -3085,9 +3123,10 @@ $def with (name)
               level_name = level_name.split("-")
               var level = parseInt(level_name[0])
               var stage = level_name[1]
-              var these_stars = star_progress[level][stage]
-              console.log(these_stars)
-              console.dir(star_progress)
+              var these_stars = 0            
+              for (var i = 0; i < star_progress[level][stage].length; i++) {
+                these_stars += star_progress[level][stage][i]
+              }
               for (var i = 0; i < these_stars; i++) {
                 this.star_sprites[i].active = true
               }
@@ -3108,9 +3147,10 @@ $def with (name)
               level_name = level_name.split("-")
               var level = parseInt(level_name[0])
               var stage = level_name[1]
-              var these_stars = star_progress[level][stage]
-              console.log(these_stars)
-              console.dir(star_progress)
+              var these_stars = 0            
+              for (var i = 0; i < star_progress[level][stage].length; i++) {
+                these_stars += star_progress[level][stage][i]
+              }
               for (var i = 0; i < these_stars; i++) {
                 this.star_sprites[i].active = true
               }
@@ -3441,14 +3481,14 @@ $def with (name)
 
         // level select stars
         level_select_menu.star_sprites = new Array()
-        var star_sprite_1 = new jaws.Sprite({x:level_select_menu.x-2,y:level_select_menu.y+36,image:"./static/images/STAR.gif",anchor:"left"})        
+        var star_sprite_1 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+36,image:"./static/images/STAR.gif",anchor:"left"})        
         star_sprite_1.width = 15
         star_sprite_1.height = 15
         level_select_menu.sprites.push(star_sprite_1)
         level_select_menu.star_sprites.push(star_sprite_1)
         star_sprite_1.active = false
 
-        var star_sprite_2 = new jaws.Sprite({x:level_select_menu.x-2,y:level_select_menu.y+21,image:"./static/images/STAR.gif",anchor:"left"})        
+        var star_sprite_2 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+21,image:"./static/images/STAR.gif",anchor:"left"})        
         star_sprite_2.width = 15
         star_sprite_2.height = 15
         level_select_menu.sprites.push(star_sprite_2)
