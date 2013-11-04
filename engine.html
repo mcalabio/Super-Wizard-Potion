@@ -3134,10 +3134,25 @@ $def with (name)
           if (this.items[this.index-1].active) {
             this.index--
             if (this.scrolling) {
+              console.log("scrolling action")
               for (var i = 0; i < this.star_sprites.length; i++) {
                 this.star_sprites[i].active = false
               }
               var level_name = this.items[this.index].text
+
+              // activate ok submenu of this item is unlocked
+              var level_index = 0
+              for (var i = 0; i < this.items.length; i++)
+                if (this.items[i].text == level_name) {
+                  level_index = i
+                  break
+                }
+              if (this.items[level_index].locked) {
+                this.submenus[0].menu_box.items[0].active = false
+              } else
+                this.submenus[0].menu_box.items[0].active = true
+
+              // display how many stars player has earned for this level
               level_name = level_name.split("-")
               var level = parseInt(level_name[0])
               var stage = level_name[1]
@@ -3162,6 +3177,20 @@ $def with (name)
                 this.star_sprites[i].active = false
               }
               var level_name = this.items[this.index].text
+              
+              // activate ok submenu of this item is unlocked
+              var level_index = 0
+              for (var i = 0; i < this.items.length; i++)
+                if (this.items[i].text == level_name) {
+                  level_index = i
+                  break
+                }
+              if (this.items[level_index].locked) {
+                this.submenus[0].menu_box.items[0].active = false
+              } else
+                this.submenus[0].menu_box.items[0].active = true
+
+              // display how many stars player has earned for this level
               level_name = level_name.split("-")
               var level = parseInt(level_name[0])
               var stage = level_name[1]
@@ -3392,6 +3421,7 @@ $def with (name)
             level_select_menu.submenus.push(level_select_ok)
             // level_select_ok.active = true
             level_select_ok.menu_box.active = true
+            if (level_select_menu)
             level_select_menu.parent.setActiveMenu(level_select_menu,active_menu,level_select_ok)
             level_edit = false
             marathon = false
@@ -3454,9 +3484,15 @@ $def with (name)
         active_menu = main_menu
         active_menu.active = true
 
+
         // level select menu
         var level_select_menu = new MenuBox("Level",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, new Array(),true)
         level_select_menu.back = this.back
+
+        var level_select_ok = new OkSubMenu("",level_select_menu,function() {
+          console.log("hawaiian bread")
+          level_select_menu.items[menu.index].action(jaws)
+        })
 
         // add level menu items
         var item_count = 0
@@ -3532,11 +3568,6 @@ $def with (name)
         star_total_sprite.height = 15
         console.log("star_total_sprite")
         console.dir(star_total_sprite)
-
-        var level_select_ok = new OkSubMenu("",level_select_menu,function() {
-          console.log("hawaiian bread")
-          level_select_menu.items[menu.index].action(jaws)
-        })
 
         // options menu
         var options_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, [new MenuItem(options_menu, "Controls", function() {
@@ -4050,7 +4081,7 @@ $def with (name)
     jaws.onload = function() {
       console.log("Bugs: need to check if there's enough flasks for lose condition")
       jaws.unpack()
-      jaws.assets.add(["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/sfx/drop.mp3","./static/sfx/grab.mp3"])
+      jaws.assets.add(["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/sfx/drop.mp3","./static/sfx/grab.mp3"])
 
       console.log("loading levels TEST")
       loadLevels(function(data) {
