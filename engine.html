@@ -580,6 +580,7 @@ $def with (name)
         this.score = 0
         this.control_scheme = 0
         this.stars = starTotal()
+        this.new_stars = 0 // new stars player acquired for this
 
         this.sprite_sheet = new jaws.SpriteSheet({
           image: "./static/images/CURSOR.gif", frame_size: [40,20]})
@@ -1674,8 +1675,6 @@ $def with (name)
           // win condition: robots cleared
           console.log("checking win condition")
           if (!(this.robot_count<[0,0,0,0,0,0] || [0,0,0,0,0,0]<this.robot_count)) { // array equality
-            var record = buildRecordString(this,"W")
-            saveRecord(record)
             game_end = "W"
             return
           }
@@ -1720,14 +1719,10 @@ $def with (name)
               if (this.flask_count[c] <= 0) {
                 if (this.block_count[c] < 3) {
                   console.log("lose! here")
-                  var record = buildRecordString(this,"L")
-                  saveRecord(record)
                   game_end = "L"
                   return
                 } else if (potential_white_potions < remaining_robot_colors){
                   console.log("lose! not enough white blocks, checking color = " + COLORS[c])
-                  var record = buildRecordString(this,"L")
-                  saveRecord(record)
                   game_end = "L"
                   return
                 }
@@ -1749,14 +1744,14 @@ $def with (name)
 
             winlose_data.active = true
             winlose_data.items[1].text += "  " + player.timer.clock_text
-            winlose_data.items[2].text += " " + player.score
+            winlose_data.items[2].text += " \u03BB" + player.score
 
             // update player progress
             if (player_progress[player_level] < player_stage)
               player_progress[player_level] = player_stage
 
             // update star progress
-            updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
+            player.new_stars = updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
 
             player.stars = starTotal()
             player_data.items[0].text = "  x " + player.stars
@@ -1780,6 +1775,9 @@ $def with (name)
             winlose_menu.index = 1
           }
 
+          var record = buildRecordString(this,game_end)
+          saveRecord(record)
+          
           // color timer to be red to indicate game end
           screen_data.index = 1
         }
@@ -2877,6 +2875,8 @@ $def with (name)
     // construct record string
     function buildRecordString (board, winloss) {
 
+      console.log("Buidling record string")
+
       var control_text = (control_scheme == 1) ? "KB" : "MS"
       var record
 
@@ -2884,6 +2884,14 @@ $def with (name)
         record = player_name + " " + control_text + " MRTHN-" + MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss + "\n"
       else
         record = player_name + " " + control_text + " " + player_level + "-" + player_stage + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss + "\n"
+
+      console.log("new_stars = " + board.player.new_stars)
+      if (board.player.new_stars > 0) {
+        for (var i = 0; i < star_progress.length; i++) {
+          var level_progress = JSON.stringify(star_progress[i])
+          record += level_progress
+        }
+      }
 
       console.log(record)
 
@@ -2913,6 +2921,7 @@ $def with (name)
     function updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data) {
 
       var stage_star_progress = star_progress[player_level][player_stage.toString()]
+      var new_stars = 0
 
       if (stage_star_progress == undefined) {
         star_progress[player_level][player_stage.toString()] = [1,0,0,0] // [complete,time,score,all]
@@ -2920,6 +2929,7 @@ $def with (name)
         winlose_data.items[0].sprites[0].setImage("./static/images/STAR.gif")
         winlose_data.items[0].sprites[0].width = 15
         winlose_data.items[0].sprites[0].height = 15
+        new_stars++
       } else {
         winlose_data.items[0].sprites[0].setImage("./static/images/STAR_BORDER.gif")
         winlose_data.items[0].sprites[0].width = 15
@@ -2938,6 +2948,7 @@ $def with (name)
           winlose_data.items[1].sprites[0].setImage("./static/images/STAR.gif")
           winlose_data.items[1].sprites[0].width = 15
           winlose_data.items[1].sprites[0].height = 15
+          new_stars++
         } else {
           winlose_data.items[1].sprites[0].setImage("./static/images/STAR_BORDER.gif")
           winlose_data.items[1].sprites[0].width = 15
@@ -2956,6 +2967,7 @@ $def with (name)
           winlose_data.items[2].sprites[0].setImage("./static/images/STAR.gif")
           winlose_data.items[2].sprites[0].width = 15
           winlose_data.items[2].sprites[0].height = 15
+          new_stars++
         } else {
           winlose_data.items[2].sprites[0].setImage("./static/images/STAR_BORDER.gif")
           winlose_data.items[2].sprites[0].width = 15
@@ -2974,6 +2986,7 @@ $def with (name)
           winlose_data.items[3].sprites[0].setImage("./static/images/STAR.gif")
           winlose_data.items[3].sprites[0].width = 15
           winlose_data.items[3].sprites[0].height = 15
+          new_stars++
         } else {
           winlose_data.items[3].sprites[0].setImage("./static/images/STAR_BORDER.gif")
           winlose_data.items[3].sprites[0].width = 15
@@ -2987,7 +3000,7 @@ $def with (name)
       console.log("stage_star_progress = ")
       console.dir(stage_star_progress)
 
-      return these_stars
+      return new_stars
 
     }
 
@@ -3149,6 +3162,9 @@ $def with (name)
       this.scrolling = scrolling || false
 
       this.setup = function(x,y,width) {
+
+        this.x = x
+        this.y = y
         // calculate height
         if (this.scrolling)
           this.height = 70
@@ -3457,6 +3473,8 @@ $def with (name)
         action()
       })])
 
+      this.sprites = new Array()
+
       this.update = function() {
         if (this.menu_box.active) {
           if (this.menu_box.mouse_inside)
@@ -3468,6 +3486,9 @@ $def with (name)
 
       this.draw = function() {
         this.menu_box.draw()
+        for(var s=0; s<this.sprites.length; s++) {
+          this.sprites[s].draw()
+        }
       }
 
     }
@@ -3633,20 +3654,30 @@ $def with (name)
         console.dir(star_total_sprite)
 
         // lock sprite
-        var lock_sprite = new jaws.Sprite({x:ITEM_WIDTH+220,y:110,image:"./static/images/LOCK.gif",anchor:"left"})        
+        var lock_sprite = new jaws.Sprite({x:level_select_ok.menu_box.x+21,y:level_select_ok.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"})        
         console.log("lock_sprite")
         console.dir(lock_sprite)
+        console.dir(level_select_ok)
         level_select_ok.menu_box.sprites.push(lock_sprite)
         lock_sprite.active = true
 
         // star lock sprite
-        var star_lock_sprite = new jaws.Sprite({x:305,y:127,image:"./static/images/STAR.gif",anchor:"left"})        
+        var star_lock_sprite = new jaws.Sprite({x:level_select_ok.menu_box.x+64,y:level_select_ok.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})        
         star_lock_sprite.width = 15
         star_lock_sprite.height = 15
         console.log("star_lock_sprite")
         console.dir(star_lock_sprite)
+        console.dir(menus[0].submenus)
         level_select_ok.menu_box.sprites.push(star_lock_sprite)
         star_lock_sprite.active = true
+
+        // marathon star lock menu
+        var marathon_star_lock_menu = new OkSubMenu("",main_menu,function(){})
+        marathon_star_lock_menu.menu_box.items[0].text = "      x " + main_menu.items[1].star_lock
+        main_menu.submenus.push(marathon_star_lock_menu)
+        marathon_star_lock_menu.menu_box.setup(main_menu.x + main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 20,level_select_ok.menu_box.width)
+
+
 
         // options menu
         var options_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, [new MenuItem(options_menu, "Controls", function() {
@@ -3710,6 +3741,15 @@ $def with (name)
 
         for (var i = 0; i < menus.length; i++) {
           menus[i].draw()
+        }
+        if (menus[0].index == 1) {
+          var marathon_submenu = menus[0].submenus[0]
+          marathon_submenu.sprites.push(new jaws.Sprite({x:marathon_submenu.menu_box.x+21,y:marathon_submenu.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"}))
+          var star_lock_sprite = new jaws.Sprite({x:marathon_submenu.menu_box.x+64,y:marathon_submenu.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})
+          star_lock_sprite.width = 15
+          star_lock_sprite.height = 15
+          marathon_submenu.sprites.push(star_lock_sprite)
+          menus[0].submenus[0].draw()
         }
 
       }
