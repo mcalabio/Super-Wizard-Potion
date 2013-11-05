@@ -27,6 +27,8 @@ $def with (name)
     var MAX_RAISE_LEVEL_TIME = 24
     var MIN_RAISE_LEVEL_TIME = 10
     var FREQ_RAISE_LEVEL_TIME = 30  // decrease raise_level_time every 30 seconds
+    var MARATHON_STAR_LOCK = 30
+    var ZERO_STAR_LOCK = 50
 
 
     var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
@@ -744,7 +746,7 @@ $def with (name)
         this.canMoveX = function(x) {
 
           // check if stacks overlap
-          if (this.board.stacks[this.x + x].items.length + this.hand.items.length > BOARD_HEIGHT || x < 0)
+          if (this.board.stacks[this.x + x].items.length + this.hand.items.length > BOARD_HEIGHT)
             return false
 
           return true
@@ -3568,7 +3570,7 @@ $def with (name)
             jaws.start(Game)
           }))
           var marathon_menu_item = main_menu_items[main_menu_items.length-1]
-          marathon_menu_item.star_lock = 0
+          marathon_menu_item.star_lock = MARATHON_STAR_LOCK
           marathon_menu_item.locked = (starTotal() >= marathon_menu_item.star_lock) ? false : true
           main_menu_items.push(new MenuItem(main_menu,"Change Name",function() {
             jaws.start(PlayerNameState)
@@ -3616,7 +3618,8 @@ $def with (name)
                 player_stage = level_name[1]
                 jaws.start(Game)
             })
-            this_level.star_lock = (this_level.text[0] == "0") ? 0 : level_data.levels[i][j].split('\n')[8]
+            var this_level_star_lock = level_data.levels[i][j].split('\n')[8]
+            this_level.star_lock = (this_level.text[0] == "0") ? ((this_level_star_lock == undefined) ? ZERO_STAR_LOCK : this_level_star_lock) : this_level_star_lock
             this_level.locked = (starTotal() >= this_level.star_lock) ? false : true
             level_select_menu.items.push(this_level)
             item_count++
