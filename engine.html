@@ -1782,8 +1782,8 @@ $def with (name)
             winlose_menu.title = ""
 
             // allow player to advance to next level if they have enough stars   
-            console.log("GAME END, next level starlock = " +  level_data.levels[player_level][player_stage].split('\n')[8])         
-            if (level_data.levels[player_level][player_stage].split('\n')[8] == undefined || player.stars >= level_data.levels[player_level][player_stage].split('\n')[8]) {
+            // console.log("GAME END, next level starlock = " +  level_data.levels[player_level][player_stage].split('\n')[8])         
+            if (level_data.levels[player_level][player_stage] != undefined && player.stars >= level_data.levels[player_level][player_stage].split('\n')[8]) {
               winlose_menu.items[0].active = true
             } else
               winlose_menu.index = 1
