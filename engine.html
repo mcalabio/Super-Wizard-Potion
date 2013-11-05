@@ -744,7 +744,7 @@ $def with (name)
         this.canMoveX = function(x) {
 
           // check if stacks overlap
-          if (this.board.stacks[this.x + x].items.length + this.hand.items.length > BOARD_HEIGHT)
+          if (this.board.stacks[this.x + x].items.length + this.hand.items.length > BOARD_HEIGHT || x < 0)
             return false
 
           return true
@@ -890,13 +890,23 @@ $def with (name)
           var click_y = click_coordinates[1]
           right_click = typeof right_click !== 'undefined' ? right_click : false;
 
+          var click_outside_board = false
 
           // normal gameplay
           if (!level_edit) {
             this.mouse_actions++
             this.control_scheme = 1
-            if (click_x < 0) click_x = 0
-            else if (click_x >= BOARD_WIDTH) click_x = BOARD_WIDTH-1
+
+            if (click_x < 0 || click_y < 0)
+              click_outside_board = true
+
+            if (click_outside_board && marathon) {
+              if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
+                player.board.raiseStacks()
+                player.addScore(1)
+              }
+              return
+            }
 
             // move player cursor to clicked x coordinate
             if (Math.abs(click_x - this.x) > 1) X_SPEED = FAST
@@ -1656,12 +1666,18 @@ $def with (name)
           var board_x = x - this.board.x
           var board_y = y - this.board.y
 
+          if (board_x < 0 || board_x > this.board.width || board_y < 0 || board_y > this.board.height) {
+            return [-1,-1]
+          }
+
           // figure out which stack player clicked above or on
           // bitwise OR operator to truncate float point figures
           board_x = (board_x / ITEM_WIDTH) | 0
 
           // figure out depth the player clicked into the stack
           board_y = BOARD_HEIGHT + (BOARD_HEIGHT - board_y) / ITEM_WIDTH | 0
+
+          console.log([board_x, board_y])
 
           return [board_x, board_y]
 
@@ -3552,7 +3568,7 @@ $def with (name)
             jaws.start(Game)
           }))
           var marathon_menu_item = main_menu_items[main_menu_items.length-1]
-          marathon_menu_item.star_lock = 30
+          marathon_menu_item.star_lock = 0
           marathon_menu_item.locked = (starTotal() >= marathon_menu_item.star_lock) ? false : true
           main_menu_items.push(new MenuItem(main_menu,"Change Name",function() {
             jaws.start(PlayerNameState)
