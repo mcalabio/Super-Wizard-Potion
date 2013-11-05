@@ -1777,7 +1777,7 @@ $def with (name)
 
           var record = buildRecordString(this,game_end)
           saveRecord(record)
-          
+
           // color timer to be red to indicate game end
           screen_data.index = 1
         }
@@ -2881,12 +2881,13 @@ $def with (name)
       var record
 
       if (marathon)
-        record = player_name + " " + control_text + " MRTHN-" + MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss + "\n"
+        record = "\n\n" + player_name + " " + control_text + " MRTHN-" + MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
       else
-        record = player_name + " " + control_text + " " + player_level + "-" + player_stage + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss + "\n"
+        record = "\n\n" + player_name + " " + control_text + " " + player_level + "-" + player_stage + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
 
       console.log("new_stars = " + board.player.new_stars)
       if (board.player.new_stars > 0) {
+        record += "\n"
         for (var i = 0; i < star_progress.length; i++) {
           var level_progress = JSON.stringify(star_progress[i])
           record += level_progress
@@ -3544,7 +3545,9 @@ $def with (name)
             marathon = true
             jaws.start(Game)
           }))
-          main_menu_items[main_menu_items.length-1].locked = true
+          var marathon_menu_item = main_menu_items[main_menu_items.length-1]
+          marathon_menu_item.star_lock = 24
+          marathon_menu_item.locked = (starTotal() >= marathon_menu_item.star_lock) ? false : true
           main_menu_items.push(new MenuItem(main_menu,"Change Name",function() {
             jaws.start(PlayerNameState)
           }))
@@ -3591,7 +3594,7 @@ $def with (name)
                 player_stage = level_name[1]
                 jaws.start(Game)
             })
-            this_level.star_lock = level_data.levels[i][j].split('\n')[8]
+            this_level.star_lock = (this_level.text[0] == "0") ? 50 : level_data.levels[i][j].split('\n')[8]
             this_level.locked = (starTotal() >= this_level.star_lock) ? false : true
             level_select_menu.items.push(this_level)
             item_count++
@@ -3742,7 +3745,7 @@ $def with (name)
         for (var i = 0; i < menus.length; i++) {
           menus[i].draw()
         }
-        if (menus[0].index == 1) {
+        if (menus[0].index == 1 && menus[0].items[1].locked) {
           var marathon_submenu = menus[0].submenus[0]
           marathon_submenu.sprites.push(new jaws.Sprite({x:marathon_submenu.menu_box.x+21,y:marathon_submenu.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"}))
           var star_lock_sprite = new jaws.Sprite({x:marathon_submenu.menu_box.x+64,y:marathon_submenu.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})
