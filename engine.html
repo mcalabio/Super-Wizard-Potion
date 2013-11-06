@@ -40,7 +40,7 @@ $def with (name)
     var MIN_RAISE_LEVEL_TIME = 10
     var FREQ_RAISE_LEVEL_TIME = 30  // decrease raise_level_time every 30 seconds
     var MARATHON_STAR_LOCK = 30
-    var ZERO_STAR_LOCK = 0
+    var ZERO_STAR_LOCK = 50
 
 
     var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
@@ -1803,7 +1803,7 @@ $def with (name)
 
             // allow player to advance to next level if they have enough stars   
             // console.log("GAME END, next level starlock = " +  level_data.levels[player_level][player_stage].split('\n')[8])         
-            if (level_data.levels[player_level][player_stage] != undefined && player.stars >= level_data.levels[player_level][player_stage].split('\n')[8]) {
+            if (level_data.levels[player_level][player_stage] != undefined && player.stars >= level_data.levels[player_level][player_stage].split('\n')[8] || player_level == 0) {
               winlose_menu.items[0].active = true
             } else
               winlose_menu.index = 1
@@ -3181,6 +3181,8 @@ $def with (name)
       this.locked = false
       this.star_lock = 100
 
+      this.description = ""
+
       this.sprites = new Array()
 
     }
@@ -3315,22 +3317,33 @@ $def with (name)
       }
 
       this.up_action = function() {
-
         if (this.index > 0) 
-          if (this.items[this.index-1].active) {
+
+          if (this.scrolling) {
+            if (this.items[this.index].active) {
+              this.index--
+              this.scroll_action()              
+            }
+          } else {
             this.index--
-            if (this.scrolling) {
-              this.scroll_action()
+            while (!this.items[this.index].active) {
+              this.index--
             }
           }
       }
 
       this.down_action = function() {
         if (this.index < this.items.length - 1) 
-          if (this.items[this.index+1].active) {
-            this.index++
-            if (this.scrolling) {
+
+          if (this.scrolling) {
+            if (this.items[this.index].active) {
+              this.index++
               this.scroll_action()              
+            }
+          } else {
+            this.index++
+            while (!this.items[this.index].active) {
+              this.index++
             }
           }
       }
@@ -3544,6 +3557,7 @@ $def with (name)
       var menus = new Array()
       var level_select_string = (player_progress.length-1) + "-" + player_progress[player_progress.length-1]
       var star_total_sprite
+      var description_box
 
       // unhide progress buttons
       var progress_buttons = $("progressButtons")
@@ -3589,17 +3603,28 @@ $def with (name)
               
 
           }))
+          main_menu_items[main_menu_items.length-1].description
+            = "Brew potions to destroy robots. Clear\n" +
+            "all robots from the board to advance to\n" +
+            "the next level."
           main_menu_items.push(new MenuItem(main_menu,"Marathon",function() {
             level_edit = false
             marathon = true
             jaws.start(Game)
           }))
+          main_menu_items[main_menu_items.length-1].description
+            = "Stacks frequently rise toward the top of\n" +
+            "the board. The game is over when a stack\n" +
+            "reaches the top of the board. Try to \n" + 
+            "survive and beat your high score!"
           var marathon_menu_item = main_menu_items[main_menu_items.length-1]
           marathon_menu_item.star_lock = MARATHON_STAR_LOCK
           marathon_menu_item.locked = (starTotal() >= marathon_menu_item.star_lock) ? false : true
           main_menu_items.push(new MenuItem(main_menu,"Change Name",function() {
             jaws.start(PlayerNameState)
           }))
+          main_menu_items[main_menu_items.length-1].description
+            = "Change your name."
           main_menu_items.push(new MenuItem(main_menu,"Level Editor",function() {
             menus.push(level_select_menu)
             menus.push(level_select_ok)
@@ -3610,10 +3635,19 @@ $def with (name)
             level_select_menu.controls(level_select_menu,level_select_ok,menus)
             level_edit = true
           }))
+          main_menu_items[main_menu_items.length-1].description
+            = "Let's make some levels, Kris."
           main_menu_items.push(new MenuItem(main_menu,"Options Mode",function() {
             menus.push(options_menu)
             options_menu.parent.setActiveMenu(options_menu,active_menu)
           }))
+          main_menu_items[main_menu_items.length-1].active = false
+          main_menu_items.push(new MenuItem(main_menu,"Save/Load",function() {
+            return
+          }))
+          main_menu_items[main_menu_items.length-1].description
+            = "Click the buttons below to save or load\n" +
+            "your progress using a .txt file."
         var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items)
 
         menus.push(main_menu)
@@ -3757,6 +3791,9 @@ $def with (name)
           controls_menu.setActiveMenu(controls_menu.parent,active_menu)
         }
 
+        description_box = new MenuBox("",description_box,main_menu.x,main_menu.y+main_menu.height+1+ITEM_WIDTH/2,500, [new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){})])
+        description_box.index = -1
+
         // controls
         active_menu.controls(active_menu)
       }
@@ -3771,6 +3808,12 @@ $def with (name)
           star_progress = JSON.parse(open_data[3])
           $("openData").innerHTML = ""
           jaws.start(MainMenu)
+        }
+
+        // update description box
+        var description = menus[0].items[menus[0].index].description.split("\n")
+        for (var i=0; i < description_box.items.length; i++) {
+          description_box.items[i].text = (description[i] == undefined) ? "" : description[i]
         }
           
         for (var i = 0; i < menus.length; i++) {
@@ -3814,6 +3857,7 @@ $def with (name)
           marathon_submenu.sprites.push(star_lock_sprite)
           menus[0].submenus[0].draw()
         }
+        description_box.draw()
 
       }
 
