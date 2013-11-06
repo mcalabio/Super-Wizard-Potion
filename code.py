@@ -97,7 +97,7 @@ class engine:
 
 			level = 0
 
-			while (level < 2):
+			while (level < 3):
 
 				levels_data["levels"].append([])
 

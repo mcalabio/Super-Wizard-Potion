@@ -100,8 +100,8 @@ $def with (name)
     var level_data
     var player_level = 1
     var player_stage = 1
-    var player_progress = [0,0]
-    var star_progress = [{},{}]
+    var player_progress = [0,0,0]
+    var star_progress = [{},{},{}]
     var marathon_progress = ["00:00",0]
     var control_scheme = 1
     var game_mode = 1
@@ -222,9 +222,12 @@ $def with (name)
           console.log("MARATHON")
           raise_level_time = 24
           player.board.marathonLevel(5)
-        }
-        else {
-          player.board.fillLevel(player_level,player_stage)
+        } else {
+          console.dir(level_data)
+          if (level_data.levels[player_level][player_stage-1] != undefined) {
+            console.log("filling level " + player_level + "-" + player_stage)
+            player.board.fillLevel(player_level,player_stage)
+          }
        }
 
         // pause menu
@@ -299,6 +302,7 @@ $def with (name)
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"New",function() {
             console.log("New")
             player_stage = latest_edit
+            console.log("editing level 0-" + player_stage)
             jaws.start(Game)
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Load",function() {
@@ -322,6 +326,7 @@ $def with (name)
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Copy",function() {
             console.log("Copy")
             player_stage = latest_edit
+            console.log(player_stage)
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Delete",function() {
             console.log("Delete")
@@ -329,8 +334,9 @@ $def with (name)
               jaws.start(Game)
             } else {
               deleteLevel (player_level,player_stage,function(latest){
-                latest_edit = latest
-                player_progress[0] = latest
+                console.log("latest = " + latest)
+                latest_edit = latest - 1
+                player_progress[0] = latest_edit
                 player_stage = latest_edit
                 jaws.start(Game)
               })
@@ -1461,12 +1467,20 @@ $def with (name)
 
           var data = level_data.levels[level][stage-1]
 
-          // SANITY CHECK
-          if ((data == "\n\n\n\n\n\n" || data == undefined) && !level_edit) {
+          console.log("level_data")
+          console.dir(level_data)
 
-            player_level = 1
-            player_stage = 1
-            jaws.start(MainMenu)
+          // SANITY CHECK
+          if (data == "" || data == "\n\n\n\n\n\n" || data == undefined) {
+            if (level_edit) {
+              for (var s=0; s < BOARD_WIDTH; s++)
+                this.stacks.push(new Stack(this,level,s))
+              return
+            } else {
+              player_level = 1
+              player_stage = 1
+              jaws.start(MainMenu)
+            }
           }
 
           // array of stacks in string form
@@ -1705,8 +1719,10 @@ $def with (name)
           var board_x = x - this.board.x
           var board_y = y - this.board.y
 
-          if (board_x < 0 || board_x > this.board.width || board_y < 0 || board_y > this.board.height) {
-            return [-1,-1]
+          if (marathon) {
+            if (board_x < 0 || board_x > this.board.width || board_y < 0 || board_y > this.board.height) {
+              return [-1,-1]
+            }
           }
 
           // figure out which stack player clicked above or on
@@ -1822,9 +1838,8 @@ $def with (name)
 
             winlose_menu.title = ""
 
-            // allow player to advance to next level if they have enough stars   
-            // console.log("GAME END, next level starlock = " +  level_data.levels[player_level][player_stage].split('\n')[8])         
-            if (level_data.levels[player_level][player_stage] != undefined && player.stars >= level_data.levels[player_level][player_stage].split('\n')[8] || player_level == 0) {
+            // allow player to advance to next level if they have enough stars     
+            if (level_data.levels[player_level][player_stage] != undefined && player.stars >= level_data.levels[player_level][player_stage].split('\n')[8] || player_level != 1) {
               winlose_menu.items[0].active = true
             } else
               winlose_menu.index = 1
@@ -1852,6 +1867,9 @@ $def with (name)
             // update player_save data
             var player_save = $("saveData")
             player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+
+            // change menu item text
+            winlose_menu.items[0].text = "Play again"
           }
 
           var record = buildRecordString(this,game_end)
@@ -3012,6 +3030,9 @@ $def with (name)
     // update star for a stage
     function updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data) {
 
+      var level_star_progress = star_progress[player_level]
+      if (level_star_progress == undefined)
+        star_progress.push({})
       var stage_star_progress = star_progress[player_level][player_stage.toString()]
       var new_stars = 0
 
@@ -3681,6 +3702,7 @@ $def with (name)
             level_select_menu.parent.setActiveMenu(level_select_menu,active_menu,level_select_ok)
             level_select_menu.controls(level_select_menu,level_select_ok,menus)
             level_edit = true
+            marathon = false
           }))
           main_menu_items[main_menu_items.length-1].description
             = "Let's make some levels, Kris."
@@ -3725,7 +3747,7 @@ $def with (name)
                 jaws.start(Game)
             })
             var this_level_star_lock = level_data.levels[i][j].split('\n')[8]
-            this_level.star_lock = (this_level.text[0] == "0") ? ((this_level_star_lock == undefined) ? ZERO_STAR_LOCK : this_level_star_lock) : this_level_star_lock
+            this_level.star_lock = (this_level.text[0] != "1") ? ((this_level_star_lock == undefined) ? ZERO_STAR_LOCK : this_level_star_lock) : this_level_star_lock
             this_level.locked = (starTotal() >= this_level.star_lock) ? false : true
             level_select_menu.items.push(this_level)
             item_count++
@@ -4383,8 +4405,11 @@ $def with (name)
       loadLevels(function(data) {
 
         level_data = JSON.parse(data)
+        console.log("level_data = ")
+        console.dir(level_data)
         latest_edit = level_data.levels[0].length + 1
         player_progress[0] = latest_edit - 2
+        console.log("player_progress = " + player_progress[0])
 
         if (name_entered)
           jaws.start(MainMenu)  // Our convenience function jaws.start() will load assets, call setup and loop update/draw in 60 FPS
