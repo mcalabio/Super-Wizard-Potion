@@ -102,6 +102,7 @@ $def with (name)
     var player_stage = 1
     var player_progress = [0,0]
     var star_progress = [{},{}]
+    var marathon_progress = ["00:00",0]
     var control_scheme = 1
     var game_mode = 1
     var game_record = ""
@@ -126,6 +127,16 @@ $def with (name)
       var winlose = false
       var raise_level_time = MAX_RAISE_LEVEL_TIME
       var restart_menu_item = new MenuItem(pause_menu,"Restart",function() {
+        // update marathon progress
+        if (marathon) {
+          if (player.timer.clock_text > marathon_progress[0])
+            marathon_progress[0] = player.timer.clock_text
+          if (player.score > marathon_progress[1])
+            marathon_progress[1] = player.score
+          // update player_save data
+          var player_save = $("saveData")
+          player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+        }
         var record = buildRecordString(player.board,"R")
         saveRecord(record)
         game_end = "R"
@@ -172,7 +183,7 @@ $def with (name)
           screen_data,
           player.board.board.x + player.board.board.width + ITEM_WIDTH,
           player.board.board.y,
-          125,
+          160,
           [new MenuItem(screen_data,"  x " + player.stars,function(){return})]
         )
         player_data.index = -1
@@ -649,6 +660,16 @@ $def with (name)
             for (var i=0; i<player.board.sounds.length;i++) {
               var this_sound = player.board.sounds[i]
               this_sound.stop()
+            }
+            // update marathon progress
+            if (marathon) {
+              if (player.timer.clock_text > marathon_progress[0])
+                marathon_progress[0] = player.timer.clock_text
+              if (player.score > marathon_progress[1])
+                marathon_progress[1] = player.score
+              // update player_save data
+              var player_save = $("saveData")
+              player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
             }
             var record = buildRecordString(player.board,"R")
             saveRecord(record)
@@ -1794,7 +1815,7 @@ $def with (name)
 
             // update player_save data
             var player_save = $("saveData")
-            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress)
+            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)            
 
             player.stars = starTotal()
             player_data.items[0].text = "  x " + player.stars
@@ -1809,6 +1830,7 @@ $def with (name)
               winlose_menu.index = 1
 
           } else if (game_end == "L") {
+
             winlose_data.active = false
             winlose_menu.y = winlose_data.y
             winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
@@ -1817,6 +1839,19 @@ $def with (name)
             winlose_menu.title = (marathon) ? "GAME OVER!" : "YOU LOSE!"
 
             winlose_menu.index = 1
+          }
+
+          if (marathon) {
+
+            // update marathon progress
+            if (player.timer.clock_text > marathon_progress[0])
+              marathon_progress[0] = player.timer.clock_text
+            if (player.score > marathon_progress[1])
+              marathon_progress[1] = player.score
+
+            // update player_save data
+            var player_save = $("saveData")
+            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
           }
 
           var record = buildRecordString(this,game_end)
@@ -2895,6 +2930,18 @@ $def with (name)
       pause_menu.items.push(((level_edit) ? save_menu_item : restart_menu_item))
       pause_menu.items.push(new MenuItem(pause_menu,"Back to Menu",function() {
         if (!level_edit) {
+
+          // update marathon progress
+          if (marathon) {
+            if (player.timer.clock_text > marathon_progress[0])
+              marathon_progress[0] = player.timer.clock_text
+            if (player.score > marathon_progress[1])
+              marathon_progress[1] = player.score
+
+            // update player_save data
+            var player_save = $("saveData")
+            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+          }
           var record = buildRecordString(player.board,"Q")
           saveRecord(record)
           game_end = "Q"
@@ -3806,6 +3853,7 @@ $def with (name)
           player_name = open_data[1]
           player_progress = JSON.parse(open_data[2])
           star_progress = JSON.parse(open_data[3])
+          marathon_progress = JSON.parse(open_data[4])
           $("openData").innerHTML = ""
           jaws.start(MainMenu)
         }
@@ -3856,6 +3904,17 @@ $def with (name)
           star_lock_sprite.height = 15
           marathon_submenu.sprites.push(star_lock_sprite)
           menus[0].submenus[0].draw()
+        } else if (menus[0].index == 1){
+          var marathon_submenu = menus[0].submenus[0]
+          console.dir(marathon_submenu.menu_box)
+          marathon_submenu.menu_box.items[0].text = "Best Time:  " + marathon_progress[0]
+          if (marathon_submenu.menu_box.items[1] == undefined) {
+            marathon_submenu.menu_box.items.push(new MenuItem(marathon_submenu.menu_box,"High Score:",function(){return}))
+            marathon_submenu.menu_box.setup(marathon_submenu.menu_box.x,marathon_submenu.menu_box.y,marathon_submenu.menu_box.width+30)
+          }
+          marathon_submenu.menu_box.items[1].text = "High Score: \u03BB" + marathon_progress[1]
+          marathon_submenu.menu_box.index = -1
+          marathon_submenu.draw()
         }
         description_box.draw()
 
@@ -4020,6 +4079,7 @@ $def with (name)
           player_name = open_data[1]
           player_progress = JSON.parse(open_data[2])
           star_progress = JSON.parse(open_data[3])
+          marathon_progress = JSON.parse(open_data[4])
           $("openData").innerHTML = ""
           jaws.start(MainMenu)
         }
