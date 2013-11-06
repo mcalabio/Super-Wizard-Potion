@@ -6,6 +6,7 @@ $def with (name)
     <script src="./static/jawsjs/audio.js"></script>
     <script src="./static/json/json.js"></script>
     <script src="./static/howler/howler.js"></script>
+    <script src="./static/opensave/opensave.js" language="javascript"></script>
     <script type="text/javascript" src="./static/jquery/jquery-1.10.2.min.js"></script>
     <link type="text/css" rel="stylesheet" href="./static/style.css" />
     <title>Super Wizard Potion</title>
@@ -13,9 +14,20 @@ $def with (name)
 <body>
 
   <canvas width=600 height=500></canvas>
+  <br>
+  <div id="progressButtons" margin="100">
+    <div id="saveData" hidden="true">Data to save comes from here.</div>
+    <div id="openData" hidden="true">Data to save comes from here.</div>
+    <div id="saveButton">Replaced By Button</div>
+    <div id="openButton">Replaced By Button</div>
+  </div>
   <div id="live_info"></div>
 
   <script>
+
+    opensave.swf = "./static/opensave/opensave.swf"
+    opensave.make({label: "Save Progress", width: 100, height: 30, dataID: "saveData", buttonDiv: "saveButton"});
+    opensave.make({label: "Load Progress", kind:"open", width: 100, height: 30, dataID: "openData", buttonDiv: "openButton"});
 
     // CONSTANTS
     var SLOW = 10
@@ -28,7 +40,7 @@ $def with (name)
     var MIN_RAISE_LEVEL_TIME = 10
     var FREQ_RAISE_LEVEL_TIME = 30  // decrease raise_level_time every 30 seconds
     var MARATHON_STAR_LOCK = 30
-    var ZERO_STAR_LOCK = 50
+    var ZERO_STAR_LOCK = 0
 
 
     var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
@@ -136,6 +148,10 @@ $def with (name)
       var screen_data
       var star_time
       var star_score
+
+      // hide progress buttons
+      var progress_buttons = $("progressButtons")
+      progress_buttons.hidden = true
 
       /* Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
@@ -1771,10 +1787,14 @@ $def with (name)
 
             // update player progress
             if (player_progress[player_level] < player_stage)
-              player_progress[player_level] = player_stage
+              player_progress[player_level] = parseInt(player_stage)
 
             // update star progress
             player.new_stars = updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
+
+            // update player_save data
+            var player_save = $("saveData")
+            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress)
 
             player.stars = starTotal()
             player_data.items[0].text = "  x " + player.stars
@@ -3525,6 +3545,11 @@ $def with (name)
       var level_select_string = (player_progress.length-1) + "-" + player_progress[player_progress.length-1]
       var star_total_sprite
 
+      // unhide progress buttons
+      var progress_buttons = $("progressButtons")
+      progress_buttons.hidden = false
+      $("live_info").innerHTML = ""
+
       this.back = function() {
           var this_menu = menus.pop()
           this_menu.setActiveMenu(this_menu.parent,active_menu)
@@ -3738,6 +3763,16 @@ $def with (name)
 
       this.update = function() {
 
+        // load save file
+        var open_data = $("openData").innerHTML.split("|")
+        if (open_data[0] == "SuperWizardPotionSave") {
+          player_name = open_data[1]
+          player_progress = JSON.parse(open_data[2])
+          star_progress = JSON.parse(open_data[3])
+          $("openData").innerHTML = ""
+          jaws.start(MainMenu)
+        }
+          
         for (var i = 0; i < menus.length; i++) {
           menus[i].update()
         }
@@ -3934,6 +3969,16 @@ $def with (name)
       }
 
       this.draw = function() {
+
+        // load save file
+        var open_data = $("openData").innerHTML.split("|")
+        if (open_data[0] == "SuperWizardPotionSave") {
+          player_name = open_data[1]
+          player_progress = JSON.parse(open_data[2])
+          star_progress = JSON.parse(open_data[3])
+          $("openData").innerHTML = ""
+          jaws.start(MainMenu)
+        }
 
         jaws.context.clearRect(0,0,jaws.width,jaws.height)
 
