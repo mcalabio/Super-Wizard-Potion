@@ -3968,18 +3968,43 @@ $def with (name)
         // save menu
         var save_menu_items = new Array()
           save_menu_items.push(new MenuItem(save_menu, "Save", function() {
-            // manually set cookie here
+            var player_save = $("saveData")
+            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+            // update cookie save
+            setCookie("player_save",player_save.innerHTML,360000)
+
+            save_menu_items[0].description += "\n\nSaved."
           }))
           save_menu_items.push(new MenuItem(save_menu, "Export Save", function() {
-            // provide string for player to save
+            var save_string = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+            window.prompt("Copy this text and keep it somewhere safe!",save_string)
           }))
           save_menu_items.push(new MenuItem(save_menu, "Import Save", function() {
-            window.prompt("blah!","savestring")
+
+            var input_string = window.prompt("enter save string","")
+
+            // load save file
+            var open_data = input_string.split("|")
+            if (open_data[0] == "SuperWizardPotionSave") {
+
+              console.log("open_data = ")
+              console.dir(open_data)
+              // window.alert("OPEN DATA")
+
+              player_name = open_data[1]
+              player_progress = JSON.parse(open_data[2])
+              star_progress = JSON.parse(open_data[3])
+              marathon_progress = JSON.parse(open_data[4])
+              $("openData").innerHTML = ""
+              jaws.start(MainMenu)
+            }
           }))
           save_menu_items.push(new MenuItem(save_menu, "Reset", function() {
-            // provide string for player to save
+            menus.push(reset_menu)
+            reset_menu.index = control_scheme - 1
+            active_menu = reset_menu.parent.setActiveMenu(reset_menu,active_menu)
           }))
-        var save_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, save_menu_items)
+        var save_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 160, save_menu_items)
         save_menu.back = this.back
         save_menu_items[0].description = "Save your progress manually\n"
           + "(the game autosaves after each level)."
@@ -3988,6 +4013,31 @@ $def with (name)
         save_menu_items[2].description = "Back up your save or transfer\n"
           + "it to another computer."
         save_menu_items[3].description = "Delete all your progress.\n"
+
+        // reset sub menu
+        var reset_menu_items = new Array()
+          reset_menu_items.push(new MenuItem(reset_menu, "Yes", function() {
+            player_name = ""
+            player_progress = [[0,{}],[0,{}],[0,{}]]
+            star_progress = [{},{},{}]
+            marathon_progress = ["00:00",0]
+            jaws.start(PlayerNameState)
+          }))
+          reset_menu_items.push(new MenuItem(reset_menu, "No", function() {
+            reset_menu.back()
+          }))
+        var reset_menu = new MenuBox("Really?",save_menu,save_menu.x + save_menu.width + 1, save_menu.y, 150, reset_menu_items)
+        reset_menu.index = 1
+        reset_menu.back = function() {
+          menus.pop()
+          active_menu = reset_menu.setActiveMenu(reset_menu.parent,active_menu)
+        }
+        reset_menu_items[0].description = "Delete all your progress.\n"
+          + "\nNo take-backsies. You might want\n"
+          + "to Export Save first."
+        reset_menu_items[1].description = "Delete all your progress.\n"
+          + "\nNo take-backsies. You might want\n"
+          + "to Export Save first."
 
         description_box = new MenuBox("",description_box,main_menu.x,main_menu.y+main_menu.height+1+ITEM_WIDTH/2,500, [new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){})])
         description_box.index = -1
