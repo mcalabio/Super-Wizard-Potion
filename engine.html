@@ -6,6 +6,7 @@ $def with (name)
     <script src="./static/jawsjs/audio.js"></script>
     <script src="./static/json/json.js"></script>
     <script src="./static/howler/howler.js"></script>
+    <script src="./static/sjcl/sjcl.js"></script>
     <script src="./static/opensave/opensave.js" language="javascript"></script>
     <script type="text/javascript" src="./static/jquery/jquery-1.10.2.min.js"></script>
     <link type="text/css" rel="stylesheet" href="./static/style.css" />
@@ -3977,11 +3978,14 @@ $def with (name)
           }))
           save_menu_items.push(new MenuItem(save_menu, "Export Save", function() {
             var save_string = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+            save_string = sjcl.encrypt("zonky",save_string)
             window.prompt("Copy this text and keep it somewhere safe!",save_string)
           }))
           save_menu_items.push(new MenuItem(save_menu, "Import Save", function() {
 
             var input_string = window.prompt("enter save string","")
+
+            input_string = sjcl.decrypt("zonky",input_string)
 
             // load save file
             var open_data = input_string.split("|")
