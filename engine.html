@@ -183,8 +183,11 @@ $def with (name)
 
       var player_data
       var screen_data
+      var marathon_data
       var star_time
       var star_score
+      var beat_marathon_time = false
+      var beat_marathon_score = false
 
       // hide progress buttons
       var progress_buttons = $("progressButtons")
@@ -243,11 +246,21 @@ $def with (name)
         player.controls()
 
         // fill up the level with items
-
+        // and setup screen data for marathon
         if (marathon) {
           console.log("MARATHON")
           raise_level_time = 24
           player.board.marathonLevel(5)
+
+          var marathon_data_items = new Array()
+          marathon_data_items.push(new MenuItem(marathon_data,"Best Time:  " + marathon_progress[0],function(){return}))
+          marathon_data_items.push(new MenuItem(marathon_data,"High Score: \u03BB" + marathon_progress[1],function(){return}))
+
+          marathon_data = new MenuBox("",marathon_data,screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,marathon_data_items)
+          marathon_data.index = -1
+
+          // marathon_star_lock_menu.menu_box.setup(main_menu.x + main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 20,level_select_ok.menu_box.width)
+
         } else {
           console.dir(level_data)
           if (level_data.levels[player_level][player_stage-1] != undefined) {
@@ -585,6 +598,21 @@ $def with (name)
         }
 
         player.update()
+
+        if (marathon) {
+          // check if player beat marathon time
+          if (beat_marathon_time)
+            marathon_data.items[0].text = "Best Time:  " + player.timer.clock_text
+          else if (player.timer.clock_text > marathon_progress[0])
+            beat_marathon_time = true
+
+          // check if player beat marathon high score
+          if (beat_marathon_score)
+            marathon_data.items[1].text = "High Score: \u03BB" + player.score
+          else if (player.score > marathon_progress[1])
+            beat_marathon_score = true          
+        }
+
         if(level_edit) {
           level_editor.update()
           if(!level_edit_menu.mouse_inside)
@@ -613,6 +641,8 @@ $def with (name)
           player.draw()
           player_data.draw()
           screen_data.draw()
+          if (marathon)
+            marathon_data.draw()
           for (var s=0; s < star_sprites.length; s++) {
             star_sprites[s].draw()
           }
