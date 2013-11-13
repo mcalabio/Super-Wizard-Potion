@@ -36,9 +36,9 @@ $def with (name)
     var BOARD_HEIGHT = 10
     var ITEM_WIDTH = 40
     var PURPLE_HEX = '#700054'
-    var MAX_RAISE_LEVEL_TIME = 24
-    var MIN_RAISE_LEVEL_TIME = 10
-    var FREQ_RAISE_LEVEL_TIME = 30  // decrease raise_level_time every 30 seconds
+    var MAX_RAISE_LEVEL_TIME = 20
+    var MIN_RAISE_LEVEL_TIME = 6
+    var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 30 seconds
     var MARATHON_STAR_LOCK = 0
     var ZERO_STAR_LOCK = 50
 
@@ -76,11 +76,11 @@ $def with (name)
       "0|7" : 16 , // WHITE
 
     // POTIONS
-      "1|0" : 2 , // RED
-      "1|1" : 2 , // GREEN
-      "1|2" : 2 , // PURPLE
+      "1|0" : 1 , // RED
+      "1|1" : 1 , // GREEN
+      "1|2" : 1 , // PURPLE
       "1|4" : 1 , // YELLOW
-      "1|6" : 2 , // EMPTY
+      "1|6" : 3 , // EMPTY
       "1|7" : 4 , // WHITE
 
     // ROBOTS
@@ -111,6 +111,29 @@ $def with (name)
     var latest_edit
     var pause = false
 
+    // load cookies if possible
+    var cookie_save = getCookie("player_save")
+    if (cookie_save != null && cookie_save != "") {
+      console.log("cookie loaded")
+      console.log(cookie_save.toString())
+      var open_data = cookie_save.split("|")
+      if (open_data[0] == "SuperWizardPotionSave") {
+
+        console.log("open_data = ")
+        console.dir(open_data)
+        // window.alert("OPEN DATA")
+
+        player_name = open_data[1]
+        player_progress = JSON.parse(open_data[2])
+        star_progress = JSON.parse(open_data[3])
+        marathon_progress = JSON.parse(open_data[4])
+
+        name_entered = true
+      }
+    } else {
+      console.log("failed to load cookie data")
+    }
+
     function Game() {
       var player
       var star_sprites = new Array()
@@ -136,6 +159,8 @@ $def with (name)
           // update player_save data
           var player_save = $("saveData")
           player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+          // update cookie save
+          setCookie("player_save",player_save.innerHTML,360000)
         }
         var record = buildRecordString(player.board,"R")
         saveRecord(record)
@@ -678,6 +703,8 @@ $def with (name)
               // update player_save data
               var player_save = $("saveData")
               player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+              // update cookie save
+              setCookie("player_save",player_save.innerHTML,360000)
             }
             var record = buildRecordString(player.board,"R")
             saveRecord(record)
@@ -1846,7 +1873,9 @@ $def with (name)
 
             // update player_save data
             var player_save = $("saveData")
-            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)            
+            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)    
+            // update cookie save
+            setCookie("player_save",player_save.innerHTML,360000)
 
             player.stars = starTotal()
             player_data.items[0].text = "  x " + player.stars
@@ -1882,6 +1911,8 @@ $def with (name)
             // update player_save data
             var player_save = $("saveData")
             player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+            // update cookie save
+            setCookie("player_save",player_save.innerHTML,360000)
 
             // change menu item text
             winlose_menu.items[0].text = "Play again"
@@ -2990,6 +3021,8 @@ $def with (name)
             // update player_save data
             var player_save = $("saveData")
             player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+            // update cookie save
+            setCookie("player_save",player_save.innerHTML,360000)
           }
           var record = buildRecordString(player.board,"Q")
           saveRecord(record)
@@ -3056,6 +3089,37 @@ $def with (name)
 
       return total
 
+    }
+
+    function setCookie(c_name,value,exdays) {
+      var exdate=new Date();
+      exdate.setDate(exdate.getDate() + exdays);
+      var c_value=escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString());
+      document.cookie=c_name + "=" + c_value;
+    }
+
+    function getCookie(c_name) {
+      var c_value = document.cookie;
+      var c_start = c_value.indexOf(" " + c_name + "=");
+      if (c_start == -1)
+        {
+        c_start = c_value.indexOf(c_name + "=");
+        }
+      if (c_start == -1)
+        {
+        c_value = null;
+        }
+      else
+        {
+        c_start = c_value.indexOf("=", c_start) + 1;
+        var c_end = c_value.indexOf(";", c_start);
+        if (c_end == -1)
+        {
+      c_end = c_value.length;
+      }
+      c_value = unescape(c_value.substring(c_start,c_end));
+      }
+      return c_value;
     }
 
     // update star for a stage
@@ -3512,6 +3576,7 @@ $def with (name)
           active_menu = new_active
           active_menu.active = true
           active_menu.controls(active_menu,ok_submenu)
+          return active_menu
       }
 
       this.update = function() {
@@ -3665,11 +3730,13 @@ $def with (name)
       $("live_info").innerHTML = ""
 
       var player_save = $("saveData")
-      player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)     
+      player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)  
+      // update cookie save
+      setCookie("player_save",player_save.innerHTML,360000)
 
       this.back = function() {
           var this_menu = menus.pop()
-          this_menu.setActiveMenu(this_menu.parent,active_menu)
+          active_menu = this_menu.setActiveMenu(this_menu.parent,active_menu)
       }
 
       this.setup = function() {
@@ -3683,7 +3750,7 @@ $def with (name)
             // level_select_ok.active = true
             level_select_ok.menu_box.active = true
             if (level_select_menu)
-            level_select_menu.parent.setActiveMenu(level_select_menu,active_menu,level_select_ok)
+            active_menu = level_select_menu.parent.setActiveMenu(level_select_menu,active_menu,level_select_ok)
             level_edit = false
             marathon = false
             level_select_menu.controls(level_select_menu,level_select_ok,menus)
@@ -3733,7 +3800,7 @@ $def with (name)
             level_select_menu.submenus.push(level_select_ok)
             // level_select_ok.active = true
             level_select_ok.menu_box.active = true
-            level_select_menu.parent.setActiveMenu(level_select_menu,active_menu,level_select_ok)
+            active_menu = level_select_menu.parent.setActiveMenu(level_select_menu,active_menu,level_select_ok)
             level_select_menu.controls(level_select_menu,level_select_ok,menus)
             level_edit = true
             marathon = false
@@ -3742,11 +3809,13 @@ $def with (name)
             = "Let's make some levels, Kris."
           main_menu_items.push(new MenuItem(main_menu,"Options Mode",function() {
             menus.push(options_menu)
-            options_menu.parent.setActiveMenu(options_menu,active_menu)
+            active_menu = options_menu.parent.setActiveMenu(options_menu,active_menu)
           }))
           main_menu_items[main_menu_items.length-1].active = false
-          main_menu_items.push(new MenuItem(main_menu,"Save/Load",function() {
-            return
+          main_menu_items.push(new MenuItem(main_menu,"Save Progress",function() {
+            menus.push(save_menu)
+            active_menu = save_menu.parent.setActiveMenu(save_menu,active_menu)
+            console.dir(active_menu)
           }))
           main_menu_items[main_menu_items.length-1].description
             = "Click the buttons below to save or load\n" +
@@ -3875,7 +3944,7 @@ $def with (name)
         var options_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, [new MenuItem(options_menu, "Controls", function() {
           menus.push(controls_menu)
           controls_menu.index = control_scheme - 1
-          controls_menu.parent.setActiveMenu(controls_menu,active_menu)
+          active_menu = controls_menu.parent.setActiveMenu(controls_menu,active_menu)
           })])
         options_menu.back = this.back
 
@@ -3893,8 +3962,32 @@ $def with (name)
         controls_menu.index = control_scheme - 1
         controls_menu.back = function() {
           menus.pop()
-          controls_menu.setActiveMenu(controls_menu.parent,active_menu)
+          active_menu = controls_menu.setActiveMenu(controls_menu.parent,active_menu)
         }
+
+        // save menu
+        var save_menu_items = new Array()
+          save_menu_items.push(new MenuItem(save_menu, "Save", function() {
+            // manually set cookie here
+          }))
+          save_menu_items.push(new MenuItem(save_menu, "Export Save", function() {
+            // provide string for player to save
+          }))
+          save_menu_items.push(new MenuItem(save_menu, "Import Save", function() {
+            window.prompt("blah!","savestring")
+          }))
+          save_menu_items.push(new MenuItem(save_menu, "Reset", function() {
+            // provide string for player to save
+          }))
+        var save_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, save_menu_items)
+        save_menu.back = this.back
+        save_menu_items[0].description = "Save your progress manually\n"
+          + "(the game autosaves after each level)."
+        save_menu_items[1].description = "Back up your save or transfer\n"
+          + "it to another computer."
+        save_menu_items[2].description = "Back up your save or transfer\n"
+          + "it to another computer."
+        save_menu_items[3].description = "Delete all your progress.\n"
 
         description_box = new MenuBox("",description_box,main_menu.x,main_menu.y+main_menu.height+1+ITEM_WIDTH/2,500, [new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){})])
         description_box.index = -1
@@ -3942,7 +4035,8 @@ $def with (name)
         }
 
         // update description box
-        var description = menus[0].items[menus[0].index].description.split("\n")
+        // var description = menus[0].items[menus[0].index].description.split("\n")
+        var description = active_menu.items[active_menu.index].description.split("\n")
         for (var i=0; i < description_box.items.length; i++) {
           description_box.items[i].text = (description[i] == undefined) ? "" : description[i]
         }
@@ -4001,7 +4095,8 @@ $def with (name)
           marathon_submenu.menu_box.index = -1
           marathon_submenu.draw()
         }
-        description_box.draw()
+        if (active_menu.items[active_menu.index].description != "")
+          description_box.draw()
 
         // draw level record
         if (menus[0].index == 0 && menus[1] != undefined && menus[1].title == "Level") {
