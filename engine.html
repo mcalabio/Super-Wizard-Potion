@@ -600,17 +600,32 @@ $def with (name)
         player.update()
 
         if (marathon) {
-          // check if player beat marathon time
-          if (beat_marathon_time)
-            marathon_data.items[0].text = "Best Time:  " + player.timer.clock_text
-          else if (player.timer.clock_text > marathon_progress[0])
-            beat_marathon_time = true
+          // UPDATE BEST TIME AND SCORE IF PLAYER BEAT THEM
+          // // check if player beat marathon time
+          // if (beat_marathon_time)
+          //   marathon_data.items[0].text = "Best Time:  " + player.timer.clock_text
+          // else if (player.timer.clock_text > marathon_progress[0])
+          //   beat_marathon_time = true
 
+          // // check if player beat marathon high score
+          // if (beat_marathon_score)
+          //   marathon_data.items[1].text = "High Score: \u03BB" + player.score
+          // else if (player.score > marathon_progress[1])
+          //   beat_marathon_score = true          
+          // check if player beat marathon time
+          if (!beat_marathon_time) {
+            if (player.timer.clock_text > marathon_progress[0]) {
+              beat_marathon_time = true
+              marathon_data.items[0].color = "Grey"
+            }
+          }
           // check if player beat marathon high score
-          if (beat_marathon_score)
-            marathon_data.items[1].text = "High Score: \u03BB" + player.score
-          else if (player.score > marathon_progress[1])
-            beat_marathon_score = true          
+          if (!beat_marathon_score) {
+            if (player.score > marathon_progress[1]) {
+              beat_marathon_score = true
+              marathon_data.items[1].color = "Grey"
+            }
+          }
         }
 
         if(level_edit) {
@@ -3377,6 +3392,8 @@ $def with (name)
 
       this.description = ""
 
+      this.color
+
       this.sprites = new Array()
 
     }
@@ -3690,7 +3707,7 @@ $def with (name)
 
             jaws.context.font = "bold 12pt Monaco";
             jaws.context.lineWidth = 10
-            jaws.context.fillStyle =  (this.index == i) ? ((this_item.locked) ? "Brown" : "Red") : ((this_item.locked) ? "Grey" : "White")
+            jaws.context.fillStyle =  (this_item.color == undefined) ? ((this.index == i) ? ((this_item.locked) ? "Brown" : "Red") : ((this_item.locked) ? "Grey" : "White")) : this_item.color
             jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
             jaws.context.fillText(this_item.text, this.x + 20, this.y + 20 * (i + 1 + j) + 10)
 
@@ -3813,10 +3830,9 @@ $def with (name)
             jaws.start(Game)
           }))
           main_menu_items[main_menu_items.length-1].description
-            = "Stacks frequently rise toward the top of\n" +
-            "the board. The game is over when a stack\n" +
-            "reaches the top of the board. Try to \n" + 
-            "survive and beat your high score!"
+            = "Stacks rise toward the top of the board.\n" +
+            "Try to survive and beat your high score!"
+
           var marathon_menu_item = main_menu_items[main_menu_items.length-1]
           marathon_menu_item.star_lock = MARATHON_STAR_LOCK
           marathon_menu_item.locked = (starTotal() >= marathon_menu_item.star_lock) ? false : true
