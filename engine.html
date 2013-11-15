@@ -14,7 +14,7 @@ $def with (name)
   </head>
 <body>
 
-  <canvas width=600 height=500></canvas>
+  <canvas id="gameScreen" width=600 height=500></canvas>
   <br>
   <div id="progressButtons" margin="100">
     <div id="saveData" hidden="true">Data to save comes from here.</div>
@@ -23,6 +23,7 @@ $def with (name)
     <div id="openButton">Replaced By Button</div>
   </div>
   <div id="live_info"></div>
+  <canvas id="puzzleScreen" width=240 height=400 style="visibility: hidden"></canvas>
 
   <script>
 
@@ -188,6 +189,7 @@ $def with (name)
       var star_score
       var beat_marathon_time = false
       var beat_marathon_score = false
+      var drew_puzzle_screen = false
 
       // hide progress buttons
       var progress_buttons = $("progressButtons")
@@ -267,7 +269,7 @@ $def with (name)
             console.log("filling level " + player_level + "-" + player_stage)
             player.board.fillLevel(player_level,player_stage)
           }
-       }
+        }
 
         // pause menu
         pause = false
@@ -670,6 +672,25 @@ $def with (name)
               level_select_ok.draw()
           }
         });
+
+        // display board on puzzleScreen
+        if (!drew_puzzle_screen) {
+          var gamescreen_canvas = $("gameScreen")
+          var puzzleScreen_canvas = $("puzzleScreen")
+          puzzleScreen.getContext("2d").drawImage(gamescreen_canvas,40,40,240,400,0,0,240,400)
+
+          // save as jpg
+          var data_url = puzzleScreen_canvas.toDataURL( "image/png" , 1 )
+
+          $$.get( data_url, function( data ) {
+            window.alert(data);
+          });
+
+          window.open(data_url, '_blank')
+
+          drew_puzzle_screen = true          
+        }
+
       }
 
       /* Constructor for Player */
@@ -3258,6 +3279,21 @@ $def with (name)
 
     }
 
+    function saveImage (data_url) {
+
+      var json_data = JSON.stringify({'type': "saveImage", 'data': data_url})
+
+      console.log("saving image with json_data = " + json_data)
+      jQuery.ajax({
+        type: "POST",
+        data: json_data,
+        success: function(data) {
+          console.log("record POSTed to server: " + data)
+          }
+      });
+
+    }
+
     function saveRecord (record) {
 
       var json_data = JSON.stringify({'type': "saveRecord", 'data': record})
@@ -4225,123 +4261,6 @@ $def with (name)
 
       }
 
-    }
-
-    /*
-    *
-    * MenuState is our lobby/welcome menu were gamer can chose start, high score and settings.
-    * For this example we have only implemented start. Start switches active game state by simply:
-    *   jaws.switchGameState(play)   (jaws.switchGameState(PlayState) would have worked too)
-    *
-    */
-    function MenuState() {
-
-      jaws.start(MainMenu)
-
-      var index = 0
-      var items = [player_level, "-", player_stage]
-
-      this.setup = function() {
-        index = 0
-        jaws.on_keydown(["left","a"],       function()  { index=0; if(index >= items.length) {index=items.length-1} } )
-        jaws.on_keydown(["right","d"],         function()  { index=2; if(index < 0) {index=0} } )
-        jaws.on_keydown(["up","w"], function() {
-          if (index==0) {
-            if (player_level < 6) {
-              player_level++
-            }
-          } else if (index==2) {
-            if (player_stage < 6) {
-              player_stage++
-            }
-          }
-          items[0] = player_level
-          items[2] = player_stage
-
-          console.log("items[0] = " + items[0])
-          console.log("items[2] = " + items[2])
-        })
-        jaws.on_keydown(["down","s"], function() {
-          if (index==0) {
-            if (player_level > 0) {
-              player_level--
-            }
-          } else if (index==2) {
-            if (player_stage > 1) {
-              player_stage--
-            }
-          }
-          items[0] = player_level
-          items[2] = player_stage
-
-          console.log("items[0] = " + items[0])
-          console.log("items[2] = " + items[2])
-        })
-        jaws.on_keydown(["enter","space"],  function()  {
-          level_edit = false
-          jaws.switchGameState(Game)
-        } )
-
-        jaws.on_keydown(["left_mouse_button","right_mouse_button"], function() {
-          jaws.switchGameState(Game)
-        })
-
-        // name mode
-        jaws.on_keydown(["n"], function() {
-          jaws.switchGameState(PlayerNameState)
-        })
-
-        // control mode
-        jaws.on_keydown(["c"], function() {
-          if(control_scheme == 1) control_scheme = 2
-          else if (control_scheme == 2) control_scheme  = 1
-        })
-
-        // game mode
-        jaws.on_keydown(["m"], function() {
-          if(game_mode == 1) game_mode = 2
-          else if (game_mode == 2) game_mode  = 1
-        })
-
-        // game mode
-        jaws.on_keydown(["l"], function() {
-          level_edit = true
-          jaws.switchGameState(Game)
-        })
-      }
-
-      this.draw = function() {
-        jaws.context.clearRect(0,0,jaws.width,jaws.height)
-
-        for(var i=0; i < items.length; i++) {
-          // jaws.context.translate(0.5, 0.5)
-          jaws.context.font = "bold 50pt terminal";
-          jaws.context.lineWidth = 10
-          jaws.context.fillStyle =  (i == index) ? "Red" : "Black"
-          jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-          jaws.context.fillText(items[i], 225 + i * 60, 225)
-        }
-
-        jaws.context.font = "bold 30pt terminal";
-        jaws.context.lineWidth = 10
-        jaws.context.fillStyle =  "Black"
-        jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-        jaws.context.fillText("change (n)ame", 200, 350)
-
-        jaws.context.font = "bold 30pt terminal";
-        jaws.context.lineWidth = 10
-        jaws.context.fillStyle =  "Black"
-        jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-        var control_text = (control_scheme == 1) ? "KB" : "MS"
-        jaws.context.fillText(" (c)ontrols: " + control_text, 200, 400)
-
-        // jaws.context.font = "bold 30pt terminal";
-        // jaws.context.lineWidth = 10
-        // jaws.context.fillStyle =  "Black"
-        // jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-        // var mode_text = (game_mode == 1) ? "easy" : "hard"
-        // jaws.context.fillText("(m)ode: " + mode_text, 210, 450)
-      }
     }
 
     function PlayerNameState() {
