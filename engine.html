@@ -23,7 +23,9 @@ $def with (name)
     <div id="openButton">Replaced By Button</div>
   </div>
   <div id="live_info"></div>
-  <canvas id="puzzleScreen" width=240 height=400 style="visibility: hidden"></canvas>
+  <div hidden="true">
+    <canvas id="puzzleScreen" width=240 height=400></canvas>
+  </div>
 
   <script>
 
@@ -682,11 +684,11 @@ $def with (name)
           // save as jpg
           var data_url = puzzleScreen_canvas.toDataURL( "image/png" , 1 )
 
-          $$.get( data_url, function( data ) {
-            window.alert(data);
-          });
+          // window.prompt("encoded data",data_url.substring(data_url.indexOf(",")+1,data_url.length))
 
-          window.open(data_url, '_blank')
+          saveImage(player_level,player_stage,data_url.substring(data_url.indexOf(",")+1,data_url.length))
+
+          // window.open(data_url, '_blank')
 
           drew_puzzle_screen = true          
         }
@@ -3279,16 +3281,16 @@ $def with (name)
 
     }
 
-    function saveImage (data_url) {
+    function saveImage (level,stage,encoded_data) {
 
-      var json_data = JSON.stringify({'type': "saveImage", 'data': data_url})
+      var json_data = JSON.stringify({'type': "saveImage", 'data': encoded_data, 'level': [level,stage]})
 
       console.log("saving image with json_data = " + json_data)
       jQuery.ajax({
         type: "POST",
         data: json_data,
         success: function(data) {
-          console.log("record POSTed to server: " + data)
+          console.log("level image saved to server: " + data)
           }
       });
 
@@ -3454,6 +3456,8 @@ $def with (name)
       this.active = false
       this.mouse_inside = false
       this.scrolling = scrolling || false
+      this.old_mouse_x = jaws.mouse_x
+      this.old_mouse_y = jaws.mouse_y
 
       this.setup = function(x,y,width) {
 
@@ -3694,8 +3698,11 @@ $def with (name)
       this.draw = function() {
 
         // update index according to mouse position if menu is active
-        if (this.active && !this.scrolling)
+        if (this.active && !this.scrolling && this.old_mouse_x != jaws.mouse_x && this.old_mouse_x != jaws.mouse_x)
           this.index = this.menuCoordinates(jaws.mouse_x,jaws.mouse_y)
+
+        this.old_mouse_x = jaws.mouse_x
+        this.old_mouse_y = jaws.mouse_y
 
         jaws.context.fillStyle = "Black"
         jaws.context.fillRect(this.x + 2,this.y + 2,this.width - 4,this.height - 4)

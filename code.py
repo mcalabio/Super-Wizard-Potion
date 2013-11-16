@@ -2,6 +2,7 @@ import web
 import sys
 import json
 import os
+from binascii import a2b_base64
 
 render = web.template.render('.')
 
@@ -133,6 +134,21 @@ class engine:
 
 			web.debug("saved level " + str(level))
 			return str(level)
+
+		# saveImage()
+		elif (data["type"] == "saveImage"):
+
+			encoded_data = data["data"]
+			level = str(data["level"][0]) + "-" + str(data["level"][1])
+
+			binary_data = a2b_base64(encoded_data)
+
+			fd = open('levels/screens/' + level + '.png', 'wb')
+			fd.write(binary_data)
+			fd.close()
+
+			web.debug("encoded data = " + encoded_data)
+			return 0
 
 		return
 
