@@ -44,7 +44,7 @@ $def with (name)
     var MIN_RAISE_LEVEL_TIME = 6
     var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 30 seconds
     var MARATHON_STAR_LOCK = 0
-    var ZERO_STAR_LOCK = 50
+    var ZERO_STAR_LOCK = 0
 
 
     var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
@@ -104,8 +104,8 @@ $def with (name)
     var level_data
     var player_level = 1
     var player_stage = 1
-    var player_progress = [[0,{}],[0,{}],[0,{}]]
-    var star_progress = [{},{},{}]
+    var player_progress = [[0,{}],[0,{}],[0,{}],[0,{}]]
+    var star_progress = [{},{},{},{}]
     var marathon_progress = ["00:00",0]
     var control_scheme = 1
     var game_mode = 1
@@ -322,7 +322,8 @@ $def with (name)
 
             // advance the player to the next level
             console.log("player_stage = " + player_stage)
-            if (player_stage < ((player_level == 0) ? latest_edit : 14)) {
+            console.dir(level_data)
+            if (player_stage < level_data["levels"][player_level].length) {
               player_stage++
             } else {
               player_level++
@@ -1961,8 +1962,25 @@ $def with (name)
             winlose_menu.title = ""
 
             // allow player to advance to next level if they have enough stars     
-            if (level_data.levels[player_level][player_stage] != undefined && player.stars >= level_data.levels[player_level][player_stage].split('\n')[8] || player_level != 2) {
+            console.log("level_data")
+            console.dir(level_data)
+            var level_check
+            var stage_check
+            if (player_stage < level_data["levels"][player_level].length) {
+              level_check = player_level
+              stage_check = player_stage
+            } else {
+              level_check = parseInt(player_level) + 1
+              stage_check = 0
+            }
+            console.log("level_check = " + level_check)
+            console.log("stage_check = " + stage_check)
+            var next_level = (level_data.levels[level_check] != undefined) ? level_data.levels[level_check][stage_check] : undefined
+            var next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined
+            if (next_level != undefined && (next_star_lock == undefined || player.stars >= next_star_lock)) {
               winlose_menu.items[0].active = true
+            } else if (player_level == level_data.levels.length-1 && player_stage == level_data.levels[player_level].length) {
+              winlose_menu.index = 2
             } else
               winlose_menu.index = 1
 
@@ -3572,8 +3590,10 @@ $def with (name)
         var these_stars = 0     
         console.log("star_progress = ")
         console.dir(star_progress)       
-        for (var i = 0; i < star_progress[level][stage].length; i++) {
-          these_stars += star_progress[level][stage][i]
+        if (star_progress[level][stage] != undefined) {
+          for (var i = 0; i < star_progress[level][stage].length; i++) {        
+            these_stars += star_progress[level][stage][i]
+          }
         }
         for (var i = 0; i < these_stars; i++) {
           if (this.star_sprites[i] != undefined)
@@ -4128,8 +4148,8 @@ $def with (name)
         var reset_menu_items = new Array()
           reset_menu_items.push(new MenuItem(reset_menu, "Yes", function() {
             player_name = ""
-            player_progress = [[0,{}],[0,{}],[0,{}]]
-            star_progress = [{},{},{}]
+            player_progress = [[0,{}],[0,{}],[0,{}],[0,{}]]
+            star_progress = [{},{},{},{}]
             marathon_progress = ["00:00",0]
             jaws.start(PlayerNameState)
           }))
