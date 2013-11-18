@@ -115,6 +115,7 @@ $def with (name)
     var latest_edit
     var pause = false
     var main_menu_auto = undefined
+    var sound_effects = new Array()
 
     // load cookies if possible
     var cookie_save = getCookie("player_save")
@@ -594,6 +595,17 @@ $def with (name)
 
         jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
         jaws.preventDefaultKeys(["w", "s", "a", "d", "k"])
+
+        // reset sound effects array
+        for (var i = 0; i < sound_effects.length; i++) {
+          var this_sound = sound_effects[i]
+          console.log("deleting this sound = ")
+          console.dir(this_sound)
+          this_sound = null
+          delete this_sound
+          console.dir(this_sound)
+        }
+
       }
 
       /* update() will get called each game tick with your specified FPS. Put game logic here. */
@@ -742,13 +754,13 @@ $def with (name)
           urls: ['./static/sfx/grab.mp3','./static/sfx/grab.ogg'],
           volume:.3
         })
-        this.board.sounds.push(this.grab_sound)
+        sound_effects.push(this.grab_sound)
 
         this.drop_sound = new Howl({
           urls: ['./static/sfx/drop.mp3','./static/sfx/drop.ogg'],
           volume:.3
         })
-        this.board.sounds.push(this.drop_sound)
+        sound_effects.push(this.drop_sound)
 
         this.addScore = function(points) {
           if (level_edit)
@@ -2660,12 +2672,12 @@ $def with (name)
             urls: ["./static/sfx/robot_death.mp3","./static/sfx/robot_death.ogg"],
             volume:.25
           })
-          board.sounds.push(this.break_audio)
+          sound_effects.push(this.break_audio)
           this.brew_audio = new Howl({
             urls: ["./static/sfx/brew.mp3","./static/sfx/brew.ogg"],
             volume:.25
           })
-          board.sounds.push(this.brew_audio)
+          sound_effects.push(this.brew_audio)
 
         }
         else if (this.type == 2) {
@@ -2885,7 +2897,7 @@ $def with (name)
             urls: ["./static/sfx/break.mp3","./static/sfx/break.ogg"],
             volume:1
           })
-        this.stack.board.sounds.push(this.sound_fx)
+        sound_effects.push(this.sound_fx)
 
 
         // set appropriate sprite for this Splash
@@ -3684,7 +3696,7 @@ $def with (name)
 
           } else {
             if(menu.mouse_inside) {
-              if(!menu.items[menu.index].locked)
+              if(!menu.items[menu.index].locked && menu.items[menu.index].active)
                 menu.items[menu.index].action()
             } else
               menu.back()
