@@ -2610,25 +2610,25 @@ $def with (name)
 
         this.draw = function() {
 
-          // draw all items on stack and next random item
-          for (var i=0; i<this.items.length;i++) {
-            this.items[i].draw()
-          }
-          // if (!marathon) {
-          //   for (var i=0; i<this.items.length;i++) {
-          //     this.items[i].draw()
-          //   }
-          // } else {
-          //   // TODO: flash stack when full and player in danger
-          //   var this_stack_full = (this.items.length + ((this.board.player.x != this.x) ? 0 : this.board.player.hand.items.length) == BOARD_HEIGHT)
-          //   var danger_time = (this.board.player.timer.raise_level_timer < raise_level_time/2)
-
-          //   if (!this_stack_full && !danger_time) {
-          //     for (var i=0; i<this.items.length;i++) {
-          //       this.items[i].draw()
-          //     }
-          //   }
+          // // draw all items on stack and next random item
+          // for (var i=0; i<this.items.length;i++) {
+          //   this.items[i].draw()
           // }
+          if (!marathon) {
+            for (var i=0; i<this.items.length;i++) {
+              this.items[i].draw()
+            }
+          } else {
+            // TODO: flash stack when full and player in danger
+            var this_stack_full = (this.items.length + ((this.board.player.x != this.x) ? 0 : this.board.player.hand.items.length) == BOARD_HEIGHT)
+            var player_timer = this.board.player.timer
+            var danger_time = (player_timer.raise_level_timer < raise_level_time/4) ? ((player_timer.ticker%8==0) ? true : false) : false
+            if (!this_stack_full || !danger_time || this.itemsBreaking()) {
+              for (var i=0; i<this.items.length;i++) {
+                this.items[i].draw()
+              }
+            }
+          }
           if (this.level >= 0 && marathon) {
             this.next_random_item.draw()
           }
