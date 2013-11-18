@@ -45,6 +45,7 @@ $def with (name)
     var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 30 seconds
     var MARATHON_STAR_LOCK = 0
     var ZERO_STAR_LOCK = 0
+    var MENU_FONT = "bold 12pt Menu Text"
 
 
     var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
@@ -381,6 +382,7 @@ $def with (name)
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Copy",function() {
             console.log("Copy")
+            player_level = 0
             player_stage = latest_edit
             console.log(player_stage)
           }))
@@ -2872,7 +2874,7 @@ $def with (name)
 
           this.sprite.draw()
 
-          jaws.context.font = "bold 10pt Monaco";
+          jaws.context.font = MENU_FONT
           jaws.context.lineWidth = 10
           jaws.context.fillStyle =  "White"
           jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
@@ -3769,7 +3771,7 @@ $def with (name)
         // draw title
         var j = 0
         if (this.title != "") {
-          jaws.context.font = "bold 14pt Monaco";
+          jaws.context.font = MENU_FONT
           jaws.context.lineWidth = 10
           jaws.context.fillStyle =  "Red"
           jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
@@ -3781,7 +3783,7 @@ $def with (name)
 
           var this_item = this.items[this.index]
 
-          jaws.context.font = "bold 12pt Monaco";
+          jaws.context.font = MENU_FONT
           jaws.context.lineWidth = 10
           jaws.context.fillStyle =  (this_item.locked) ? "Brown" : "Red"
           jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
@@ -3797,7 +3799,7 @@ $def with (name)
             if (!this_item.active)
               continue
 
-            jaws.context.font = "bold 12pt Monaco";
+            jaws.context.font = MENU_FONT
             jaws.context.lineWidth = 10
             jaws.context.fillStyle =  (this_item.color == undefined) ? ((this.index == i) ? ((this_item.locked) ? "Brown" : "Red") : ((this_item.locked) ? "Grey" : "White")) : this_item.color
             jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
@@ -4275,7 +4277,7 @@ $def with (name)
         jaws.context.fillRect(0,0,jaws.width,jaws.height)
 
         // player name
-        jaws.context.font = "bold 12pt Monaco";
+        jaws.context.font = MENU_FONT
         jaws.context.lineWidth = 10
         jaws.context.fillStyle =  "Red"
         jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
@@ -4286,7 +4288,7 @@ $def with (name)
         star_total_sprite.draw()
 
         // player star count
-        jaws.context.font = "bold 12pt Monaco";
+        jaws.context.font = MENU_FONT
         jaws.context.lineWidth = 10
         jaws.context.fillStyle =  "White"
         jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"

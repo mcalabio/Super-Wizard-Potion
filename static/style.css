@@ -20,6 +20,11 @@ canvas { border: 1px solid; background: white; margin-top: 50px; display: block;
   box-shadow: 0px 0px 10px black;
 }
 
+@font-face {
+    font-family: 'Menu Text';
+    src: url('fonts/Monaco.ttf');
+}
+
 code { font-weight: bold; font-size: 15px; color: #33FF33;}
 
 body {
