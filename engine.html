@@ -1192,16 +1192,17 @@ $def with (name)
           if (pause || game_end != "")
             return
 
-          // draw hand, flash if stack is full
-          var this_stack = this.board.stacks[this.x]
-          var this_stack_full = (this_stack.items.length + this.hand.items.length == BOARD_HEIGHT)
-          // var danger_time = (player_timer.raise_level_timer < raise_level_time/4) ? ((player_timer.ticker%8==0) ? true : false) : false
-          var danger_time = (this.timer.ticker%8==0) ? true : false
-          if (!this_stack_full || !danger_time || this_stack.itemsBreaking()) {
+          if (marathon) {
+            // draw hand, flash if stack is full
+            var this_stack = this.board.stacks[this.x]
+            var this_stack_full = (this_stack.items.length + this.hand.items.length == BOARD_HEIGHT)
+            // var danger_time = (player_timer.raise_level_timer < raise_level_time/4) ? ((player_timer.ticker%8==0) ? true : false) : false
+            var danger_time = (this.timer.ticker%8==0) ? true : false
+            if (!this_stack_full || !danger_time || this_stack.itemsBreaking()) {
+              this.hand.draw()
+            }
+          } else
             this.hand.draw()
-          }
-
-          // this.hand.draw()
           // jaws.context.drawImage(jaws.assets.get("images/CURSOR.gif"), this.cursor.x, this.cursor.y)
 
           if (control_scheme == 2 && this.hand.items.length == 0)
