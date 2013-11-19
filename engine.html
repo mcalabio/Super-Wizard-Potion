@@ -147,6 +147,7 @@ $def with (name)
       var viewport
       var need_to_restart = false
       var game_end = ""
+      var game_start = false
       var level_editor
       var pause_menu
       var winlose_data
@@ -956,6 +957,9 @@ $def with (name)
 
         // grab depth amount of items from stack
         this.grab = function(stack,depth) {
+
+          if (!game_start)
+            game_start = true
 
           this.moves++
           console.log("player moves = " + this.moves)
@@ -3040,7 +3044,7 @@ $def with (name)
 
         // increment the ticker and count the seconds and minutes
         this.update = function() {
-          if (game_end == "") this.ticker++
+          if (game_start && game_end == "") this.ticker++
           if (this.ticker >= 60) {
             this.ticker = 0
             this.seconds++
