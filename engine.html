@@ -190,6 +190,7 @@ $def with (name)
 
       var player_data
       var screen_data
+      var puzzle_data
       var marathon_data
       var star_time
       var star_score
@@ -277,6 +278,22 @@ $def with (name)
           if (level_data.levels[player_level][player_stage-1] != undefined) {
             console.log("filling level " + player_level + "-" + player_stage)
             player.board.fillLevel(player_level,player_stage)
+
+            console.log("player_progress")
+            console.dir(player_progress)
+
+            if (player_progress[player_level][1][player_stage.toString()] != undefined) {
+              var best_time = player_progress[player_level][1][player_stage.toString()][0]
+              var best_score = player_progress[player_level][1][player_stage.toString()][1]
+
+              var puzzle_data_items = new Array()
+              puzzle_data_items.push(new MenuItem(puzzle_data,"Best Time:  " + best_time,function(){return}))
+              puzzle_data_items.push(new MenuItem(puzzle_data,"High Score: \u03BB" + best_score,function(){return}))
+
+              puzzle_data = new MenuBox("",puzzle_data,screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,puzzle_data_items)
+              puzzle_data.index = -1
+            }
+
           }
         }
 
@@ -690,6 +707,8 @@ $def with (name)
           screen_data.draw()
           if (marathon)
             marathon_data.draw()
+          else (!level_edit)
+            if (puzzle_data != undefined) puzzle_data.draw()
           for (var s=0; s < star_sprites.length; s++) {
             star_sprites[s].draw()
           }
@@ -1970,10 +1989,16 @@ $def with (name)
             var this_stage_progress = this_level_progress[player_stage.toString()]
             if (this_stage_progress == undefined) // create new array if stage newly beaten
               this_stage_progress = this_level_progress[player_stage.toString()] = ["99:99",0]
-            if (player.timer.clock_text < this_stage_progress[0])
+            if (player.timer.clock_text < this_stage_progress[0]) {
               this_stage_progress[0] = player.timer.clock_text
-            if (player.score > this_stage_progress[1])
+              if (puzzle_data != undefined)
+                puzzle_data.items[0].color = "Grey"
+            }
+            if (player.score > this_stage_progress[1]) {
               this_stage_progress[1] = player.score
+              if (puzzle_data != undefined)
+                puzzle_data.items[1].color = "Grey"
+            }
 
             console.log("player_progress = ")
             console.dir(player_progress)
