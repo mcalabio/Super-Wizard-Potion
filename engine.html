@@ -101,7 +101,7 @@ $def with (name)
     var X_SPEED = SLOW
     var Y_SPEED = FAST
     var name_entered = false
-    var player_name = "zonky"
+    var player_name = ""
     var level_data
     var player_level = 1
     var player_stage = 1
@@ -117,6 +117,15 @@ $def with (name)
     var pause = false
     var main_menu_auto = undefined
     var sound_effects = new Array()
+    var paused_sound_effects = new Array()
+    var playing_sound_effects = new Array()
+    // player sound effects
+    var grab_sound
+    var drop_sound
+    var break_audio
+    var brew_audio
+    var splash_audio
+    setupSounds()
 
     // load cookies if possible
     var cookie_save = getCookie("player_save")
@@ -306,6 +315,7 @@ $def with (name)
         var pause_menu_items = new Array()
         pause_menu_items.push(new MenuItem(pause_menu,"Resume",function() {
           pause = false
+          playPausedSounds()
           player.controls()
         }))
         pause_menu_items.push(((level_edit) ? save_menu_item : restart_menu_item))
@@ -619,16 +629,6 @@ $def with (name)
         jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
         jaws.preventDefaultKeys(["w", "s", "a", "d", "k"])
 
-        // reset sound effects array
-        for (var i = 0; i < sound_effects.length; i++) {
-          var this_sound = sound_effects[i]
-          console.log("deleting this sound = ")
-          console.dir(this_sound)
-          this_sound = null
-          delete this_sound
-          console.dir(this_sound)
-        }
-
       }
 
       /* update() will get called each game tick with your specified FPS. Put game logic here. */
@@ -774,19 +774,6 @@ $def with (name)
         // count player actions
         this.moves = 0
 
-        // player sound effects
-        this.grab_sound = new Howl({
-          urls: ['./static/sfx/grab.mp3','./static/sfx/grab.ogg'],
-          volume:.3
-        })
-        sound_effects.push(this.grab_sound)
-
-        this.drop_sound = new Howl({
-          urls: ['./static/sfx/drop.mp3','./static/sfx/drop.ogg'],
-          volume:.3
-        })
-        sound_effects.push(this.drop_sound)
-
         this.addScore = function(points) {
           if (level_edit)
             return
@@ -809,6 +796,7 @@ $def with (name)
             for (var i=0; i<player.board.sounds.length;i++) {
               var this_sound = player.board.sounds[i]
               this_sound.stop()
+              removeFromPlayingSounds(this_sound)
             }
             // update marathon progress
             if (marathon) {
@@ -1027,8 +1015,9 @@ $def with (name)
 
           // play sound effect
           if (depth > 0) {
-            this.grab_sound.stop()
-            this.drop_sound.play()
+            grab_sound.stop()
+            removeFromPlayingSounds(grab_sound)
+            drop_sound.play()
           }
         }
 
@@ -1072,8 +1061,9 @@ $def with (name)
             this.y = stack_items.length - depth // at item at bottom of hand stack
 
           // play sound effects
-          this.drop_sound.stop()
-          this.grab_sound.play()
+          drop_sound.stop()
+          removeFromPlayingSounds(drop_sound)
+          grab_sound.play()
 
         }
 
@@ -2333,7 +2323,8 @@ $def with (name)
           if (old_item.type == 1) {
             console.log("stop sound effect")
             console.dir(old_item.break_audio)
-            old_item.break_audio.stop()
+            break_audio.stop()
+            removeFromPlayingSounds(break_audio)
             if (old_item.chain > 1)
               this.board.effects.push(new ChainEffect(this,old_item))
           }
@@ -2469,10 +2460,11 @@ $def with (name)
             this_flask.sprite.dy = this_flask.stack.board.posy(this_flask.y)
 
             // stop flask's sound effects
-            this_flask.break_audio.stop()
+            break_audio.stop()
+            removeFromPlayingSounds(break_audio)
 
             // play robot breaking sound effects
-            this_flask.break_audio.play()
+            break_audio.play()
 
 
 
@@ -2712,17 +2704,7 @@ $def with (name)
           this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y), image:"./static/images/POTION_" + COLORS[color] + ".gif",anchor:"left"})
           board.flask_count[color] += 1
 
-          // flask sound effects
-          this.break_audio = new Howl({
-            urls: ["./static/sfx/robot_death.mp3","./static/sfx/robot_death.ogg"],
-            volume:.25
-          })
-          sound_effects.push(this.break_audio)
-          this.brew_audio = new Howl({
-            urls: ["./static/sfx/brew.mp3","./static/sfx/brew.ogg"],
-            volume:.25
-          })
-          sound_effects.push(this.brew_audio)
+
 
         }
         else if (this.type == 2) {
@@ -2791,9 +2773,10 @@ $def with (name)
                 this.stack.board.flask_count[above.color]++
 
                 // play sound effect for brewing
-                this.brew_audio.stop()
+                brew_audio.stop()
+                removeFromPlayingSounds(brew_audio)
                 console.log("brewing color potion")
-                this.brew_audio.play()
+                brew_audio.play()
 
               // only accept white blocks above if empty
               // break if other colors brewed
@@ -2816,9 +2799,10 @@ $def with (name)
                   this.stack.board.flask_count[above.color]++
 
                   // play sound effect for brewing
-                  this.brew_audio.stop()
+                  brew_audio.stop()
+                  removeFromPlayingSounds(brew_audio)
                   console.log("brewing white potion")
-                  this.brew_audio.play()
+                  brew_audio.play()
 
                 // melting colored blocks over empty flask creates an unstable reaction
                 } else {
@@ -2849,9 +2833,10 @@ $def with (name)
                   this.stack.board.flask_count[this.color]++
 
                   // play sound effect for unstable reaction
-                  this.break_audio.stop()
+                  break_audio.stop()
+                  removeFromPlayingSounds(break_audio)
                   console.log("brewing unstable potion")
-                  this.break_audio.play()
+                  break_audio.play()
                 }
 
               }
@@ -2938,12 +2923,6 @@ $def with (name)
         this.y = y
         this.index = index
         this.delay = delay // delay animation until counter goes to 0
-        this.sound_fx = new Howl({
-            urls: ["./static/sfx/break.mp3","./static/sfx/break.ogg"],
-            volume:1
-          })
-        sound_effects.push(this.sound_fx)
-
 
         // set appropriate sprite for this Splash
         if (type == 1)
@@ -3021,8 +3000,9 @@ $def with (name)
 
           if (this.delay == 0) {
             console.log("playing break sfx")
-            this.sound_fx.stop()
-            this.sound_fx.play()
+            splash_audio.stop()
+            removeFromPlayingSounds(splash_audio)
+            splash_audio.play()
           }
 
           if (this.spritesOffscreen())
@@ -3136,21 +3116,12 @@ $def with (name)
     function pauseGame (pause_menu,player,restart_menu_item,save_menu_item) {
 
       if (pause) {
-        pause = false
-        pause_menu.active = false
-        // pause all sounds currently playing
-        for (var i=0; i<player.board.sounds.length;i++) {
-          var this_sound = player.board.sounds[i]
-          this_sound.play()
-        }
+        return
       } else {
         pause = true
         pause_menu.active = true
         // pause all sounds currently playing
-        for (var i=0; i<player.board.sounds.length;i++) {
-          var this_sound = player.board.sounds[i]
-          this_sound.pause()
-        }
+        pauseSounds()
       }
 
 
@@ -3158,6 +3129,7 @@ $def with (name)
       pause_menu.items = new Array()
       pause_menu.items.push(new MenuItem(pause_menu,"Resume",function() {
         pause = false
+        playPausedSounds()
         player.controls()
       }))
       pause_menu.items.push(((level_edit) ? save_menu_item : restart_menu_item))
@@ -3189,6 +3161,97 @@ $def with (name)
       }))
 
       console.log("constructed pause_menu = " + pause_menu.items.length)
+    }
+
+    function setupSounds () {
+      // player sound effects
+      grab_sound = new Howl({
+        urls: ['./static/sfx/grab.mp3','./static/sfx/grab.ogg'],
+        volume:.3
+      })
+      sound_effects.push(grab_sound)
+
+      drop_sound = new Howl({
+        urls: ['./static/sfx/drop.mp3','./static/sfx/drop.ogg'],
+        volume:.3
+      })
+      sound_effects.push(drop_sound)
+      // flask sound effects
+      break_audio = new Howl({
+        urls: ["./static/sfx/robot_death.mp3","./static/sfx/robot_death.ogg"],
+        volume:.25
+      })
+      sound_effects.push(break_audio)
+      brew_audio = new Howl({
+        urls: ["./static/sfx/brew.mp3","./static/sfx/brew.ogg"],
+        volume:.25
+      })
+      sound_effects.push(brew_audio)
+      splash_audio = new Howl({
+          urls: ["./static/sfx/break.mp3","./static/sfx/break.ogg"],
+          volume:1
+        })
+      sound_effects.push(splash_audio)
+
+      // set onpause callback for each howl object
+      for (var i = 0; i < sound_effects.length; i++) {
+        var this_sound = sound_effects[i]
+
+        // push this sound onto the array of currently playing sounds
+        this_sound.on('play', function() {
+          playing_sound_effects.push(this)
+        })
+
+        // push this sound onto the array of currently paused sounds
+        this_sound.on('pause', function() {
+          paused_sound_effects.push(this)  
+        })
+
+        // remove this sound from array of currently playing sounds
+        this_sound.on('end', function() {
+          removeFromPlayingSounds(this)
+        })
+
+
+      }
+    }
+
+    function stopSounds () {
+      // stop all sounds
+      for (var i=0; i<sound_effects.length;i++) {
+        var this_sound = sound_effects[i]
+        this_sound.stop()
+      }
+      playing_sound_effects = new Array()
+    }
+
+    function pauseSounds () {
+      // pause all currently playing sounds
+      for (var i=0; i<playing_sound_effects.length;i++) {
+        var this_sound = playing_sound_effects[i]
+        this_sound.pause()
+      }
+      playing_sound_effects = new Array()
+    }
+
+    function playPausedSounds() {
+      // play all paused sounds
+      for (var i=0; i<paused_sound_effects.length;i++) {
+        var this_sound = paused_sound_effects[i]
+        this_sound.play()
+      }
+      paused_sound_effects = new Array()
+    }
+
+    function removeFromPlayingSounds(this_sound) {
+      var index = 0
+      for (var j = 0; j < playing_sound_effects; j++) {
+        if (this_sound == playing_sound_effects[j])
+          break
+        else
+          index++
+      }
+      playing_sound_effects.splice(index,1);
     }
 
     function fisherYates ( myArray ) {
