@@ -14,7 +14,8 @@ $def with (name)
   </head>
 <body>
 
-  <canvas id="gameScreen" width=600 height=500></canvas>
+  <a id="muteButton" href="#" onClick="toggleMute()" style="float:right">Sound: On</a>  
+  <canvas id="gameScreen" width=600 height=500 style="margin-top:10px"></canvas>
   <br>
   <div id="progressButtons" margin="100">
     <div id="saveData" hidden="true">Data to save comes from here.</div>
@@ -42,7 +43,7 @@ $def with (name)
     var PURPLE_HEX = '#350028'//'#700054'
     var MAX_RAISE_LEVEL_TIME = 20
     var MIN_RAISE_LEVEL_TIME = 6
-    var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 30 seconds
+    var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 20 seconds
     var MARATHON_STAR_LOCK = 0
     var ZERO_STAR_LOCK = 0
     var MENU_FONT = "bold 12pt Menu Text"
@@ -116,6 +117,7 @@ $def with (name)
     var latest_edit
     var pause = false
     var main_menu_auto = undefined
+    var mute = false
     var sound_effects = new Array()
     var paused_sound_effects = new Array()
     var playing_sound_effects = new Array()
@@ -125,6 +127,8 @@ $def with (name)
     var break_audio
     var brew_audio
     var splash_audio
+    var melt_audio
+    var white_audio
     setupSounds()
 
     // load cookies if possible
@@ -315,7 +319,7 @@ $def with (name)
         var pause_menu_items = new Array()
         pause_menu_items.push(new MenuItem(pause_menu,"Resume",function() {
           pause = false
-          playPausedSounds()
+          // playPausedSounds()
           player.controls()
         }))
         pause_menu_items.push(((level_edit) ? save_menu_item : restart_menu_item))
@@ -1017,7 +1021,8 @@ $def with (name)
           if (depth > 0) {
             grab_sound.stop()
             removeFromPlayingSounds(grab_sound)
-            drop_sound.play()
+            if (!mute)
+              drop_sound.play()
           }
         }
 
@@ -1063,7 +1068,8 @@ $def with (name)
           // play sound effects
           drop_sound.stop()
           removeFromPlayingSounds(drop_sound)
-          grab_sound.play()
+          if (!mute)
+            grab_sound.play()
 
         }
 
@@ -2199,6 +2205,10 @@ $def with (name)
                 console.log("matches found!!! " + matches.length + " of color (" + matches[0].color + ")")
                 this.matchesFound(matches)
                 match_found = true
+                melt_audio.stop()
+                removeFromPlayingSounds(melt_audio)
+                if (!mute)
+                  melt_audio.play()
               }
 
               matches = new Array()
@@ -2210,6 +2220,10 @@ $def with (name)
                 console.log("matches found!!! " + matches.length + " of color (" + matches[0].color + ")")
                 this.matchesFound(matches)
                 match_found = true
+                melt_audio.stop()
+                removeFromPlayingSounds(melt_audio)
+                if (!mute)
+                  melt_audio.play()
               }
             }
           }
@@ -2482,7 +2496,8 @@ $def with (name)
             removeFromPlayingSounds(break_audio)
 
             // play robot breaking sound effects
-            break_audio.play()
+            if (!mute)
+              break_audio.play()
 
 
 
@@ -2793,8 +2808,15 @@ $def with (name)
                 // play sound effect for brewing
                 brew_audio.stop()
                 removeFromPlayingSounds(brew_audio)
+                melt_audio.stop()
+                removeFromPlayingSounds(melt_audio)
+                white_audio.stop()
+                removeFromPlayingSounds(white_audio)
                 console.log("brewing color potion")
-                brew_audio.play()
+                if (!mute) {
+                  brew_audio.play()
+                  white_audio.play()
+                }
 
               // only accept white blocks above if empty
               // break if other colors brewed
@@ -2817,10 +2839,13 @@ $def with (name)
                   this.stack.board.flask_count[above.color]++
 
                   // play sound effect for brewing
-                  brew_audio.stop()
-                  removeFromPlayingSounds(brew_audio)
+                  white_audio.stop()
+                  removeFromPlayingSounds(white_audio)
+                  melt_audio.stop()
+                  removeFromPlayingSounds(melt_audio)
                   console.log("brewing white potion")
-                  brew_audio.play()
+                  if (!mute)
+                    white_audio.play()
 
                 // melting colored blocks over empty flask creates an unstable reaction
                 } else {
@@ -2854,7 +2879,8 @@ $def with (name)
                   break_audio.stop()
                   removeFromPlayingSounds(break_audio)
                   console.log("brewing unstable potion")
-                  break_audio.play()
+                  if (!mute)
+                    break_audio.play()
                 }
 
               }
@@ -3020,7 +3046,8 @@ $def with (name)
             console.log("playing break sfx")
             splash_audio.stop()
             removeFromPlayingSounds(splash_audio)
-            splash_audio.play()
+            if (!mute)
+              splash_audio.play()
           }
 
           if (this.spritesOffscreen())
@@ -3139,7 +3166,7 @@ $def with (name)
         pause = true
         pause_menu.active = true
         // pause all sounds currently playing
-        pauseSounds()
+        stopSounds()
       }
 
 
@@ -3147,7 +3174,7 @@ $def with (name)
       pause_menu.items = new Array()
       pause_menu.items.push(new MenuItem(pause_menu,"Resume",function() {
         pause = false
-        playPausedSounds()
+        // playPausedSounds()
         player.controls()
       }))
       pause_menu.items.push(((level_edit) ? save_menu_item : restart_menu_item))
@@ -3202,7 +3229,7 @@ $def with (name)
       sound_effects.push(break_audio)
       brew_audio = new Howl({
         urls: ["./static/sfx/brew.mp3","./static/sfx/brew.ogg"],
-        volume:.25
+        volume:.1
       })
       sound_effects.push(brew_audio)
       splash_audio = new Howl({
@@ -3210,28 +3237,38 @@ $def with (name)
           volume:1
         })
       sound_effects.push(splash_audio)
+      melt_audio = new Howl({
+          urls: ["./static/sfx/melt1.mp3","./static/sfx/melt1.ogg"],
+          volume:.1
+      })
+      sound_effects.push(melt_audio)
+      white_audio = new Howl({
+          urls: ["./static/sfx/white3.mp3","./static/sfx/white3.ogg"],
+          volume:.25
+      })
+      sound_effects.push(white_audio)
 
-      // set onpause callback for each howl object
-      for (var i = 0; i < sound_effects.length; i++) {
-        var this_sound = sound_effects[i]
+      // // set onpause callback for each howl object
+      // for (var i = 0; i < sound_effects.length; i++) {
+      //   var this_sound = sound_effects[i]
 
-        // push this sound onto the array of currently playing sounds
-        this_sound.on('play', function() {
-          playing_sound_effects.push(this)
-        })
+      //   // push this sound onto the array of currently playing sounds
+      //   this_sound.on('play', function() {
+      //     playing_sound_effects.push(this)
+      //   })
 
-        // push this sound onto the array of currently paused sounds
-        this_sound.on('pause', function() {
-          paused_sound_effects.push(this)  
-        })
+      //   // push this sound onto the array of currently paused sounds
+      //   this_sound.on('pause', function() {
+      //     paused_sound_effects.push(this)  
+      //   })
 
-        // remove this sound from array of currently playing sounds
-        this_sound.on('end', function() {
-          removeFromPlayingSounds(this)
-        })
+      //   // remove this sound from array of currently playing sounds
+      //   this_sound.on('end', function() {
+      //     removeFromPlayingSounds(this)
+      //   })
 
 
-      }
+      // }
     }
 
     function stopSounds () {
@@ -3253,6 +3290,10 @@ $def with (name)
     }
 
     function playPausedSounds() {
+
+      if (mute)
+        return
+
       // play all paused sounds
       for (var i=0; i<paused_sound_effects.length;i++) {
         var this_sound = paused_sound_effects[i]
@@ -3270,6 +3311,17 @@ $def with (name)
           index++
       }
       playing_sound_effects.splice(index,1);
+    }
+
+    function toggleMute() {
+      if (mute) {
+        $("muteButton").innerHTML = "Sound: On"
+        mute = false
+        stopSounds()
+      } else {
+        $("muteButton").innerHTML = "Sound: Off"
+        mute = true
+      }
     }
 
     function fisherYates ( myArray ) {
