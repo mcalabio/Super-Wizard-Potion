@@ -105,8 +105,8 @@ $def with (name)
     var level_data
     var player_level = 1
     var player_stage = 1
-    var player_progress = [[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}]]
-    var star_progress = [{},{},{},{},{},{}]
+    var player_progress = [[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}]]
+    var star_progress = [{},{},{},{},{},{},{}]
     var marathon_progress = ["00:00",0]
     var control_scheme = 1
     var game_mode = 1
@@ -4320,8 +4320,8 @@ $def with (name)
         var reset_menu_items = new Array()
           reset_menu_items.push(new MenuItem(reset_menu, "Yes", function() {
             player_name = ""
-            player_progress = [[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}]]
-            star_progress = [{},{},{},{},{},{}]
+            player_progress = [[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}]]
+            star_progress = [{},{},{},{},{},{},{}]
             marathon_progress = ["00:00",0]
             jaws.start(PlayerNameState)
           }))
