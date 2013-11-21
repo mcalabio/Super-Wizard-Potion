@@ -39,7 +39,7 @@ $def with (name)
     var BOARD_WIDTH = 6
     var BOARD_HEIGHT = 10
     var ITEM_WIDTH = 40
-    var PURPLE_HEX = '#700054'
+    var PURPLE_HEX = '#350028'//'#700054'
     var MAX_RAISE_LEVEL_TIME = 20
     var MIN_RAISE_LEVEL_TIME = 6
     var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 30 seconds
@@ -105,8 +105,8 @@ $def with (name)
     var level_data
     var player_level = 1
     var player_stage = 1
-    var player_progress = [[0,{}],[0,{}],[0,{}],[0,{}]]
-    var star_progress = [{},{},{},{}]
+    var player_progress = [[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}]]
+    var star_progress = [{},{},{},{},{},{}]
     var marathon_progress = ["00:00",0]
     var control_scheme = 1
     var game_mode = 1
@@ -697,7 +697,7 @@ $def with (name)
         jaws.clear()
 
         // background
-        jaws.context.fillStyle = PURPLE_HEX
+        jaws.context.fillStyle = 'Black' //PURPLE_HEX
         jaws.context.fillRect(0,0,600,500)
 
         // the viewport magic. wrap all draw()-calls inside viewport.apply and it will draw those relative to the viewport.
@@ -2125,15 +2125,17 @@ $def with (name)
         this.draw = function() {
 
           // board sprite
-          jaws.context.drawImage(jaws.assets.get("./static/images/BOARD.gif"), this.board.x, this.board.y )
+          //jaws.context.drawImage(jaws.assets.get("./static/images/BOARD.gif"), this.board.x, this.board.y )
 
           // draw pause menu
           if (pause) {
+            jaws.context.fillStyle = PURPLE_HEX //"Black"
+            jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
             pause_menu.draw()
             return
           }
 
-          jaws.context.fillStyle = "Black"
+          jaws.context.fillStyle = PURPLE_HEX //"Black"
           jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
 
           // draw all stacks in this board and containing items
@@ -2143,7 +2145,7 @@ $def with (name)
 
           // hide next random items
           var alpha = player.timer.raise_level_timer/raise_level_time/2 + .5
-          jaws.context.fillStyle =  "rgba(112,0,84," + alpha + ")"
+          jaws.context.fillStyle =  "rgba(0,0,0," + alpha + ")"//"rgba(112,0,84," + alpha + ")"
           jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH+this.board.height,this.board.width,ITEM_WIDTH)
 
           // draw all effects on this board
@@ -4318,8 +4320,8 @@ $def with (name)
         var reset_menu_items = new Array()
           reset_menu_items.push(new MenuItem(reset_menu, "Yes", function() {
             player_name = ""
-            player_progress = [[0,{}],[0,{}],[0,{}],[0,{}]]
-            star_progress = [{},{},{},{}]
+            player_progress = [[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}]]
+            star_progress = [{},{},{},{},{},{}]
             marathon_progress = ["00:00",0]
             jaws.start(PlayerNameState)
           }))

@@ -98,27 +98,35 @@ class engine:
 
 			level = 0
 
-			while (level < 4):
+			while (level < 100):
 
-				levels_data["levels"].append([])
+				try:
 
-				stage = 1
-				while (stage < 100):
+					f = open('levels/' + str(level) + '-1')
+					f.close()
 
-					try:
+					levels_data["levels"].append([])
 
-						f = open('levels/' + str(level) + '-' + str(stage))
-						levels_data["levels"][level].append(f.read())
-						f.close()
+					stage = 1
+					while (stage < 100):
 
-						stage += 1
+						try:
 
-					except:
+							f = open('levels/' + str(level) + '-' + str(stage))
+							levels_data["levels"][level].append(f.read())
+							f.close()
 
-						break
+							stage += 1
 
-				level += 1
+						except:
 
+							break
+
+					level += 1
+
+				except:
+
+					break
 
 			return json.JSONEncoder().encode(levels_data)
 
