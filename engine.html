@@ -778,6 +778,9 @@ $def with (name)
         // count player actions
         this.moves = 0
 
+        // record player actions
+        this.replay_data = {}
+
         this.addScore = function(points) {
           if (level_edit)
             return
@@ -824,6 +827,9 @@ $def with (name)
             if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
               player.board.raiseStacks()
               player.addScore(1)
+              // record this action
+              player.replay_data[player.timer.frame_ticker.toString()]
+                = [player.x,player.y,"raise",0]
             }
           })
 
@@ -972,6 +978,10 @@ $def with (name)
         // grab depth amount of items from stack
         this.grab = function(stack,depth) {
 
+          // record this action
+          this.replay_data[this.timer.frame_ticker.toString()]
+            = [this.x,this.y,"grab",depth]
+
           if (!game_start)
             game_start = true
 
@@ -1028,6 +1038,10 @@ $def with (name)
 
         // drop depth amount of items onto stack
         this.drop = function(stack,depth) {
+
+          // record this action
+          this.replay_data[this.timer.frame_ticker.toString()]
+            = [this.x,this.y,"drop",depth]          
 
           this.moves++
           console.log("player moves = " + this.moves)
@@ -1093,6 +1107,9 @@ $def with (name)
               if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
                 player.board.raiseStacks()
                 player.addScore(1)
+                // record this action
+                player.replay_data[player.timer.frame_ticker.toString()]
+                  = [player.x,player.y,"raise",0]
               }
               return
             }
@@ -3091,13 +3108,17 @@ $def with (name)
         this.minutes = 0
         this.seconds = 0
         this.ticker = 0
+        this.frame_ticker = 0
         this.clock_text = "00:00"
         this.raise_level_timer = raise_level_time
         this.raise_level_frequency_timer = 0
 
         // increment the ticker and count the seconds and minutes
         this.update = function() {
-          if (game_start && game_end == "") this.ticker++
+          if (game_start && game_end == "") {
+            this.ticker++
+            this.frame_ticker++
+          }
           if (this.ticker >= 60) {
             this.ticker = 0
             this.seconds++
@@ -3347,6 +3368,10 @@ $def with (name)
         record += player_name + " " + control_text + " MRTHN-" + MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
       else
         record += player_name + " " + control_text + " " + player_level + "-" + player_stage + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
+
+      // append data for replays
+      var player_moves = JSON.stringify(board.player.replay_data)
+      record += "\n" + player_moves
 
       console.log("new_stars = " + board.player.new_stars)
       if (board.player.new_stars > 0) {
