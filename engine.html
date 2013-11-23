@@ -1993,6 +1993,75 @@ $def with (name)
             winlose_data.items[1].text += "  " + player.timer.clock_text
             winlose_data.items[2].text += " \u03BB" + player.score
 
+            // allow player to advance to next level if they have enough stars     
+            console.log("level_data")
+            console.dir(level_data)
+            var level_check
+            var stage_check
+            if (player_stage < level_data["levels"][player_level].length) {
+              level_check = player_level
+              stage_check = player_stage
+            } else {
+              level_check = parseInt(player_level) + 1
+              stage_check = 0
+            }
+            console.log("level_check = " + level_check)
+            console.log("stage_check = " + stage_check)
+            var next_level = (level_data.levels[level_check] != undefined) ? level_data.levels[level_check][stage_check] : undefined
+            var next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined
+
+            // stage menu if beat last stage (already)
+            if (player_stage == level_data.levels[player_level].length ||
+                player_progress[player_level][0] >= level_data.levels[player_level].length) {
+              // keep Back to Menu item
+              var back_to_menu = winlose_menu.items.pop()
+              // remove Restart Menu item
+              winlose_menu.items.pop()
+              // add MenuItem for each stage of this level
+              for (var s = 0; s < level_data.levels[player_level].length; s++) {
+                var stage_menu_item = new MenuItem(winlose_menu,player_level.toString() + "-" + (s+1).toString(), function() {
+                  player_stage = parseInt(this.text[2])
+                  console.dir(this)
+                  jaws.start(Game)
+                })
+                winlose_menu.items.push(stage_menu_item)
+              }
+              // add Back to Menu item
+              winlose_menu.items.push(back_to_menu)
+              winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+
+              // continue
+              if (next_level != undefined) {
+                winlose_menu.items[0].active = true
+                if (next_star_lock == undefined || player.stars >= next_star_lock)
+                  winlose_menu.items[0].locked = false
+                else
+                  winlose_menu.items[0].locked = true
+                winlose_menu.items[0].text = "Continue to " + (parseInt(player_level) + 1) + "-1"
+                winlose_menu.items[0].action = function() {
+                  player_level++
+                  player_stage = 1
+                  jaws.start(Game)
+                }
+              } 
+
+              // default index
+              if (player_progress[player_level][0] >= player_stage)
+                winlose_menu.index = player_stage                         
+
+            // beating levels for the first time
+            } else {
+              // continue
+              if (next_level != undefined) {
+                winlose_menu.items[0].active = true
+              }
+
+              // default index
+              // restart if beat this level already
+              if (player_progress[player_level][0] >= player_stage)
+                winlose_menu.index = 1
+            }
+
             // update player progress
             if (player_progress[player_level][0] < player_stage)
               player_progress[player_level][0] = parseInt(player_stage)
@@ -2045,29 +2114,6 @@ $def with (name)
                 })
               })
             }
-
-            // allow player to advance to next level if they have enough stars     
-            console.log("level_data")
-            console.dir(level_data)
-            var level_check
-            var stage_check
-            if (player_stage < level_data["levels"][player_level].length) {
-              level_check = player_level
-              stage_check = player_stage
-            } else {
-              level_check = parseInt(player_level) + 1
-              stage_check = 0
-            }
-            console.log("level_check = " + level_check)
-            console.log("stage_check = " + stage_check)
-            var next_level = (level_data.levels[level_check] != undefined) ? level_data.levels[level_check][stage_check] : undefined
-            var next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined
-            if (next_level != undefined && (next_star_lock == undefined || player.stars >= next_star_lock)) {
-              winlose_menu.items[0].active = true
-            } else if (player_level == level_data.levels.length-1 && player_stage == level_data.levels[player_level].length) {
-              winlose_menu.index = 2
-            } else
-              winlose_menu.index = 1
 
           } else if (game_end == "L") {
 
