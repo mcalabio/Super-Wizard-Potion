@@ -3854,10 +3854,12 @@ $def with (name)
       }
 
       this.up_action = function() {
+        console.log("up_action")
         if (this.index > 0) 
 
           if (this.scrolling) {
-            if (this.items[this.index].active) {
+            this.index--
+            while (!this.items[this.index].active) {
               this.index--
               this.scroll_action()              
             }
@@ -3870,13 +3872,20 @@ $def with (name)
       }
 
       this.down_action = function() {
+        console.log("down_action")
         if (this.index < this.items.length - 1) 
 
           if (this.scrolling) {
-            if (this.items[this.index].active) {
+            var old_index = this.index
+            this.index++
+            while (!this.items[this.index].active && this.index < this.items.length - 1) {
               this.index++
-              this.scroll_action()              
             }
+            if (this.items[this.index].active)
+              this.scroll_action()     
+            else 
+              this.index = old_index         
+
           } else {
             this.index++
             while (!this.items[this.index].active) {
@@ -4140,7 +4149,7 @@ $def with (name)
             if (level_count + 1 >= level_select_menu.items.length)
               level_select_menu.index = level_select_menu.items.length - 1
             else
-              level_select_menu.index = level_count + 1
+              level_select_menu.index = level_count
           
             for (var i = 0; i < level_select_menu.star_sprites.length; i++) {
               level_select_menu.star_sprites[i].active = false
@@ -4227,11 +4236,26 @@ $def with (name)
             })
             var this_level_star_lock = level_data.levels[i][j].split('\n')[8]
             this_level.star_lock = (this_level.text[0] != "1") ? ((this_level_star_lock == undefined) ? ZERO_STAR_LOCK : this_level_star_lock) : this_level_star_lock
-            this_level.locked = (starTotal() >= this_level.star_lock) ? false : true
+
+            // set "l-1" to be active but locked unless star_lock met
+            if (j == 0) {
+              this_level.active = true
+              this_level.locked = (starTotal() >= this_level.star_lock) ? false : true
+
+            // set other puzzles to be inactive unless previous puzzle completed
+            } else {
+              if (j > player_progress[i][0])
+                this_level.active = false
+              else
+                this_level.active = true
+            }
+
             level_select_menu.items.push(this_level)
             item_count++
           }
         }
+        console.log("level_select_menu")
+        console.dir(level_select_menu)
 
         // level select arrows
         level_select_menu.arrow_sprites = new jaws.SpriteSheet({
@@ -4935,6 +4959,7 @@ $def with (name)
         latest_edit = level_data.levels[0].length + 1
         player_progress[0][0] = latest_edit - 2
         console.log("player_progress = " + player_progress[0][0])
+        console.dir(player_progress)
 
         if (name_entered)
           jaws.start(MainMenu)  // Our convenience function jaws.start() will load assets, call setup and loop update/draw in 60 FPS
