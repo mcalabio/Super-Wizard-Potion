@@ -165,6 +165,7 @@ $def with (name)
       var pause_menu
       var winlose_data
       var winlose_menu
+      var level_record
       var level_edit_menu
       var level_select_menu
       var level_select_ok
@@ -384,6 +385,29 @@ $def with (name)
             jaws.start(MainMenu)
           }))
         winlose_menu = new MenuBox(" ",winlose_menu,menu_x, winlose_data.y + winlose_data.height,4*ITEM_WIDTH+15,winlose_menu_items)
+
+
+        // level record data
+        var level_record_items = new Array()
+        level_record_items.push(new MenuItem(level_record,"Completed!",function() {return}))
+        level_record_items.push(new MenuItem(level_record,"Time:",function() {return}))
+        level_record_items.push(new MenuItem(level_record,"Score:",function() {return}))
+        level_record_items.push(new MenuItem(level_record,"",function() {return}))
+
+        level_record = new MenuBox("",level_record,winlose_menu.x + winlose_menu.width - 50, winlose_menu.y+40, 230, level_record_items)
+        level_record.index = -1
+        level_record.active = false
+
+        // add star sprites for level record data
+        for (var s=0; s < level_record_items.length; s++) {
+          var this_sprite = new jaws.Sprite({x:level_record.x,y:level_record.y+36 + 20*(s-1),anchor:"left",image:"./static/images/STAR.gif"})
+          this_sprite.width = 15
+          this_sprite.height = 15
+          this_sprite.active = false
+          level_record.sprites.push(this_sprite)
+
+        }
+
 
         // level editor
         if (level_edit) {
@@ -691,6 +715,34 @@ $def with (name)
             level_select_ok.update()
         }
 
+        if (winlose_menu.active) {
+          if (player_progress[player_level][0] >= level_data.levels[player_level].length){
+            if (winlose_menu.index > 0 && winlose_menu.index <= level_data.levels[player_level].length) {
+              level_record.active = true
+              var level_item = winlose_menu.items[winlose_menu.index]
+              var level_name = level_item.text.split("-")
+              var level = parseInt(level_name[0])
+              var stage = level_name[1]
+              if (player_progress[level][1][stage] != undefined) {
+                level_record.items[1].text = "Best Time:  " + player_progress[level][1][stage][0]
+                level_record.items[2].text = "High Score: \u03BB" + player_progress[level][1][stage][1]
+                
+                // show appropriate stars
+                level_record.sprites[0].active = true
+
+                
+                level_record.sprites[1].active = (star_progress[level][stage][1] > 0) ? true : false
+                level_record.sprites[2].active = (star_progress[level][stage][2] > 0) ? true : false
+                level_record.sprites[3].active = (star_progress[level][stage][3] > 0) ? true : false
+                level_record.items[3].text = (star_progress[level][stage][3] > 0) ? "Perfect" : ""                         
+                }
+            }
+            else
+              level_record.active = false
+          }
+        }
+
+
         live_info.innerHTML = jaws.game_loop.fps + " fps. Player: " + parseInt(player.x) + "/" + parseInt(player.y) + ". "
         live_info.innerHTML += "Viewport: " + parseInt(viewport.x) + "/" + parseInt(viewport.y) + "."
 
@@ -743,6 +795,9 @@ $def with (name)
 
           drew_puzzle_screen = true          
         }
+
+        if (level_record.active)
+          level_record.draw()
 
       }
 
@@ -2049,7 +2104,7 @@ $def with (name)
               if (player_progress[player_level][0] >= player_stage)
                 winlose_menu.index = player_stage                         
 
-            // beating levels for the first time
+            // beating puzzles for the first time
             } else {
               // continue
               if (next_level != undefined) {
