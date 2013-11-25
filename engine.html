@@ -715,7 +715,7 @@ $def with (name)
             level_select_ok.update()
         }
 
-        if (winlose_menu.active) {
+        if (winlose_menu.active && game_end == "W") {
           if (player_progress[player_level][0] >= level_data.levels[player_level].length){
             if (winlose_menu.index > 0 && winlose_menu.index <= level_data.levels[player_level].length) {
               level_record.active = true
@@ -723,7 +723,7 @@ $def with (name)
               var level_name = level_item.text.split("-")
               var level = parseInt(level_name[0])
               var stage = level_name[1]
-              if (player_progress[level][1][stage] != undefined) {
+              if (player_progress[level] != undefined && player_progress[level][1][stage] != undefined) {
                 level_record.items[1].text = "Best Time:  " + player_progress[level][1][stage][0]
                 level_record.items[2].text = "High Score: \u03BB" + player_progress[level][1][stage][1]
                 
@@ -2020,7 +2020,7 @@ $def with (name)
               console.log("flask_count = " + this.flask_count[c])
               if (this.flask_count[c] <= 0) {
                 if (this.block_count[c] < 3) {
-                  console.log("lose! here")
+                  console.log("lose! here for color = " + c)
                   game_end = "L"
                   return
                 } else if (potential_white_potions < remaining_robot_colors){
@@ -2431,7 +2431,7 @@ $def with (name)
 
           // check for win/lose only when blocks and robots are broken since flasks break first
           // but only check when items aren't breaking
-          if (!old_item.stack.itemsBreaking()) {
+          if (!this.board.stacksBreaking()) {
             if (old_item.type == 0 || old_item.type == 1) {
               // if (old_item.color != WHITE)
                 this.board.checkWinLose() // check for win/lose conditions
@@ -2511,7 +2511,7 @@ $def with (name)
 
           // check for win/lose only when blocks and robots are broken since flasks break first
           // but only check when items aren't breaking
-          if (!old_item.stack.itemsBreaking()) {
+          if (!this.board.stacksBreaking()) {
             if (old_item.type == 0 || old_item.type == 1) {
               // if (old_item.color != WHITE)
                 this.board.checkWinLose() // check for win/lose conditions
