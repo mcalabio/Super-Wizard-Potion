@@ -386,6 +386,20 @@ $def with (name)
           }))
         winlose_menu = new MenuBox(" ",winlose_menu,menu_x, winlose_data.y + winlose_data.height,4*ITEM_WIDTH+15,winlose_menu_items)
 
+        // to display star lock to continue to next world
+        var continue_lock_box = new OkSubMenu("",winlose_menu,function() { return })
+
+        // lock sprite
+        var lock_sprite = new jaws.Sprite({x:continue_lock_box.menu_box.x+21,y:continue_lock_box.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"})        
+        continue_lock_box.menu_box.sprites.push(lock_sprite)
+        lock_sprite.active = true
+
+        // star lock sprite
+        var star_lock_sprite = new jaws.Sprite({x:continue_lock_box.menu_box.x+64,y:continue_lock_box.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})        
+        star_lock_sprite.width = 15
+        star_lock_sprite.height = 15
+        continue_lock_box.menu_box.sprites.push(star_lock_sprite)
+        star_lock_sprite.active = true        
 
         // level record data
         var level_record_items = new Array()
@@ -2084,6 +2098,12 @@ $def with (name)
               // add Back to Menu item
               winlose_menu.items.push(back_to_menu)
               winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+
+              next_level = (level_data.levels[parseInt(player_level) + 1] != undefined) ? level_data.levels[parseInt(player_level) + 1][0] : undefined
+              next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined      
+
+              console.log("continue! ??" + next_level)
+              console.dir(level_data)        
 
               // continue
               if (next_level != undefined) {
@@ -4318,7 +4338,6 @@ $def with (name)
         level_select_menu.back = this.back
 
         var level_select_ok = new OkSubMenu("",level_select_menu,function() {
-          console.log("hawaiian bread")
           level_select_menu.items[menu.index].action(jaws)
         })
 
