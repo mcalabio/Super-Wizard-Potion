@@ -4343,6 +4343,8 @@ $def with (name)
             "your progress using a .txt file."
         var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items)
 
+        main_menu.items[3].active = false
+
         menus.push(main_menu)
         active_menu = main_menu
         active_menu.active = true
@@ -4476,6 +4478,7 @@ $def with (name)
         marathon_star_lock_menu.menu_box.items[0].text = "      x " + main_menu.items[1].star_lock
         main_menu.submenus.push(marathon_star_lock_menu)
         marathon_star_lock_menu.menu_box.setup(main_menu.x + main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 20,level_select_ok.menu_box.width)
+        marathon_star_lock_menu.menu_box.index = -1
 
 
 
