@@ -7,7 +7,6 @@ $def with (name)
     <script src="./static/json/json.js"></script>
     <script src="./static/howler/howler.js"></script>
     <script src="./static/sjcl/sjcl.js"></script>
-    <script src="./static/opensave/opensave.js" language="javascript"></script>
     <script type="text/javascript" src="./static/jquery/jquery-1.10.2.min.js"></script>
     <link type="text/css" rel="stylesheet" href="./static/style.css" />
     <title>Super Wizard Potion</title>
@@ -20,8 +19,6 @@ $def with (name)
   <div id="progressButtons" margin="100">
     <div id="saveData" hidden="true">Data to save comes from here.</div>
     <div id="openData" hidden="true">Data to save comes from here.</div>
-    <div id="saveButton">Replaced By Button</div>
-    <div id="openButton">Replaced By Button</div>
   </div>
   <div id="live_info"></div>
   <div hidden="true">
@@ -29,10 +26,6 @@ $def with (name)
   </div>
 
   <script>
-
-    opensave.swf = "./static/opensave/opensave.swf"
-    opensave.make({label: "Save Progress", width: 100, height: 30, dataID: "saveData", buttonDiv: "saveButton"});
-    opensave.make({label: "Load Progress", kind:"open", width: 100, height: 30, dataID: "openData", buttonDiv: "openButton"});
 
     // CONSTANTS
     var SLOW = 10
@@ -4570,6 +4563,8 @@ $def with (name)
             player_progress = [[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}]]
             star_progress = [{},{},{},{},{},{},{}]
             marathon_progress = ["00:00",0]
+            player_level = 1
+            player_stage = 1
             jaws.start(PlayerNameState)
           }))
           reset_menu_items.push(new MenuItem(reset_menu, "No", function() {
