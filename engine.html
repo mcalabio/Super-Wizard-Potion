@@ -2841,7 +2841,7 @@ $def with (name)
             var player_timer = this.board.player.timer
             // var danger_time = (player_timer.raise_level_timer < raise_level_time/4) ? ((player_timer.ticker%8==0) ? true : false) : false
             var danger_time = (player_timer.ticker%8==0) ? true : false
-            if (!this_stack_full || !danger_time || this.itemsBreaking()) {
+            if (!this_stack_full || !danger_time || this.itemsBreaking() || game_end != "") {
               for (var i=0; i<this.items.length;i++) {
                 this.items[i].draw()
               }
