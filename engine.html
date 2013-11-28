@@ -165,6 +165,7 @@ $def with (name)
       var pause_menu
       var winlose_data
       var winlose_menu
+      var continue_lock_box
       var level_record
       var level_edit_menu
       var level_select_menu
@@ -387,7 +388,9 @@ $def with (name)
         winlose_menu = new MenuBox(" ",winlose_menu,menu_x, winlose_data.y + winlose_data.height,4*ITEM_WIDTH+15,winlose_menu_items)
 
         // to display star lock to continue to next world
-        var continue_lock_box = new OkSubMenu("",winlose_menu,function() { return })
+        continue_lock_box = new OkSubMenu("",winlose_menu,function() { return })
+        continue_lock_box.menu_box.setup(winlose_menu.x + winlose_menu.width - 50, winlose_menu.y+40,continue_lock_box.menu_box.width)
+        continue_lock_box.menu_box.index = -1
 
         // lock sprite
         var lock_sprite = new jaws.Sprite({x:continue_lock_box.menu_box.x+21,y:continue_lock_box.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"})        
@@ -733,6 +736,7 @@ $def with (name)
           if (player_progress[player_level][0] >= level_data.levels[player_level].length){
             if (winlose_menu.index > 0 && winlose_menu.index <= level_data.levels[player_level].length) {
               level_record.active = true
+              continue_lock_box.active = false
               var level_item = winlose_menu.items[winlose_menu.index]
               var level_name = level_item.text.split("-")
               var level = parseInt(level_name[0])
@@ -750,9 +754,19 @@ $def with (name)
                 level_record.sprites[3].active = (star_progress[level][stage][3] > 0) ? true : false
                 level_record.items[3].text = (star_progress[level][stage][3] > 0) ? "Perfect" : ""                         
                 }
-            }
-            else
+            } else if (winlose_menu.index == 0) {
               level_record.active = false
+              if (winlose_menu.items[0].active && winlose_menu.items[0].locked) {
+                continue_lock_box.active = true
+                var next_level = (level_data.levels[parseInt(player_level) + 1] != undefined) ? level_data.levels[parseInt(player_level) + 1][0] : undefined
+                var next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined   
+                continue_lock_box.menu_box.items[0].text = "      x " + ((next_star_lock == undefined) ? "?" : next_star_lock)
+
+              }
+            } else {
+              level_record.active = false
+              continue_lock_box.active = false
+            }
           }
         }
 
@@ -809,6 +823,9 @@ $def with (name)
 
           drew_puzzle_screen = true          
         }
+
+        if (continue_lock_box.active)
+          continue_lock_box.draw()
 
         if (level_record.active)
           level_record.draw()
