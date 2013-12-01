@@ -1,0 +1,4297 @@
+$def with (name)
+
+<html>
+  <head>
+    <script src="./static/jawsjs/jaws.js"></script>
+    <script src="./static/jawsjs/audio.js"></script>
+    <script src="./static/json/json.js"></script>
+    <script src="./static/howler/howler.js"></script>
+    <script src="./static/opensave/opensave.js" language="javascript"></script>
+    <script type="text/javascript" src="./static/jquery/jquery-1.10.2.min.js"></script>
+    <link type="text/css" rel="stylesheet" href="./static/style.css" />
+    <title>Super Wizard Potion</title>
+  </head>
+<body>
+
+  <canvas width=600 height=500></canvas>
+  <br>
+  <div id="progressButtons" margin="100">
+    <div id="saveData" hidden="true">Data to save comes from here.</div>
+    <div id="openData" hidden="true">Data to save comes from here.</div>
+    <div id="saveButton">Replaced By Button</div>
+    <div id="openButton">Replaced By Button</div>
+  </div>
+  <div id="live_info"></div>
+
+  <script>
+
+    opensave.swf = "./static/opensave/opensave.swf"
+    opensave.make({label: "Save Progress", width: 100, height: 30, dataID: "saveData", buttonDiv: "saveButton"});
+    opensave.make({label: "Load Progress", kind:"open", width: 100, height: 30, dataID: "openData", buttonDiv: "openButton"});
+
+    // CONSTANTS
+    var SLOW = 10
+    var FAST = 60
+    var BOARD_WIDTH = 6
+    var BOARD_HEIGHT = 10
+    var ITEM_WIDTH = 40
+    var PURPLE_HEX = '#700054'
+    var MAX_RAISE_LEVEL_TIME = 24
+    var MIN_RAISE_LEVEL_TIME = 10
+    var FREQ_RAISE_LEVEL_TIME = 30  // decrease raise_level_time every 30 seconds
+    var MARATHON_STAR_LOCK = 30
+    var ZERO_STAR_LOCK = 0
+
+
+    var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
+    var TYPES = new Array("BLOCK","POTION","ROBOT")
+    var RED = 0
+    var GREEN = 1
+    var PURPLE = 2
+    var BLUE = 3
+    var UNSTABLE = COLORS.length - 1
+    var WHITE = COLORS.length - 2
+    var EMPTY = COLORS.length - 3
+
+    var COLOR = {
+      RED : 0,
+      GREEN : 1,
+      PURPLE : 2,
+      BLUE : 3,
+      YELLOW : 4,
+      ORANGE : 5,
+      EMPTY : 6,
+      WHITE : 7
+    }
+
+    // PROBABILITIES FOR
+    // GENERATING RANDOM ITEMS IN MARATHON
+    var ITEM_PROBS = {
+
+    // BLOCKS
+      "0|0" : 8 , // RED
+      "0|1" : 8 , // GREEN
+      "0|2" : 8 , // PURPLE
+      "0|4" : 6 , // YELLOW
+      "0|7" : 16 , // WHITE
+
+    // POTIONS
+      "1|0" : 2 , // RED
+      "1|1" : 2 , // GREEN
+      "1|2" : 2 , // PURPLE
+      "1|4" : 2 , // YELLOW
+      "1|6" : 2 , // EMPTY
+      "1|7" : 4 , // WHITE
+
+    // ROBOTS
+      "2|0" : 10 , // RED
+      "2|1" : 10 , // GREEN
+      "2|2" : 10 , // PURPLE
+      "2|3" : 2 , // RED ARMOR
+      "2|4" : 2 , // GREEN ARMOR
+      "2|5" : 2 , // PURPLE ARMOR
+    }
+
+    // GLOBALS
+    var X_SPEED = SLOW
+    var Y_SPEED = FAST
+    var name_entered = false
+    var player_name = "zonky"
+    var level_data
+    var player_level = 1
+    var player_stage = 1
+    var player_progress = [0,0]
+    var star_progress = [{},{}]
+    var control_scheme = 1
+    var game_mode = 1
+    var game_record = ""
+    var level_edit = false
+    var marathon = false
+    var latest_edit
+    var pause = false
+
+    function Game() {
+      var player
+      var star_sprites = new Array()
+      var viewport
+      var need_to_restart = false
+      var game_end = ""
+      var level_editor
+      var pause_menu
+      var winlose_data
+      var winlose_menu
+      var level_edit_menu
+      var level_select_menu
+      var level_select_ok
+      var winlose = false
+      var raise_level_time = MAX_RAISE_LEVEL_TIME
+      var restart_menu_item = new MenuItem(pause_menu,"Restart",function() {
+        var record = buildRecordString(player.board,"R")
+        saveRecord(record)
+        game_end = "R"
+        jaws.start(Game)
+      })
+
+      var save_menu_item = new MenuItem(pause_menu,"Save Level",function() {
+        saveLevel(player_level,player_stage,player.board,function() {
+          loadLevels(function(data) {
+            level_data = JSON.parse(data)
+            latest_edit = level_data.levels[0].length + 1
+            player_progress[0] = latest_edit - 2
+          })
+        })
+      })
+
+      var randomization_array = new Array()
+
+      var player_data
+      var screen_data
+      var star_time
+      var star_score
+
+      // hide progress buttons
+      var progress_buttons = $("progressButtons")
+      progress_buttons.hidden = true
+
+      /* Called once when a game state is activated. Use it for one-time setup code. */
+      this.setup = function() {
+        // live_info = document.getElementById("live_info")
+        live_info = $("live_info")
+
+        viewport = new jaws.Viewport({max_x: 600, max_y: 500})
+
+        console.dir("jaws.context = " + jaws.context.strokeRect)
+
+        // initialize player
+        player = new Player(3,0)
+
+
+        // setup player data in a menu box
+        player_data = new MenuBox(
+          player_name,
+          screen_data,
+          player.board.board.x + player.board.board.width + ITEM_WIDTH,
+          player.board.board.y,
+          125,
+          [new MenuItem(screen_data,"  x " + player.stars,function(){return})]
+        )
+        player_data.index = -1
+        var player_stars_sprite = new jaws.Sprite({x:player_data.x+20,y:player_data.y+36,image:"./static/images/STAR.gif",anchor:"left"})
+        player_stars_sprite.width = 15
+        player_stars_sprite.height = 15
+        star_sprites.push(player_stars_sprite)
+        console.log("starsprite")
+        console.dir(player_stars_sprite)
+
+        // setup screen data in a menu box
+        var screen_data_items = new Array()
+        screen_data_items.push(new MenuItem(screen_data,(marathon)?("Marathon"):(player_level + "-" + player_stage),function(){return}))
+        if (!level_edit) {
+          screen_data_items.push(new MenuItem(screen_data,player.timer.clock_text,function(){return}))
+          screen_data_items.push(new MenuItem(screen_data,'\u03BB'+player.score,function(){return}))
+        }
+        screen_data = new MenuBox(
+          "Level",
+          screen_data,
+          player.board.board.x + player.board.board.width + ITEM_WIDTH,
+          player_data.y + player_data.height + 1,
+          125,
+          screen_data_items
+        )
+        screen_data.index = -1
+
+        console.log("creating box for screen data")
+
+        // Player Controls
+        player.controls()
+
+        // fill up the level with items
+
+        if (marathon) {
+          console.log("MARATHON")
+          raise_level_time = 24
+          player.board.marathonLevel(5)
+        }
+        else {
+          player.board.fillLevel(player_level,player_stage)
+       }
+
+        // pause menu
+        pause = false
+
+        var menu_x = player.board.board.x + player.board.board.width/2 - (4*ITEM_WIDTH+15)/2
+        var menu_y = player.board.board.y + player.board.board.height/2 - 3*ITEM_WIDTH
+
+        var pause_menu_items = new Array()
+        pause_menu_items.push(new MenuItem(pause_menu,"Resume",function() {
+          pause = false
+          player.controls()
+        }))
+        pause_menu_items.push(((level_edit) ? save_menu_item : restart_menu_item))
+        pause_menu_items.push(new MenuItem(pause_menu,"Back to Menu",function() {
+          jaws.start(MainMenu)
+        }))
+
+        pause_menu = new MenuBox("Pause!",pause_menu,menu_x, menu_y,4*ITEM_WIDTH+15,pause_menu_items)
+
+        // winlose data
+        var winlose_data_items = new Array()
+        winlose_data_items.push(new MenuItem(winlose_data_items,"YOU WIN!",function() {return}))
+        winlose_data_items.push(new MenuItem(winlose_data_items,"Time:",function() {return}))
+        winlose_data_items.push(new MenuItem(winlose_data_items,"Score:",function() {return}))
+        winlose_data_items.push(new MenuItem(winlose_data_items,"Perfect",function() {return}))
+
+        winlose_data = new MenuBox("",winlose_data,menu_x, menu_y, 4*ITEM_WIDTH+15, winlose_data_items)
+
+        // add star sprites for winlose data
+        for (var s=0; s < winlose_data_items.length; s++) {
+          var this_sprite = new jaws.Sprite({x:winlose_data.x,y:winlose_data.y+36 + 20*(s-1),anchor:"left"})
+          this_sprite.width = 15
+          this_sprite.height = 15
+          winlose_data_items[s].sprites.push(this_sprite)
+
+          console.log("winlose sprite, s = " + s)
+          console.dir(winlose_data_items[s].sprites[0])
+        }
+
+        // winlose menu
+        var winlose_menu_items = new Array()
+          winlose_menu_items.push(new MenuItem(winlose_menu,"Continue",function() {
+
+            // advance the player to the next level
+            if (player_stage < (player_level == 0) ? latest_edit : 14) {
+              player_stage++
+            } else {
+              player_level++
+              player_stage = 1
+            }
+
+            // reset board
+            jaws.start(Game)
+
+          }))
+          winlose_menu_items[0].active = false
+          winlose_menu_items.push(new MenuItem(winlose_menu,"Restart",function() {
+            jaws.start(Game)
+          }))
+          winlose_menu_items.push(new MenuItem(winlose_menu,"Back to Menu",function() {
+            jaws.start(MainMenu)
+          }))
+        winlose_menu = new MenuBox(" ",winlose_menu,menu_x, winlose_data.y + winlose_data.height,4*ITEM_WIDTH+15,winlose_menu_items)
+
+        // level editor
+        if (level_edit) {
+          level_editor = new LevelEditor(player.board)
+
+          // level edit menu
+          var level_edit_menu_items = new Array()
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"New",function() {
+            console.log("New")
+            player_stage = latest_edit
+            jaws.start(Game)
+          }))
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Load",function() {
+            console.log("Load")
+            level_select_menu.active = true
+            level_select_menu.controls(level_select_menu,level_select_ok)
+            level_select_ok.menu_box.active = true
+            level_select_string = player_level + "-" + player_stage
+            level_select_menu.items[0].text = level_select_string
+          }))
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
+            console.log("Save")
+            saveLevel(player_level,player_stage,player.board,function() {
+              loadLevels(function(data) {
+                level_data = JSON.parse(data)
+                latest_edit = level_data.levels[0].length + 1
+                player_progress[0] = latest_edit - 2
+              })
+            })
+          }))
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Copy",function() {
+            console.log("Copy")
+            player_stage = latest_edit
+          }))
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Delete",function() {
+            console.log("Delete")
+            if (player_stage == latest_edit) {
+              jaws.start(Game)
+            } else {
+              deleteLevel (player_level,player_stage,function(latest){
+                latest_edit = latest
+                player_progress[0] = latest
+                player_stage = latest_edit
+                jaws.start(Game)
+              })
+            }
+          }))
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Clear",function() {
+            console.log("Clear")
+            player.board.clearBoard()
+          }))
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Quit",function() {
+            console.log("Quit")
+            jaws.start(MainMenu)
+          }))
+
+          level_edit_menu = new MenuBox("",level_edit_menu,level_editor.board.x + level_editor.board.width + 10, level_editor.board.y,3*ITEM_WIDTH,level_edit_menu_items)
+
+          level_edit_menu.active = true
+
+          var level_select_string = player_level + "-" + player_stage
+
+          // level select menu
+          level_select_menu = new MenuBox("Level",level_edit_menu,level_edit_menu.x, level_edit_menu.y + level_edit_menu.height + 1, level_edit_menu.width, [new MenuItem(level_select_menu,level_select_string,function() {
+            if (player_stage == latest_edit) {
+              level_select_menu.active = false
+              level_select_ok.menu_box.active = false
+              player.controls()
+            }
+            else
+              jaws.start(Game)
+          })])
+
+          level_select_menu.level = player_level
+          level_select_menu.stage = player_stage
+
+          // level select arrows
+          level_select_menu.arrow_sprites = new jaws.SpriteSheet({
+            image: "./static/images/ARROWS.gif", frame_size: [20,10]})
+
+          level_select_menu.up_arrow = new jaws.Sprite({x:level_select_menu.x + 85, y:level_select_menu.y + 20, image: level_select_menu.arrow_sprites.frames[0]})
+          level_select_menu.down_arrow = new jaws.Sprite({x:level_select_menu.x + 85, y:level_select_menu.y + 38, image: level_select_menu.arrow_sprites.frames[1]})
+
+          level_select_menu.up_arrow.height = 15
+          level_select_menu.down_arrow.height = 15
+
+          level_select_menu.up_arrow.mouse_over = false
+          level_select_menu.down_arrow.mouse_over  = false
+
+          level_select_menu.up_arrow.active = true
+          level_select_menu.down_arrow.active = true
+
+          level_select_menu.sprites.push(level_select_menu.up_arrow)
+          level_select_menu.sprites.push(level_select_menu.down_arrow)
+
+          level_select_menu.update = function() {
+
+            // update arrow sprites
+            for (var s=0; s < level_select_menu.sprites.length; s++) {
+              var this_sprite = level_select_menu.sprites[s]
+              if (this_sprite.mouse_over && this_sprite.image == level_select_menu.arrow_sprites.frames[s])
+                this_sprite.image = level_select_menu.arrow_sprites.frames[s+2]
+              else if (!this_sprite.mouse_over && this_sprite.image == level_select_menu.arrow_sprites.frames[s+2])
+                this_sprite.image = level_select_menu.arrow_sprites.frames[s]
+            }
+
+            if (level_edit) {
+              if (level_select_menu.stage == latest_edit)
+                this.sprites[0].active = false
+              else
+                this.sprites[0].active = true
+              if (level_select_menu.stage == 1)
+                this.sprites[1].active = false
+              else
+                this.sprites[1].active = true
+            } else {
+              if (level_select_menu.level == player_progress.length-1 && level_select_menu.stage == player_progress[player_progress.length-1])
+                this.sprites[0].active = false
+              else
+                this.sprites[0].active = true
+              if (player_progress[0] > 0) {
+                if (level_select_menu.level == 0 && level_select_menu.stage == 1)
+                  this.sprites[1].active = false
+                else
+                  this.sprites[1].active = true
+              } else {
+                if (level_select_menu.level == 1 && level_select_menu.stage == 1)
+                  this.sprites[1].active = false
+                else
+                  this.sprites[1].active = true
+
+              }
+
+            }
+
+          }
+
+          level_select_menu.controls = function(menu,ok_submenu) {
+
+            menu.up_action = function() {
+
+              console.log("down_action")
+
+              if (level_edit) {
+
+                if (level_select_menu.stage < latest_edit)
+                  level_select_menu.stage++
+
+              } else {
+
+                if (level_select_menu.stage < player_progress[level_select_menu.level]) {
+                  level_select_menu.stage++
+                } else {
+                  if (level_select_menu.level < player_progress.length - 1) {
+                    level_select_menu.level++
+                    level_select_menu.stage = 1
+                  }
+                }
+
+              }
+
+              level_select_string = level_select_menu.level + "-" + level_select_menu.stage
+              menu.items[0].text = level_select_string
+
+            }
+
+            menu.down_action = function() {
+
+              console.log("down_action")
+
+              if (level_select_menu.stage > 1)
+                level_select_menu.stage--
+              else if (level_select_menu.level > 0 && player_progress[level_select_menu.level-1] > 0){
+                if(level_edit) return
+                level_select_menu.level--
+                level_select_menu.stage = player_progress[level_select_menu.level]
+              }
+
+              level_select_string = level_select_menu.level + "-" + level_select_menu.stage
+              menu.items[0].text = level_select_string
+
+            }
+
+            jaws.on_keydown(["up","w"], function() {
+
+              menu.up_action()
+
+            })
+
+            jaws.on_keydown(["down","s"], function() {
+
+              menu.down_action()
+
+            })
+
+            jaws.on_keydown(["enter","space"], function() {
+              console.log("performing action")
+              menu.items[menu.index].action(jaws)
+            })
+
+            jaws.on_keydown(["esc","a","left"], function() {
+              menu.back()
+            })
+
+            jaws.on_keydown(["left_mouse_button"], function() {
+              console.log("click button")
+              if (menu.sprites[0].mouse_over) {
+                menu.up_action()
+                console.log("up button")
+              }
+              else if (menu.sprites[1].mouse_over) {
+                console.log("click on down arrow")
+                menu.down_action()
+              }
+              else if (ok_submenu.menu_box.mouse_inside) {
+                console.log("ok!")
+                player_level = menu.level
+                player_stage = menu.stage
+                menu.items[menu.index].action()
+              }
+              else if (menu.mouse_inside)
+                return
+              else {
+                console.log("elsing")
+                menu.active = false
+                ok_submenu.menu_box.active = false
+                player.controls()
+              }
+            })
+
+          }
+
+          level_select_ok = new OkSubMenu("",level_select_menu,function() {
+            level_select_menu.items[menu.index].action(jaws)
+          })
+
+        }
+
+        console.log("setup game")
+        console.log("player_name = " + player_name)
+        console.log("live_info = " + live_info)
+
+        jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
+        jaws.preventDefaultKeys(["w", "s", "a", "d", "k"])
+      }
+
+      /* update() will get called each game tick with your specified FPS. Put game logic here. */
+      this.update = function() {
+
+        if (need_to_restart)
+          jaws.start(Game)
+
+        if ((game_end == "W" || game_end == "L") && !winlose) {
+          player.board.winLose()
+        }
+
+        if (pause) {
+          // console.log(pause_menu)
+          pause_menu.controls(pause_menu)
+        }
+
+        player.update()
+        if(level_edit) {
+          level_editor.update()
+          if(!level_edit_menu.mouse_inside)
+            level_edit_menu.index = -1
+          if(level_select_menu.active)
+            level_select_menu.update()
+          if(level_select_ok.menu_box.active)
+            level_select_ok.update()
+        }
+
+        live_info.innerHTML = jaws.game_loop.fps + " fps. Player: " + parseInt(player.x) + "/" + parseInt(player.y) + ". "
+        live_info.innerHTML += "Viewport: " + parseInt(viewport.x) + "/" + parseInt(viewport.y) + "."
+
+      }
+
+      /* Directly after each update draw() will be called. Put all your on-screen operations here. */
+      this.draw = function() {
+        jaws.clear()
+
+        // background
+        jaws.context.fillStyle = PURPLE_HEX
+        jaws.context.fillRect(0,0,600,500)
+
+        // the viewport magic. wrap all draw()-calls inside viewport.apply and it will draw those relative to the viewport.
+        viewport.apply( function() {
+          player.draw()
+          player_data.draw()
+          screen_data.draw()
+          for (var s=0; s < star_sprites.length; s++) {
+            star_sprites[s].draw()
+          }
+          if(level_edit) {
+            level_editor.draw()
+            level_edit_menu.draw()
+            if (level_select_menu.active)
+              level_select_menu.draw()
+            if (level_select_ok.menu_box.active)
+              level_select_ok.draw()
+          }
+        });
+      }
+
+      /* Constructor for Player */
+      function Player(x,y) {
+
+        // player consists of a board and hand
+        // board consists of six stacks, hand is a stack
+        // stack consists of items
+        // an item has type and color
+
+        this.x = x
+        this.y = y
+        this.board = new Board(this)
+        this.hand = new Stack(this.board, -1) // passing in Player board
+        this.cursor_speed = X_SPEED
+        this.score = 0
+        this.control_scheme = 0
+        this.keyboard_actions = 0
+        this.mouse_actions = 0
+        this.stars = starTotal()
+        this.new_stars = 0 // new stars player acquired for this
+
+        this.sprite_sheet = new jaws.SpriteSheet({
+          image: "./static/images/CURSOR.gif", frame_size: [40,20]})
+
+        this.cursor_top = new jaws.Sprite({x:this.board.posx(x), y:this.board.posy(y), image: this.sprite_sheet.frames[0]})
+        this.cursor_bottom = new jaws.Sprite({x:this.board.posx(x), y:(this.board.posy(y)+20), image: this.sprite_sheet.frames[1]})
+
+        // player timer
+        this.timer = new Timer(this)
+
+        // count player actions
+        this.moves = 0
+
+        // player sound effects
+        this.grab_sound = new Howl({
+          urls: ['./static/sfx/grab.mp3','./static/sfx/grab.ogg'],
+          volume:.3
+        })
+        this.board.sounds.push(this.grab_sound)
+
+        this.drop_sound = new Howl({
+          urls: ['./static/sfx/drop.mp3','./static/sfx/drop.ogg'],
+          volume:.3
+        })
+        this.board.sounds.push(this.drop_sound)
+
+        this.addScore = function(points) {
+          if (level_edit)
+            return
+          this.score += points
+          screen_data.items[2].text = '\u03BB' + this.score
+        }
+
+        // player controls
+        this.controls = function() {
+
+          jaws.on_keydown(["enter","esc","p"], function() {
+
+            if (game_end == "")
+              pauseGame(pause_menu,player,restart_menu_item,save_menu_item)
+
+          })
+
+          jaws.on_keydown(["r"], function() {
+            // stop all sounds currently playing
+            for (var i=0; i<player.board.sounds.length;i++) {
+              var this_sound = player.board.sounds[i]
+              this_sound.stop()
+            }
+            var record = buildRecordString(player.board,"R")
+            saveRecord(record)
+            game_end = "R"
+            jaws.start(Game)
+          })
+
+          jaws.on_keydown(["l"], function() {
+            if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
+              player.board.raiseStacks()
+              player.addScore(1)
+            }
+          })
+
+          jaws.on_keydown(["left","a"], function() {
+            if (pause || game_end != "") return
+            X_SPEED = SLOW
+            player.control_scheme = 0
+            if(player.x > 0) {
+              if (player.canMoveX(-1)) player.moveX(-1)
+              else {
+                // drop minimum amount of items on hand so hand can move left
+                var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x - 1].items.length)
+                if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x - 1].items.length > 0) {
+                  player.drop(player.board.stacks[player.x],drop_amount)
+                  player.moveX(-1)
+                }
+              }
+            }
+            console.log("player (" + player.x + " , " + player.y + ")")
+          })
+          jaws.on_keydown(["right","d"], function() {
+            if (pause || game_end != "") return
+            X_SPEED = SLOW
+            player.control_scheme = 0
+            if(player.x < BOARD_WIDTH - 1) {
+              if (player.canMoveX(1)) player.moveX(1)
+              else {
+                // drop minimum amount of items on hand so hand can move right
+                var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length)
+                if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length > 0) {
+                  player.drop(player.board.stacks[player.x],drop_amount)
+                  player.moveX(1)
+                }
+
+              }
+            }
+            console.log("player (" + player.x + " , " + player.y + ")")
+          })
+          jaws.on_keydown(["up","w"], function() {
+            if (pause || game_end != "") return
+            player.control_scheme = 0
+            if(player.y < BOARD_HEIGHT-1)player.y += 1
+            console.log("player (" + player.x + " , " + player.y + ")")
+          })
+          jaws.on_keydown(["down","s"], function() {
+
+            if (pause || game_end != "") return
+            player.control_scheme = 0
+            if(player.hand.items.length>0) {
+              player.drop(player.board.stacks[player.x],player.hand.items.length)
+            } else if(player.y > 0) player.y -= 1
+
+
+            console.log("player (" + player.x + " , " + player.y + ")")
+          })
+          jaws.on_keydown(["z","k"], function() {
+            if (pause || game_end != "") return
+            if(player.hand.items.length == 0) {
+              player.grab(player.board.stacks[player.x],player.board.stacks[player.x].items.length)
+            } else {
+              player.drop(player.board.stacks[player.x],player.hand.items.length)
+            }
+            player.control_scheme = 0
+            player.keyboard_actions++
+          })
+          jaws.on_keydown(["x","j","space"], function() {
+            if (pause || game_end != "") return
+            if(player.hand.items.length == 0) {
+              //grab depth determined by cursor y-position
+              var depth = player.board.stacks[player.x].items.length - player.y
+              player.grab(player.board.stacks[player.x],depth)
+            } else {
+              //drop
+              player.drop(player.board.stacks[player.x],1)
+            }
+            player.control_scheme = 0
+            player.keyboard_actions++
+          })
+
+
+          jaws.on_keydown(["left_mouse_button"], function() {
+            if (pause || game_end != "") return
+            var click_coordinates = new Array()
+            click_coordinates = player.board.boardCoordinates(jaws.mouse_x,jaws.mouse_y)
+            console.log("click coordinates on board: (" + click_coordinates[0] + "," + click_coordinates[1] + ")")
+            player.clickAction(click_coordinates)
+          })
+
+          jaws.on_keydown(["right_mouse_button"], function() {
+            if (pause || game_end != "") return
+            var click_coordinates = new Array()
+            click_coordinates = player.board.boardCoordinates(jaws.mouse_x,jaws.mouse_y)
+            console.log("right click coordinates on board: (" + click_coordinates[0] + "," + click_coordinates[1] + ")")
+            player.clickAction(click_coordinates,true)
+          })
+
+        }
+
+        // check if player hand can move in x direction
+        this.canMoveX = function(x) {
+
+          // check if stacks overlap
+          if (this.board.stacks[this.x + x].items.length + this.hand.items.length > BOARD_HEIGHT)
+            return false
+
+          return true
+        }
+
+        // move the player hand in x direction
+        this.moveX = function(x) {
+
+          this.x += x
+
+          //update each item in hand
+          for (var i=0; i<this.hand.items.length; i++) {
+            var item = this.hand.items[i]
+            item.x = this.x
+            item.sprite.dx = this.board.posx(this.x)
+          }
+
+          console.log("player x = " + this.x)
+        }
+
+        this.moveX_click = function(x) {
+
+          var sign = x?x<0?-1:1:0
+          var hit_wall = false
+
+          for (var i=0; i < Math.abs(x); i++) {
+            if (this.canMoveX(sign)) player.moveX(sign)
+            else {
+              // drop minimum amount of items on hand so hand can move left
+              var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x + sign].items.length)
+              hit_wall = true
+              if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x + sign].items.length > 0) {
+                player.drop(player.board.stacks[player.x],drop_amount)
+                player.moveX(sign)
+              }
+            }
+          }
+
+          return hit_wall
+
+        }
+
+        // grab depth amount of items from stack
+        this.grab = function(stack,depth) {
+
+          this.moves++
+          console.log("player moves = " + this.moves)
+
+          // move the cursor quickly to the top of the screen
+          Y_SPEED = FAST
+          this.cursor_speed = Y_SPEED
+
+
+          // loop through the items of the stack according to depth passed in
+          // pop items and push to the player hand, one by one
+          for(var i=0; i<depth; i++) {
+
+            // stop pushing to hand when breaking item encountered
+            // if (stack.items[stack.items.length-1].breaking)
+            //   break
+
+            var item = stack.items.pop()
+            if (item.breaking) {
+              stack.items.push(item)
+              break
+            }
+
+
+            // push top of stack to hand
+
+            this.hand.items.push(item)
+
+            // update hand position
+            // var item = this.hand.items.pop()
+            item.x = this.x
+            item.y = BOARD_HEIGHT - 1 - i
+            item.stack = this.hand
+
+            // update sprite destination
+            item.sprite.dx = this.board.posx(item.x)
+            item.sprite.dy = this.board.posy(item.y)
+
+            // reset chain
+            item.chain = 0
+
+          }
+
+          // play sound effect
+          if (depth > 0) {
+            this.grab_sound.stop()
+            this.drop_sound.play()
+          }
+        }
+
+        // drop depth amount of items onto stack
+        this.drop = function(stack,depth) {
+
+          this.moves++
+          console.log("player moves = " + this.moves)
+
+          Y_SPEED = FAST
+
+          var hand_items = this.hand.items
+          var stack_items = stack.items
+
+          for(var i=0; i<depth; i++) {
+            stack.items.push(hand_items.pop())
+
+            // update stack items
+            var item = stack_items.pop()
+            item.x = this.x
+            item.y = stack_items.length
+            item.stack = stack
+
+            // update sprite destination
+            item.sprite.dx = this.board.posx(item.x)
+            item.sprite.dy = this.board.posy(item.y)
+
+            stack_items.push(item)
+
+          }
+
+          // reset chain for all items on stack if none are breaking
+          if (!stack.itemsBreaking())
+            stack.setChain(stack.items,0)
+
+          // check for matches
+          stack.checkForMatches()
+
+          // reposition player's y position if hand is now empty
+          if (hand_items.length == 0)
+            this.y = stack_items.length - depth // at item at bottom of hand stack
+
+          // play sound effects
+          this.drop_sound.stop()
+          this.grab_sound.play()
+
+        }
+
+        this.clickAction = function(click_coordinates,right_click) {
+
+          var click_x = click_coordinates[0]
+          var click_y = click_coordinates[1]
+          right_click = typeof right_click !== 'undefined' ? right_click : false;
+
+          var click_outside_board = false
+
+          // normal gameplay
+          if (!level_edit) {
+            this.mouse_actions++
+            this.control_scheme = 1
+
+            if (click_x < 0 || click_y < 0)
+              click_outside_board = true
+
+            if (click_outside_board && marathon) {
+              if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
+                player.board.raiseStacks()
+                player.addScore(1)
+              }
+              return
+            }
+
+            // move player cursor to clicked x coordinate
+            if (Math.abs(click_x - this.x) > 1) X_SPEED = FAST
+            else X_SPEED = SLOW
+
+            var this_stack = this.board.stacks[click_x]
+            var depth = 0
+            var old_x = this.x
+
+            // move the hand and catch if it hit a wall
+            var hit_wall = this.moveX_click(click_x - this.x)
+            this_stack = this.board.stacks[this.x] // update this_stack
+
+            // grab if hand is empty
+            if (this.hand.items.length == 0) {
+
+              // grab if item on stack is clicked
+              if (right_click)
+                depth = this_stack.items.length
+              else if (this_stack.items.length >= click_y) {
+                depth = this_stack.items.length - click_y // how many items to grab
+              }
+
+              this.grab(this_stack,depth)
+
+            // drop if hand is holding items
+            } else {
+
+              // determine y coordinate of bottom of hand stack
+              var cutoff = BOARD_HEIGHT - this.hand.items.length
+              console.log("click_y = " + click_y)
+              console.log("cutoff = " + cutoff)
+              if (right_click)
+                depth = this.hand.items.length
+              else if (click_y < cutoff) {
+                depth = 1
+              } else if (old_x == click_x) {
+                depth = click_y - cutoff + 1
+              } else if (old_x != click_x) {
+                if (click_y == this_stack.items.length)
+                  depth = 1
+              }
+
+              // drop remaining items on hand
+              console.log("depth = " + depth)
+              this.drop(this_stack,depth)
+
+            }
+
+          // controls for level editor
+          } else if (level_edit) {
+
+            level_editor.controls(click_x, click_y, right_click)
+            if (level_edit_menu.mouse_inside) {
+              level_edit_menu.items[level_edit_menu.index].action()
+            }
+
+          }
+        }
+
+
+
+        // update player sprites positions
+        this.updatePlayerSprites = function(dx,dy) {
+
+          var cursor_top = this.cursor_top
+          var cursor_bottom = this.cursor_bottom
+
+          cursor_top.dx = cursor_bottom.dx = this.board.posx(this.x)
+
+          if (this.hand.items.length == 0) {
+            cursor_top.dy = this.board.posy(this.y)
+            cursor_bottom.dy = this.board.posy(this.y) + cursor_bottom.height
+          } else {
+            cursor_top.dy = this.board.posy(BOARD_HEIGHT-1)
+            cursor_bottom.dy = this.board.posy(BOARD_HEIGHT - this.hand.items.length) + cursor_bottom.height
+          }
+
+          spriteMove(cursor_top,X_SPEED,this.cursor_speed)
+          spriteMove(cursor_bottom,X_SPEED,this.cursor_speed)
+
+          // reset cursor speed when it reaches dy
+          if (this.hand.items.length == 0 && cursor_top.dy == cursor_top.y) this.cursor_speed = X_SPEED
+
+
+        }
+
+        // update player sprites, board sprites, etc.
+        this.update = function() {
+
+          if (pause)
+            return
+
+          // update timer
+          this.timer.update()
+
+          // update cursor position
+          var cursor = this.cursor
+
+          // cursor.dx = this.board.posx(this.x)
+          // cursor.dy = this.board.posy(this.y)
+          // spriteMove(cursor,X_SPEED,X_SPEED)
+
+          this.updatePlayerSprites(this.board.posx(this.x),this.board.posy(this.y))
+
+          this.board.update() // updates sprites for each stack
+          this.hand.update()  // updates sprites for items in hand
+
+        }
+
+        // draw everything that was just updated
+        this.draw = function() {
+
+          this.board.draw()
+
+          if (pause || game_end != "")
+            return
+
+          this.hand.draw()
+          // jaws.context.drawImage(jaws.assets.get("images/CURSOR.gif"), this.cursor.x, this.cursor.y)
+
+          if (control_scheme == 2 && this.hand.items.length == 0)
+            return
+
+          if (this.control_scheme == 0 || this.hand.items.length > 0) {
+            this.cursor_top.draw()
+            this.cursor_bottom.draw()
+          }
+        }
+
+      }
+
+      function LevelEditor(board) {
+
+        this.x = board.board.x + ITEM_WIDTH * (BOARD_WIDTH + 1)
+        this.y = board.board.y + ITEM_WIDTH * 2
+        this.board = new jaws.Sprite({x:this.x,y:this.y,image:"./static/images/BOARD.gif",anchor:"left"})
+        this.board.width = ITEM_WIDTH * 3
+        this.board.height = ITEM_WIDTH * 8
+
+        this.flasks = new Array()
+        this.blocks = new Array()
+        this.robots = new Array()
+
+        // provide position with respect to this Board
+        this.posx = function(x) { return this.x + x * ITEM_WIDTH }
+        this.posy = function(y) { return this.y + (8 - 1 - y)*ITEM_WIDTH }
+
+        // flasks
+        for (var f = 0; f < 8; f++) {
+          this.flasks.push(new jaws.Sprite({x:this.posx(0),y:this.posy(f),image:"./static/images/POTION_" + COLORS[(f==6) ? 7 : ((f==7) ? 6 : f)] + ".gif",anchor:"left"}))
+        }
+
+        // blocks
+        for (var b = 0; b < 7; b++) {
+          this.blocks.push(new jaws.Sprite({x:this.posx(1),y:this.posy(b),image:"./static/images/" + COLORS[(b==6) ? 7: b] + ".gif",anchor:"left"}))
+          console.log("creating block_sprite = " + this.blocks[b])
+        }
+
+        for (var r = 0; r < 6; r++) {
+          // create sprite for this robot
+          this.robots.push(new jaws.Sprite({x:this.posx(2),y:this.posy(r), anchor: "left"}))
+          var anim = new jaws.Animation({sprite_sheet: "./static/images/ROBOT_" + COLORS[r] + ".gif", frame_size: [40,40], frame_duration: 100})
+          this.robots[r].anim_default = anim.slice(0,5)
+          this.robots[r].setImage(this.robots[r].anim_default.next())
+          console.log("creating robot_sprite = " + this.robots[r])
+        }
+
+        this.hand = new jaws.Sprite(this.flasks[this.flasks.length-1])
+        this.hand.type = 1
+        this.hand.color = EMPTY
+
+        this.controls = function(click_x, click_y, right_click) {
+          var color
+
+          // catch clicks made in toolbox
+          if (click_x >= 7 && click_x <= 9) {
+
+            if (click_y >= 0 && click_y <= 5) {
+              color = click_y
+            } else if (click_y == 6) {
+              if (click_x <= 8)
+                color = WHITE
+            } else if (click_y == 7) {
+              if (click_x == 7)
+                color = EMPTY
+            }
+
+            if (click_x == 7) {
+              level_editor.hand = new jaws.Sprite(level_editor.flasks[click_y])
+              level_editor.hand.type = 1
+            }
+            else if (click_x == 8) {
+              if (click_y > 6)
+                return
+              level_editor.hand = new jaws.Sprite(level_editor.blocks[click_y])
+              level_editor.hand.type = 0
+            }
+            else if (click_x == 9) {
+              if (click_y > 5)
+                return
+              level_editor.hand = new jaws.Sprite(level_editor.robots[click_y])
+              level_editor.hand.type = 2
+            }
+            level_editor.hand.color = color
+
+            console.log("click with type = " + level_editor.hand.type + " and color = " + level_editor.hand.color)
+
+          // catch clicks made on board
+          } else if (click_x >=0 && click_x <= 5) {
+
+            var this_stack = player.board.stacks[click_x]
+            console.log("player = " + player)
+            console.log("player.board = " + player.board)
+            console.log("player.board.stacks = " + player.board.stacks)
+            var cutoff = this_stack.items.length
+
+            // add item if above stack
+            if (click_y >= cutoff) {
+
+              if (right_click) {
+
+                while (this_stack.items.length < BOARD_HEIGHT) {
+                  this_stack.items.push(new Item(this_stack,level_editor.hand.type,level_editor.hand.color,click_x,this_stack.items.length))
+
+                  // items fall after spawn
+                  var this_item = this_stack.items[this_stack.items.length-1]
+                  console.log("this_item = " + this_item)
+                  this_item.sprite.x = player.board.posx(click_x)
+                  this_item.sprite.y = player.board.posy(click_y)
+
+                }
+
+              // remove item clicked
+              } else {
+
+                if (this_stack.items.length < BOARD_HEIGHT) {
+                  this_stack.items.push(new Item(this_stack,level_editor.hand.type,level_editor.hand.color,click_x,this_stack.items.length))
+
+                  // items fall after spawn
+                  var this_item = this_stack.items[this_stack.items.length-1]
+                  console.log("this_item = " + this_item)
+                  this_item.sprite.x = player.board.posx(click_x)
+                  this_item.sprite.y = player.board.posy(click_y)
+
+                }
+
+              }
+
+            // remove item clicked on stack
+            } else {
+
+              var this_item = this_stack.items[click_y]
+
+              if (right_click) {
+
+                var matches = new Array()
+                var last_match = this_stack.items[0]
+                var this_match
+                var touched_this_item = false
+
+                matches.push(last_match)
+                console.log("pushing onto matches: (" + last_match.type + "," + last_match.color + ")")
+
+                // THIS WAS DONE WITH TRIAL AND ERROR. TODO: COMMENTS
+                for (var i=1; i < this_stack.items.length; i++) {
+
+                  console.log("i = " + i)
+
+                  this_match = this_stack.items[i]
+
+                  if (this_match.type==last_match.type && this_match.color==last_match.color) {
+                    matches.push(this_match)
+                    console.log("pushing onto matches: (" + this_match.type + "," + this_match.color + ")")
+                    last_match = this_match
+                  } else {
+
+                    if (i > click_y)
+                      touched_this_item = true
+
+                    if (!touched_this_item) {
+                      matches = new Array()
+                      matches.push(this_match)
+                      console.log("pushing onto matches: (" + this_match.type + "," + this_match.color + ")")
+                      last_match = this_match
+                    } else {
+                      break
+                    }
+
+                  }
+
+                }
+
+                console.log("matches = " + matches)
+                this_stack.removeItems(matches)
+
+              } else {
+
+                // remove clicked item
+                this_stack.removeItem(this_item)
+
+              }
+
+              var sprite_stack = (this_item.type == 0) ? this.blocks : (
+                (this_item.type == 1) ? this.flasks : this.robots
+                )
+
+              if(this_item.color == WHITE)
+                color = 6
+              else if (this_item.color == EMPTY)
+                color = 7
+              else
+                color = this_item.color
+
+              this.hand = new jaws.Sprite(sprite_stack[color])
+              this.hand.type = this_item.type
+              this.hand.color = this_item.color
+
+            }
+          }
+        }
+
+        this.update = function() {
+          this.hand.x = jaws.mouse_x - ITEM_WIDTH/2
+          this.hand.y = jaws.mouse_y - ITEM_WIDTH/2
+        }
+
+        this.draw = function() {
+
+          this.hand.draw()
+          this.board.draw()
+
+          for (var f = 0; f < this.flasks.length; f++) {
+            this.flasks[f].draw()
+          }
+          for (var b = 0; b < this.blocks.length; b++) {
+            this.blocks[b].draw()
+          }
+          for (var r = 0; r < this.robots.length; r++) {
+            this.robots[r].draw()
+          }
+
+        }
+
+      }
+
+      /* Constructor for board */
+      function Board(player) {
+        this.player = player
+        this.stacks = new Array()
+        this.board = new jaws.Sprite({x:ITEM_WIDTH,y:ITEM_WIDTH,image:"./static/images/BOARD.gif",anchor:"left"})
+
+        this.block_count = [0,0,0,0,0,0,0,0]
+        this.flask_count = [0,0,0,0,0,0,0,0,0]
+        this.robot_count = [0,0,0,0,0,0]
+
+        this.effects = new Array()
+        this.sounds = new Array()
+
+        // provide position with respect to this Board
+        this.posx = function(x) { return this.board.x + x * ITEM_WIDTH }
+        this.posy = function(y) { return this.board.y + (BOARD_HEIGHT - 1 - y)*ITEM_WIDTH }
+
+        this.clearBoard = function() {
+
+         for (var s = 0; s < this.stacks.length; s++) {
+          var this_stack = this.stacks[s]
+          this_stack.items = new Array()
+         }
+
+        }
+
+        // generate random item
+        this.randomItem = function(stack,x,y) {
+
+          var type_color_string = randomization_array.pop()
+          randomization_array.push(type_color_string)
+          fisherYates(randomization_array)
+          var type_color = type_color_string.split("|")
+          var type = type_color[0]
+          var color = type_color[1]
+
+          return new Item(stack,type,color,x,y)
+
+        }
+
+        // checks if a stack contains breaking items
+        this.stacksBreaking = function() {
+          var this_stack
+          for (var s=0; s < this.stacks.length; s++) {
+            this_stack = this.stacks[s]
+            if (this_stack.itemsBreaking())
+              return true
+          }
+          return false
+        }
+
+        // checks if any stack is full
+        this.stacksFull = function() {
+
+          var this_stack
+          for (var s=0; s < this.stacks.length; s++) {
+            this_stack = this.stacks[s]
+            if (this_stack.items.length + ((this_stack.x == player.x)?(player.hand.items.length):0) >= BOARD_HEIGHT)
+              return true
+          }
+
+          return false
+
+        }
+
+        // raise level using random items in each stack's queue
+        this.raiseStacks = function() {
+
+
+          // reset board y position
+          this.board.y = ITEM_WIDTH
+
+          var this_stack
+          for (var s = 0; s < BOARD_WIDTH; s++) {
+            this_stack = this.stacks[s]
+            console.log("raising this stack using random item:")
+            console.dir(this_stack.next_random_item)
+
+            // pop each item of this stack onto a temporary array
+            var temp_stack = new Array()
+            while (this_stack.items.length > 0) {
+              temp_stack.push(this_stack.items.pop())
+            }
+
+            // push next random item onto this stack and update it's location and sprite
+            this_stack.items.push(this_stack.next_random_item)
+            this_stack.next_random_item.y = 0
+            this_stack.next_random_item.sprite.dy = this.posy(0)
+            this_stack.next_random_item.active = true
+
+            // push temporary stack onto this stack
+            while (temp_stack.length > 0) {
+              var this_item = temp_stack.pop()
+              this_stack.items.push(this_item)
+              this_item.y = this_stack.items.length-1
+              this_item.chain = 0
+              this_item.sprite.dy = this.posy(this_stack.items.length-1)
+            }
+
+            // check for matches
+            this_stack.checkForMatches()
+
+            // randomize next random item
+            this_stack.next_random_item = this.randomItem(this_stack,s,-1)
+
+          }
+
+          // move player cursor up
+          player.y++
+
+          // reset timer
+          player.timer.raise_level_timer = raise_level_time
+
+          Y_SPEED = SLOW
+
+        }
+
+        // generate marathon board
+        this.marathonLevel = function(level) {
+
+          var value
+
+          // fill up the randomization array
+          for (var key in ITEM_PROBS) {
+            if (ITEM_PROBS.hasOwnProperty(key)) {
+              value = ITEM_PROBS[key]
+
+              for (var i = 0; i < value; i++) {
+                randomization_array.push(key)
+              }
+
+            }
+          }
+
+          // shuffle the randomization array
+          fisherYates(randomization_array)
+          for (var i = 0; i < randomization_array.length; i++) {
+            console.log("randomization_array " + i + " = " + randomization_array[i])
+          }
+
+          // create stacks for the board
+          var random_item
+          for (var s = 0; s < BOARD_WIDTH; s++) {
+            this.stacks.push(new Stack(this,level,s))
+            var this_stack = this.stacks[s]
+            // add level amount of random items to this stack
+            for (var l = 0; l < level; l++) {
+
+              random_item = this.randomItem(this_stack,s,l)
+              this_stack.items.push(random_item)
+
+            }
+
+            this_stack.next_random_item = this.randomItem(this_stack,s,-1)
+            console.log("this stack's next random item:")
+            console.dir(this_stack.next_random_item)
+
+            // check for matches
+            this_stack.checkForMatches()
+
+          }
+
+
+        }
+
+        this.fillLevel = function(level,stage) {
+
+          var data = level_data.levels[level][stage-1]
+
+          // SANITY CHECK
+          if ((data == "\n\n\n\n\n\n" || data == undefined) && !level_edit) {
+
+            player_level = 1
+            player_stage = 1
+            jaws.start(MainMenu)
+          }
+
+          // array of stacks in string form
+          var stacks_string = data.split('\n')
+          var items
+          star_time = stacks_string[6]
+          star_score = stacks_string[7]
+
+          // go through each stack
+          for (var s=0; s < BOARD_WIDTH; s++) {
+
+            this.stacks.push(new Stack(this,level,s))
+
+            var this_stack = this.stacks[s]
+
+            // array of items in string form
+            items = stacks_string[s].split(',')
+
+            // skip empty stacks
+            if (items == "")
+              continue
+
+            // go through each item in this stack
+            for (var i=0; i < items.length; i++) {
+
+              var item = items[i]
+              var item_string = item.split('|')
+
+              var type = item_string[0]
+              var color = item_string[1]
+
+              console.log("stack(" + s + ") looking though item of type = " + type + ", color = " + color)
+
+              this_stack.items.push(new Item(this_stack,type,color,s,i))
+
+            }
+
+          }
+
+          console.log("block_count = " + this.block_count)
+          console.log("flask_count = " + this.flask_count)
+          console.log("robot_count = " + this.robot_count)
+
+
+
+        }
+
+        // fill up the board with items depending on level-stage
+        this.fill = function(level,stage) {
+
+          console.log("Setting up level " + level + "-" + stage + ".")
+
+          // determine what needs to be placed on the board for this level-stage
+          var total_flasks = level + 1 // except for 1-1, 1-2
+          if (level == 1 && (stage == 1 || stage == 2))
+            total_flasks = 1
+          console.log("total_flasks = " + total_flasks)
+
+          var total_robots = level + stage // except for level 1
+          if (level == 1) {
+            total_robots = stage
+          }
+          console.log("total_robots = " + total_robots)
+
+          var total_blocks = 6 * (level + 1) + stage // except for 1-1,1-2,1-3,1-4,1-5
+          if (level == 1) {
+            if (stage == 1) total_blocks = 5
+            else if (stage == 2) total_blocks = 6
+            else if (stage == 3) total_blocks = 10
+            else if (stage == 4) total_blocks = 12
+            else if (stage == 5) total_blocks = 14
+          }
+          console.log("total_blocks = " + total_blocks)
+
+          var total_colors = level + 1 // except for 1-1,1-2
+          if (level == 1) {
+            if (stage <= 2) total_colors = 1
+          } else if (level == 6) total_colors = 6
+          console.log("total_colors = " + total_colors)
+
+          // put everything that's needed into an Array then randomize
+          var items_array = new Array() // will contain tuple = [type,color]
+
+          // put items in array for each color
+          for (var c=0; c < total_colors; c++) {
+
+            // put robots into array
+            var robots_of_color = total_robots / total_colors
+            for (var r=0; r < robots_of_color; r++) {
+              items_array.push([2,c])
+              if (items_array.length >= total_robots) break
+            }
+
+            // put at least one flask for each color, fill up flasks with white for mode: 1
+            //items_array.push([1, (game_mode == 1) ? WHITE : EMPTY])
+
+            // put at least three blocks for each color
+            items_array.push([0,c])
+            items_array.push([0,c])
+            items_array.push([0,c])
+
+          }
+
+          // put in flasks
+          var num_empty_flasks = Math.floor(total_colors / 2)
+
+          // exceptions
+          // 1-3
+          if (player_level == 1) {
+            if (player_stage == 3)
+              num_empty_flasks = 0
+            else if (player_stage == 6) {
+              num_empty_flasks = 1
+            }
+          } else if (player_level == 6) {
+            if (player_stage == 1)
+              num_empty_flasks = 2
+            else if (player_stage == 6)
+              num_empty_flasks = 1
+          }
+
+          console.log("num_empty_flasks = " + num_empty_flasks)
+
+          var num_white_flasks = total_colors - num_empty_flasks
+
+          for (var e=0; e < num_empty_flasks; e++) {
+            items_array.push([1, EMPTY])
+            // put at least three white blocks for each empty flask
+            items_array.push([0,WHITE])
+            items_array.push([0,WHITE])
+            items_array.push([0,WHITE])
+          }
+          for (var w=0; w < num_white_flasks; w++)
+            items_array.push([1, WHITE])
+
+          console.log("item_count = " + items_array.length)
+
+          // fill up with random blocks and flasks until total_blocks reached
+          while (items_array.length < total_blocks) {
+
+            var rand_color = Math.floor(Math.random()*7)
+
+            if (rand_color > total_colors - 1) {
+              items_array.push(
+                [2,Math.floor(Math.random()*total_colors)]
+              )
+            } else if (rand_color < 6) {
+
+              var rand_int = Math.floor(Math.random()*2)
+              if (rand_int == 0) items_array.push([0,rand_color])
+              else items_array.push([2,rand_color])
+
+            }
+            else {
+              items_array.push([1,WHITE])
+              console.log("color(" + WHITE + ")")
+            }
+
+
+
+            console.log(items_array[items_array.length - 1])
+
+          }
+
+          console.log("done filling up items_array")
+          console.log("item_count = " + items_array.length)
+
+          // shuffle the item_array
+          fisherYates(items_array)
+          for(var i=0; i < items_array.length; i++) {
+            console.log("[" + items_array[i][0] + "," + items_array[i][1] + "]")
+          }
+
+          // push BOARD_WIDTH amount of stacks
+          for (var i=0; i < BOARD_WIDTH; i++) {
+            this.stacks.push(new Stack(this,level,i))
+          }
+
+          console.log("items_array = " + items_array)
+
+          // randomly decide which stack to place items in
+          while (items_array.length > 0) {
+
+            var rand_stack = Math.floor(Math.random()*6)
+            var this_stack = this.stacks[rand_stack]
+            if (this_stack.items.length >= level + 3) {
+              console.log(items_array.length)
+              console.log("top of stack reached")
+              continue
+            }
+            var item_top = items_array.pop()
+
+            console.log("color(" + item_top[1] + ")")
+            this_stack.items.push(
+              new Item(this_stack,item_top[0],item_top[1],rand_stack,this_stack.items.length)
+            )
+
+          }
+
+          // make sure that stacks don't contain matches
+          for(var s=0; s < player.board.stacks.length; s++) {
+            var this_stack = player.board.stacks[s]
+            if (this_stack.checkForMatches()) {
+              // will restart at the beginning of this.update()
+              need_to_restart = true
+            }
+          }
+
+          // check if there are 5 blocks of some color
+          for(var c=0; c < COLORS.length; c++) {
+            if(this.block_count[c] == 5) {
+              console.log("5 blocks of color(" + COLORS[c] + ") found. Resetting board.")
+              need_to_restart = true
+            }
+          }
+
+          // make sure that robot don't shed to add up to more than 9
+          for(var i=0; i < 3; i++) {
+            if(this.robot_count[i] + this.robot_count[i+3] > 9) {
+              need_to_restart = true
+              break
+            }
+          }
+
+          console.log("block_count = " + this.block_count)
+          console.log("flask_count = " + this.flask_count)
+          console.log("robot_count = " + this.robot_count)
+
+        }
+
+        // provide coordinates of clicks with respect to (stack, depth)
+        this.boardCoordinates = function(x,y) {
+          console.log("converting click coordinates to board coordinates")
+
+          // find click coordinates with respect to board's top-left position in canvas
+          var board_x = x - this.board.x
+          var board_y = y - this.board.y
+
+          if (board_x < 0 || board_x > this.board.width || board_y < 0 || board_y > this.board.height) {
+            return [-1,-1]
+          }
+
+          // figure out which stack player clicked above or on
+          // bitwise OR operator to truncate float point figures
+          board_x = (board_x / ITEM_WIDTH) | 0
+
+          // figure out depth the player clicked into the stack
+          board_y = BOARD_HEIGHT + (BOARD_HEIGHT - board_y) / ITEM_WIDTH | 0
+
+          console.log([board_x, board_y])
+
+          return [board_x, board_y]
+
+
+
+        }
+
+        // check if the player has reached a win/lose condition and act accordingly
+        this.checkWinLose = function() {
+
+          if (marathon)
+            return
+
+          console.log("CHECKING")
+
+          // win condition: robots cleared
+          console.log("checking win condition")
+          if (!(this.robot_count<[0,0,0,0,0,0] || [0,0,0,0,0,0]<this.robot_count)) { // array equality
+            game_end = "W"
+            return
+          }
+
+          // lose condition: no more blocks/flasks to clear robots
+          console.log("checking lose conditions")
+          var remaining_robot_colors = 0
+          var remaining_armor_robots = 0
+          for (var c=0; c < 6; c++) {
+
+            // catch all armored robots
+            if (c > 2 && this.robot_count[c] > 0) {
+              remaining_armor_robots++
+              continue
+            }
+
+            if (this.robot_count[c] > 0)
+              remaining_robot_colors++
+            if (this.flask_count[c] > 0)
+              remaining_robot_colors --
+          }
+
+          if (remaining_armor_robots > 0)
+            remaining_robot_colors++
+          if (this.flask_count[4] > 0)
+            remaining_robot_colors--
+
+          var potential_white_potions = this.block_count[WHITE] / 3 + this.flask_count[WHITE]
+
+          console.log("potential_white_potions = " + potential_white_potions)
+          console.log("remaining_robot_colors = " + remaining_robot_colors)
+
+          for (var c=0; c < 6; c++) {
+
+            if (c == 3 || c > 5)
+              continue
+
+            if (this.robot_count[c] > 0) {
+              console.log("robots of color " + COLORS[c] + " still exist!")
+              console.log("block count = " + this.block_count[c])
+              console.log("flask_count = " + this.flask_count[c])
+              if (this.flask_count[c] <= 0) {
+                if (this.block_count[c] < 3) {
+                  console.log("lose! here")
+                  game_end = "L"
+                  return
+                } else if (potential_white_potions < remaining_robot_colors){
+                  console.log("lose! not enough white blocks, checking color = " + COLORS[c])
+                  game_end = "L"
+                  return
+                }
+              }
+
+            }
+          }
+
+        }
+
+        this.winLose = function() {
+
+          winlose = true
+          winlose_data.active = true
+          winlose_menu.active = true
+          winlose_menu.controls(winlose_menu)
+
+          if (game_end == "W") {
+
+            winlose_data.active = true
+            winlose_data.items[1].text += "  " + player.timer.clock_text
+            winlose_data.items[2].text += " \u03BB" + player.score
+
+            // update player progress
+            if (player_progress[player_level] < player_stage)
+              player_progress[player_level] = parseInt(player_stage)
+
+            // update star progress
+            player.new_stars = updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
+
+            // update player_save data
+            var player_save = $("saveData")
+            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress)
+
+            player.stars = starTotal()
+            player_data.items[0].text = "  x " + player.stars
+
+            winlose_menu.title = ""
+
+            // allow player to advance to next level if they have enough stars
+            // console.log("GAME END, next level starlock = " +  level_data.levels[player_level][player_stage].split('\n')[8])
+            if (level_data.levels[player_level][player_stage] != undefined && player.stars >= level_data.levels[player_level][player_stage].split('\n')[8]) {
+              winlose_menu.items[0].active = true
+            } else
+              winlose_menu.index = 1
+
+          } else if (game_end == "L") {
+            winlose_data.active = false
+            winlose_menu.y = winlose_data.y
+            winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+
+
+            winlose_menu.title = (marathon) ? "GAME OVER!" : "YOU LOSE!"
+
+            winlose_menu.index = 1
+          }
+
+          var record = buildRecordString(this,game_end)
+          saveRecord(record)
+
+          // color timer to be red to indicate game end
+          screen_data.index = 1
+        }
+
+        // check for items of specified type,color that are breaking
+        this.checkForBreaking = function(type,color) {
+
+          console.log("checking for breaking robot of color: " + color)
+
+          for (var i=0; i < this.stacks.length; i++) {
+
+            var this_stack = this.stacks[i]
+
+            // check each item of the stack
+            for (var j=0; j < this_stack.items; j++) {
+              var this_item = this_stack.items[j]
+              if (this_item.type == type && this_item.color == color) {
+                console.log("breaking robot of color (" + color + ") found!")
+                return true
+              }
+            }
+
+          }
+
+          return false
+
+        }
+
+        // update all stacks and effects in this board
+        this.update = function() {
+
+          // update stacks
+          for (var s=0; s<this.stacks.length; s++) {
+            this.stacks[s].update()
+          }
+
+          // update effects
+          for (var e=0; e<this.effects.length; e++) {
+            this.effects[e].update()
+          }
+        }
+
+        // draw all stacks and effects on this board
+        this.draw = function() {
+
+          // board sprite
+          jaws.context.drawImage(jaws.assets.get("./static/images/BOARD.gif"), this.board.x, this.board.y )
+
+          // draw pause menu
+          if (pause) {
+            pause_menu.draw()
+            return
+          }
+
+          jaws.context.fillStyle = "Black"
+          jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
+
+          // draw all stacks in this board and containing items
+          for (var i=0; i < this.stacks.length; i++) {
+            this.stacks[i].draw()
+          }
+
+          // hide next random items
+          var alpha = player.timer.raise_level_timer/raise_level_time/2 + .5
+          jaws.context.fillStyle =  "rgba(112,0,84," + alpha + ")"
+          jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH+this.board.height,this.board.width,ITEM_WIDTH)
+
+          // draw all effects on this board
+          for (var e=0; e < this.effects.length; e++) {
+            this.effects[e].draw()
+          }
+
+          // draw winlose menu
+          if (game_end != "") {
+            if (winlose_data.active)
+              winlose_data.draw()
+            winlose_menu.draw()
+          }
+
+        }
+
+      }
+
+      /* Constructor for stack */
+      function Stack(board,level,x) {
+
+        this.board = board
+        this.items = new Array()
+        this.level = level
+        this.x = x
+        this.next_random_item  // string of form "type|color" for use in marathon
+
+        // check if the stack contains matches (3 or more consecutive blocks of same color)
+        // return true if matches are found
+        this.checkForMatches = function() {
+
+          var match_found = false
+          var matches = new Array()
+          var items = this.items
+          var match
+          var item
+
+          console.log("checking for matches")
+
+          // loop through each item on the stack, adding them to matches[] array
+          for (var i = 0; i < items.length; i++) {
+
+            item = items[i]
+
+            matches.push(item)
+            match = matches[0]
+
+            if (!match.matchBlocks(item)) {
+              matches.pop()
+              if (matches.length >= 3) {
+                console.log("matches found!!! " + matches.length + " of color (" + matches[0].color + ")")
+                this.matchesFound(matches)
+                match_found = true
+              }
+
+              matches = new Array()
+              matches.push(item)
+            }
+
+            if (i == items.length - 1) {
+              if (matches.length >= 3) {
+                console.log("matches found!!! " + matches.length + " of color (" + matches[0].color + ")")
+                this.matchesFound(matches)
+                match_found = true
+              }
+            }
+          }
+
+          return match_found
+
+        }
+
+        // break matches and update their chains
+        this.matchesFound = function(matches) { // matches, an array of blocks
+
+          // keep track of block with largest chain
+          var chain = 0
+
+          // break matches
+          for (var i=0; i<matches.length; i++) {
+
+            var match = matches[i]
+            match.breaking = true
+            match.chain += 1
+
+            // update chain
+            if (match.chain > chain) chain = match.chain
+            match.chain = chain
+
+            if (i==0)
+              match.last_in_chain = true
+
+          }
+
+          // ensure that all matches have same chain
+          this.setChain(matches,chain)
+
+          console.log("breaking with chain = " + chain)
+
+          console.log("matches:")
+          for(var i=0; i<matches.length; i++) {
+            console.log(matches[i].breaking)
+          }
+
+          return chain
+
+        }
+
+        // sets chain for all items passed in
+        this.setChain = function(items,chain) {
+
+          // go through each item and set its chain
+          for (var i=0; i<items.length; i++) {
+            var item = items[i]
+            item.chain = chain
+          }
+
+        }
+
+        this.removeItem = function(old_item) {
+
+          console.log("removing (" + old_item.type + ") of color (" + old_item.color + ")" + " with chain = " + old_item.chain + ", y = " + old_item.y)
+
+          // remove old item from items array
+          this.items.splice(old_item.y,1)
+
+          // update sprite destination for each item above old_item
+          Y_SPEED = FAST
+          for (var i=0; i<this.items.length; i++) {
+            var item = this.items[i]
+            if (item.y > old_item.y) item.y -= 1
+              item.sprite.dy = this.board.posy(item.y)
+          }
+
+          // update board count
+          if (old_item.type == 0) {
+            this.board.block_count[old_item.color]--
+          } else if (old_item.type == 1) {
+            this.board.flask_count[old_item.color]--
+          } else if (old_item.type == 2) {
+            if (old_item.color > 2) {
+              this.board.robot_count[4]--  // all armored robots count as yellowß
+              console.log("decrement yellow robot count")
+            }
+            else
+              this.board.robot_count[old_item.color]--
+          }
+
+          if (level_edit)
+            return
+
+          // check for win/lose only when blocks and robots are broken since flasks break first
+          // but only check when items aren't breaking
+          if (!old_item.stack.itemsBreaking()) {
+            if (old_item.type == 0 || old_item.type == 1) {
+              // if (old_item.color != WHITE)
+                this.board.checkWinLose() // check for win/lose conditions
+            } else if (old_item.type == 2) {
+              // make sure that there are no other robots in the process of being removed
+              var below = this.items[old_item.y - 1]
+              if(below == undefined) {
+                this.board.checkWinLose()
+              } else {
+                // if there is an item below, check if it is a robot of the same color
+                if (!(below.type == 2 && below.color == old_item.color && below.breaking)) {
+                  this.board.checkWinLose()
+                }
+              }
+
+            }
+          }
+
+          console.log("block_count = " + this.board.block_count)
+          console.log("flask_count = " + this.board.flask_count)
+          console.log("robot_count = " + this.board.robot_count)
+
+          this.checkForMatches()
+
+          // add to player score depending on type of this item
+          if (old_item.type==0) {
+            player.addScore(100*old_item.chain)
+          } else if (old_item.type==2) {
+            player.addScore(500*old_item.chain)
+          }
+
+          // show chain effects if last in chain
+          if (old_item.last_in_chain && old_item.chain > 1) {
+            console.log("last in chain = " + old_item.chain)
+            this.board.effects.push(new ChainEffect(this,old_item))
+          }
+
+          // stop sound effects
+          if (old_item.type == 1) {
+            console.log("stop sound effect")
+            console.dir(old_item.break_audio)
+            old_item.break_audio.stop()
+            if (old_item.chain > 1)
+              this.board.effects.push(new ChainEffect(this,old_item))
+          }
+
+        }
+
+        // only used by level editor
+        this.removeItems = function(old_items) {
+
+          for (var i=0; i<old_items.length; i++) {
+
+            this.removeItem(old_items[i])
+
+          }
+        }
+
+        this.shedRobot = function(old_item) {
+
+          // sanity check!!!!!!!
+          if (old_item.type != 2)
+            return
+
+          console.log("shedding (" + old_item.type + ") of color (" + old_item.color + ")")
+
+          // remove old item from items array
+          // replace robot with color of (old_item.color - 3)
+          var new_item = new Item(this,2,old_item.color-3,old_item.x,old_item.y)
+          new_item.active = true
+          new_item.chain = old_item.chain
+          this.items.splice(old_item.y,1,new_item)
+
+          // update yellow robot count
+          this.board.robot_count[4]--
+
+          // check for win/lose only when blocks and robots are broken since flasks break first
+          // but only check when items aren't breaking
+          if (!old_item.stack.itemsBreaking()) {
+            if (old_item.type == 0 || old_item.type == 1) {
+              // if (old_item.color != WHITE)
+                this.board.checkWinLose() // check for win/lose conditions
+            } else if (old_item.type == 2) {
+              // make sure that there are no other robots in the process of being removed
+              var below = this.items[old_item.y - 1]
+              if(below == undefined) {
+                this.board.checkWinLose()
+              } else {
+                // if there is an item below, check if it is a robot of the same color
+                if (!(below.type == 2 && below.color == old_item.color && below.breaking)) {
+                  this.board.checkWinLose()
+                }
+              }
+
+            }
+          }
+
+          console.log("block_count = " + this.board.block_count)
+          console.log("flask_count = " + this.board.flask_count)
+          console.log("robot_count = " + this.board.robot_count)
+
+          this.checkForMatches()
+
+          player.addScore(500*new_item.chain)
+
+        }
+
+        // check if there are items breaking on this stack
+        this.itemsBreaking = function() {
+
+          var breaking = false
+          var item
+
+          for (var i=0; i<this.items.length; i++) {
+            item = this.items[i]
+            if (item.breaking) {
+              breaking = true
+              break
+            }
+          }
+
+          return breaking
+
+        }
+
+        // clear array of robots followed by array of flasks
+        this.clearRobotsFlasks = function(robots_to_clear,flasks_to_clear) {
+
+          for (var r = 0; r < robots_to_clear.length; r++) {
+
+            var this_robot = robots_to_clear[r]
+
+            this_robot.breaking = true
+
+            // put splashes here
+            var robot_delay = this_robot.deathcounter + this_robot.splash_order
+            this.board.effects.push(new Splash(this,this_robot.type,this_robot.color,this_robot.x,this_robot.y,this.board.effects.length,robot_delay))
+
+            // determine which sprites to use
+            var death_color = "RED"
+            if (this_robot.color == 1 || this_robot.color == 4)
+              death_color = "YELLOW"
+            else if (this_robot.color == 2 || this_robot.color == 5)
+              death_color = "PURPLE"
+
+            // update sprite data
+            this_robot.sprite = new jaws.Sprite({x:this_robot.stack.board.posx(this_robot.x), y:this_robot.stack.board.posy(this_robot.y), anchor: "left"})
+            var anim = new jaws.Animation({sprite_sheet: "./static/images/ROBOT_" + death_color + "_DEATH.gif", frame_size: [40,40], frame_duration: 20})
+            this_robot.sprite.anim_default = anim.slice(0,6)
+
+            var rand_color = Math.floor(Math.random()*WHITE)
+            for (var c=0; c < rand_color; c++)
+              this_robot.sprite.setImage(this_robot.sprite.anim_default.next())
+
+            this_robot.sprite.dx = this_robot.stack.board.posx(this_robot.x)
+            this_robot.sprite.dy = this_robot.stack.board.posy(this_robot.y)
+
+          }
+
+          for (var f = 0; f < flasks_to_clear.length; f++) {
+
+            var this_flask = flasks_to_clear[f]
+
+            this_flask.breaking = true
+
+            // put splashes here
+            this.board.effects.push(new Splash(this,this_flask.type,this_flask.color,this_flask.x,this_flask.y,this.board.effects.length,this_flask.deathcounter))
+
+            // update sprite data
+            this_flask.sprite = new jaws.Sprite({x:this_flask.stack.board.posx(this_flask.x),y:this_flask.stack.board.posy(this_flask.y), anchor: "left"})
+            var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_SPRITES.gif", frame_size: [40,40], frame_duration: 20 + Math.floor(Math.random()*((60-20) + 1))})
+            this_flask.sprite.anim_default = anim.slice(0,6)
+
+            this_flask.sprite.dx = this_flask.stack.board.posx(this_flask.x)
+            this_flask.sprite.dy = this_flask.stack.board.posy(this_flask.y)
+
+            // stop flask's sound effects
+            this_flask.break_audio.stop()
+
+            // play robot breaking sound effects
+            this_flask.break_audio.play()
+
+
+
+          }
+
+        }
+
+        // Stack .update() updates each item in the stack
+        // update animations, counters, and chains
+        // remove items if their death counters set off
+        this.update = function() {
+
+          // make sure to break flask last or the game will think lose condition is met
+          // put flasks and robots to break into respective arrays
+          var flasks_to_clear = new Array()
+          var robots_to_clear = new Array()
+
+          // copy stack items into new array so we can loop through all items
+          // even if items are removed
+          var stack_items = this.items.slice()
+
+          // update each item
+          for(var i=0; i<stack_items.length; i++) {
+            var item = stack_items[i]
+            var above = stack_items[i + 1]
+
+            // for all items breaking (except UNSTABLE flasks)
+            // NOTE: eventually will make updateX for X for any type of item
+            // animation updates will happen there
+            if (item.breaking) {
+
+              // breaking animation
+              if (item.type == 0) {
+                if (item.sprite.width > 1) {
+                  item.sprite.scaleWidth(.5)
+                  item.sprite.dx += item.sprite.width / 2
+                } else {
+                  item.sprite.dx -= item.sprite.width / 2
+                  item.sprite.scaleWidth(2)
+                }
+
+              // animate breaking flasks and robots
+              } else {
+                item.sprite.setImage(item.sprite.anim_default.next())
+              }
+
+              // update deathcounter
+              item.deathcounter -= 1
+
+              // add chain to items above
+              if (above != undefined && !above.breaking) {
+                above.chain = item.chain
+                console.log("item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] passing chain (" + item.chain + ") to item [" + TYPES[above.type] + "|" + COLORS[above.color] + "] above")
+              }
+
+            }
+
+            // update items in transitory animation
+            if (item.sleepcounter > 0) {
+              item.sleepcounter -= 1
+            }
+
+            // remove item if death counter has expired
+            if (item.deathcounter <= 0) {
+
+              // do not destroy blue, yellow, orange robots
+              if(item.type == 2 && (item.color == 3 || item.color == 4 || item.color == 5)) {
+                this.shedRobot(item)
+                console.log("shedRobot")
+              }
+              else
+                this.removeItem(item)
+            }
+
+            // animate robots
+            if (item.type == 2) {
+              item.sprite.setImage(item.sprite.anim_default.next())
+            }
+
+            // update item sprite positions
+            spriteMove(item.sprite,X_SPEED,Y_SPEED)
+
+
+            // check for breaking conditions
+            // skip items on player hand
+            if (item.stack != player.hand && !item.breaking) {
+
+              // update flasks
+              if (item.type == 1) {
+
+                item.updateFlask(above)
+
+              }
+
+              // update robots
+              // check for yellow robots
+              else if (item.type == 2) {
+
+                // clear robots
+
+                var above = stack_items[i + 1]
+                var below = stack_items[i - 1]
+                if (above != undefined) {
+
+                  // break robot and same-colored flask above
+                  if (above.sleepcounter == 0 && above.color == ((item.color > 2) ? 4 : item.color) && above.type == 1) {
+
+                    // item.breaking = true
+                    // above.breaking = true
+
+                    robots_to_clear.push(item)
+                    flasks_to_clear.push(above)
+
+                    above.chain += 1
+                    item.chain = above.chain
+                    item.splash_order = above.splash_order + 1
+
+                    console.log("(" + above.color + ") flask breaking robot of color (" + item.color + ") with chain = " + item.chain + " and splash_order = " + item.splash_order)
+
+                  // break if robot above is breaking
+                  } else if (above.type == 2 && ((item.color > 2) ? (above.color > 2):(above.color == item.color)) && above.breaking) {
+
+                    // item.breaking = true
+
+                    robots_to_clear.push(item)
+
+                    item.chain = above.chain
+                    console.log("item [" + TYPES[above.type] + "|" + COLORS[above.color] + "] passing chain (" + above.chain + ") to item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] below")
+                    item.splash_order = above.splash_order + 1
+
+                    console.log("robot combo of color (" + item.color + ") with chain = " + item.chain + " and splash_order = " + item.splash_order)
+
+                  }
+                }
+
+                if (below != undefined) {
+
+                  // break robot and same-colored flask below
+                  if (below.sleepcounter == 0 && below.color == ((item.color > 2) ? 4 : item.color) && below.type == 1) {
+
+                    // item.breaking = true
+                    // below.breaking = true
+
+                    robots_to_clear.push(item)
+                    flasks_to_clear.push(below)
+
+                    item.chain += 1
+                    below.chain = item.chain
+
+                    item.splash_order = below.splash_order + 1
+
+                    below.chain = item.chain
+                    console.log("item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] passing chain (" + item.chain + ") to item [" + TYPES[below.type] + "|" + COLORS[below.color] + "] below")
+
+                    console.log("(" + below.color + ") flask breaking robot of color (" + item.color + ") with chain = " + item.chain + " and splash_order = " + item.splash_order)
+
+                  // break if robot below is breaking
+                  } else if (below.type == 2 && ((item.color > 2) ? (below.color > 2):(below.color == item.color)) && below.breaking) {
+
+                    // item.breaking = true
+
+                    robots_to_clear.push(item)
+
+                    item.chain = below.chain
+                    console.log("item [" + TYPES[below.type] + "|" + COLORS[below.color] + "] passing chain (" + below.chain + ") to item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] above")
+                    item.splash_order = below.splash_order + 1
+
+                    console.log("robot combo of color (" + item.color + ") with chain = " + item.chain + " and splash_order = " + item.splash_order)
+
+                  }
+                }
+              }
+            }
+          }
+
+          this.clearRobotsFlasks(robots_to_clear,flasks_to_clear)
+
+        }
+
+        this.draw = function() {
+
+          // draw all items on stack and next random item
+          for (var i=0; i<this.items.length;i++) {
+            this.items[i].draw()
+          }
+          if (this.level >= 0 && marathon) {
+            this.next_random_item.draw()
+          }
+        }
+
+      }
+
+      /* Constructor for item */
+      function Item(stack,type,color,x,y) {
+
+        console.log("making new item of type(" + type + "), color(" + COLORS[color] + ")")
+
+        // an item has type and color
+        this.stack = stack
+        this.type = type
+        this.color = color
+        this.x = x             // x position on the board
+        this.y = y             // y position on the board
+        this.active = false
+        this.breaking = false
+        this.deathcounter = 40
+        this.sleepcounter = 0  // used for transitory animations
+                               // (eg: potion filling up, items exploding, etc.)
+        this.chain = 0
+        this.last_in_chain = false
+        this.splash_order = 0
+
+        var board = stack.board
+
+        // set appropriate sprite for this item
+        if (this.type == 0) {
+          this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y),image:"./static/images/" + COLORS[color] + ".gif",anchor:"left"})
+          board.block_count[color] += 1
+        }
+        else if (this.type == 1) {
+          this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y), image:"./static/images/POTION_" + COLORS[color] + ".gif",anchor:"left"})
+          board.flask_count[color] += 1
+
+          // flask sound effects
+          this.break_audio = new Howl({
+            urls: ["./static/sfx/robot_death.mp3","./static/sfx/robot_death.ogg"],
+            volume:.25
+          })
+          board.sounds.push(this.break_audio)
+          this.brew_audio = new Howl({
+            urls: ["./static/sfx/brew.mp3","./static/sfx/brew.ogg"],
+            volume:.25
+          })
+          board.sounds.push(this.brew_audio)
+
+        }
+        else if (this.type == 2) {
+          // create sprite for this robot
+          this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y), anchor: "left"})
+          var anim = new jaws.Animation({sprite_sheet: "./static/images/ROBOT_" + COLORS[this.color] + ".gif", frame_size: [40,40], frame_duration: 100})
+          this.sprite.anim_default = anim.slice(0,5)
+          this.sprite.setImage(this.sprite.anim_default.next())
+
+          // determine which sprites to use
+          var death_color = "RED"
+          if (this.color == 1 || this.color == 4)
+            death_color = "YELLOW"
+          else if (this.color == 2 || this.color == 5)
+            death_color = "PURPLE"
+          var dead_sprites = new jaws.Animation({sprite_sheet: "./static/images/ROBOT_" + death_color + "_DEATH.gif", frame_size: [40,40], frame_duration: 20})
+          this.sprite.setImage(dead_sprites.slice(
+            (death_color=="RED"||this.color==1)?this.color:((this.color==2)?4:3),
+            6).next())
+
+          if (this.color > 2)
+            board.robot_count[4] += 1
+          else
+            board.robot_count[this.color] += 1
+        }
+        this.sprite.dx = this.stack.board.posx(x)
+        this.sprite.dy = this.stack.board.posy(y)
+
+        this.matchBlocks = function(item) { // item to check if this matches with
+
+          if (!this.breaking && this.type == 0 && item.type == this.type && item.color == this.color)
+            return true
+
+          return false
+
+        }
+
+        // update all flask items, called by Stack's .update()
+        // above: the item above this flask, if any
+        this.updateFlask = function(above) {
+
+          // sanity check
+          if (this.type != 1) return
+
+          // check if blocks are breaking above
+          // fill flask with potion of that color
+          if (above != undefined) {
+            if (above.breaking && above.type == 0) {
+
+              // fill up the flask with potion of breaking color
+              // only if the flask is not empty
+              if (this.color == WHITE && above.color != WHITE) {
+                this.color = above.color
+                this.chain = above.chain
+                this.sleepcounter = 40
+                player.addScore(100)
+                console.log("sleepcounter = " + this.sleepcounter)
+
+                // update sprite data
+                this.sprite = new jaws.Sprite({x:this.stack.board.posx(above.x),y:this.stack.board.posy(above.y - 1), image:"./static/images/POTION_" + COLORS[above.color] + ".gif",anchor:"left"})
+                this.sprite.dx = this.stack.board.posx(above.x)
+                this.sprite.dy = this.stack.board.posy(above.y - 1)
+
+                // update board count
+                this.stack.board.flask_count[WHITE]--
+                this.stack.board.flask_count[above.color]++
+
+                // play sound effect for brewing
+                this.brew_audio.stop()
+                console.log("brewing color potion")
+                this.brew_audio.play()
+
+              // only accept white blocks above if empty
+              // break if other colors brewed
+              } else if (this.color == EMPTY) {
+
+                if (above.color == WHITE) {
+
+                  this.color = above.color
+                  this.sleepcounter = 40
+                  player.addScore(100)
+                  console.log("sleepcounter = " + this.sleepcounter)
+
+                  // update sprite data
+                  this.sprite = new jaws.Sprite({x:this.stack.board.posx(above.x),y:this.stack.board.posy(above.y - 1), image:"./static/images/POTION_" + COLORS[above.color] + ".gif",anchor:"left"})
+                  this.sprite.dx = this.stack.board.posx(above.x)
+                  this.sprite.dy = this.stack.board.posy(above.y - 1)
+
+                  // update board count
+                  this.stack.board.flask_count[EMPTY]--
+                  this.stack.board.flask_count[above.color]++
+
+                  // play sound effect for brewing
+                  this.brew_audio.stop()
+                  console.log("brewing white potion")
+                  this.brew_audio.play()
+
+                // melting colored blocks over empty flask creates an unstable reaction
+                } else {
+
+                  var this_stack = this.stack.items
+
+                  console.log("this_stack:")
+                  for (var i=this_stack.length-1; i > 0; i--) {
+                    console.log (this_stack[i])
+                  }
+
+                  this.color = UNSTABLE
+                  this.breaking = true
+
+                  // put splashes here
+                  this.stack.board.effects.push(new Splash(this.stack,this.type,this.color,this.x,this.y,this.stack.board.effects.length,this.deathcounter))
+
+                  // update sprite data
+                  this.sprite = new jaws.Sprite({x:this.stack.board.posx(above.x),y:this.stack.board.posy(above.y - 1), anchor: "left"})
+                  var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_SPRITES.gif", frame_size: [40,40], frame_duration: 20})
+                  this.sprite.anim_default = anim.slice(0,6)
+
+                  this.sprite.dx = this.stack.board.posx(above.x)
+                  this.sprite.dy = this.stack.board.posy(above.y - 1)
+
+                  // update board count
+                  this.stack.board.flask_count[EMPTY]--
+                  this.stack.board.flask_count[this.color]++
+
+                  // play sound effect for unstable reaction
+                  this.break_audio.stop()
+                  console.log("brewing unstable potion")
+                  this.break_audio.play()
+                }
+
+              }
+
+            }
+          }
+
+        }
+
+        // player name and timer
+        this.draw = function() {
+
+          if (this.y < 0)
+            this.sprite.y = this.stack.board.posy(this.y)
+          else
+            this.sprite.dy = this.stack.board.posy(this.y)
+
+          this.sprite.draw()
+        }
+      }
+
+      function ChainEffect(stack,item) {
+
+        this.stack = stack
+        this.chain = item.chain
+        this.item = item
+        this.speed = 1
+        this.deathcounter = 60
+
+        this.index = stack.board.effects.length
+
+        this.sprite = new jaws.Sprite({
+          x: item.sprite.x,
+          y: item.sprite.y,
+          image: "./static/images/CHAIN.gif",
+          anchor: "left"
+        })
+
+        this.removeChainEffect = function() {
+          this.stack.board.effects.splice(this.index,1)
+
+          // reset indices
+          for (var i = this.index; i < this.stack.board.effects.length; i++) {
+            var this_effect = this.stack.board.effects[i]
+            this_effect.index = i
+          }
+
+          console.log("effects array:")
+          console.dir(this.stack.board.effects)
+        }
+
+        this.update = function() {
+          this.sprite.y -= this.speed
+          this.deathcounter -= 1
+        }
+
+        this.draw = function() {
+
+          if (this.deathcounter < 0) {
+            this.removeChainEffect()
+            return
+          }
+
+          this.sprite.draw()
+
+          jaws.context.font = "bold 10pt Monaco";
+          jaws.context.lineWidth = 10
+          jaws.context.fillStyle =  "White"
+          jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+          jaws.context.fillText("x" + this.chain, this.sprite.x + 6, this.sprite.y + 15)
+        }
+
+      }
+
+      /* Constructor for Splashes */
+      function Splash(stack,type,color,x,y,index,delay) {
+
+        // console.log("adding splash")
+
+        this.stack = stack // the stack this splash comes from
+        this.type = type   // type of the item destroyed
+        this.color = color // color of the item destroyed
+        this.x = x
+        this.y = y
+        this.index = index
+        this.delay = delay // delay animation until counter goes to 0
+        this.sound_fx = new Howl({
+            urls: ["./static/sfx/break.mp3","./static/sfx/break.ogg"],
+            volume:1
+          })
+        this.stack.board.sounds.push(this.sound_fx)
+
+
+        // set appropriate sprite for this Splash
+        if (type == 1)
+          this.sprite_sheet = new jaws.SpriteSheet({
+            image: "./static/images/POTION_SPLASH.gif", frame_size: [20,20]})
+        else if (type == 2)
+          this.sprite_sheet = new jaws.SpriteSheet({
+            image: "./static/images/ROBOT_" + COLORS[color] + "_SPLASH.gif", frame_size: [20,20]})
+
+        this.sprite1 = new jaws.Sprite({x:this.stack.board.posx(x), y:this.stack.board.posy(y), image: this.sprite_sheet.frames[0]})
+        this.sprite2 = new jaws.Sprite({x:this.stack.board.posx(x)+20, y:this.stack.board.posy(y), image: this.sprite_sheet.frames[1]})
+        this.sprite3 = new jaws.Sprite({x:this.stack.board.posx(x), y:this.stack.board.posy(y)+20, image: this.sprite_sheet.frames[2]})
+        this.sprite4 = new jaws.Sprite({x:this.stack.board.posx(x)+20, y:this.stack.board.posy(y)+20, image: this.sprite_sheet.frames[3]})
+
+        this.initSprite = function(sprite, splash, x_offset, y_offset) {
+
+          x_offset = typeof x_offset !== 'undefined' ? x_offset : 0;
+          y_offset = typeof y_offset !== 'undefined' ? y_offset : 0;
+
+          sprite.x0 = sprite.dx = this.stack.board.posx(splash.x) + x_offset
+          sprite.y0 = sprite.dy = this.stack.board.posy(splash.y) + y_offset
+          sprite.t = 0
+
+        }
+
+        this.initSprite(this.sprite1, this)
+        this.initSprite(this.sprite2, this, 20)
+        this.initSprite(this.sprite3, this, 0, 20)
+        this.initSprite(this.sprite4, this, 20, 20)
+
+        this.spriteExplode = function(sprite, splash, direction) {
+
+          // console.log("spriteExplode")
+          sprite.t += 3
+          sprite.dy = sprite.y0 + .1 * sprite.t * sprite.t - 4 * sprite.t
+          sprite.dx = sprite.x0 + (direction) * sprite.t
+
+        }
+
+        this.spritesOffscreen = function() {
+
+          var sprites = new Array(this.sprite1, this.sprite2, this.sprite3, this.sprite4)
+          var offscreen = new Array(false, false, false, false)
+
+          for (var s = 0; s < sprites.length; s++) {
+
+            var this_sprite = sprites[s]
+            if (this_sprite.x < 0 || this_sprite.x > jaws.width || this_sprite.y > jaws.height)
+              offscreen[s] = true
+
+          }
+
+          if (!([true,true,true,true]<offscreen || offscreen<[true,true,true,true]))
+            return true
+
+          return false
+
+        }
+
+        // remove old splash from board's effects array
+        this.removeSplash = function(old_splash) {
+          this.stack.board.effects.splice(old_splash.index,1)
+
+          // reset indices
+          for (var i = old_splash.index; i < this.stack.board.effects.length; i++) {
+            var this_effect = this.stack.board.effects[i]
+            this_effect.index = i
+          }
+
+          console.log("effects array:")
+          console.dir(this.stack.board.effects)
+        }
+
+        this.update = function() {
+
+          if (this.delay == 0) {
+            console.log("playing break sfx")
+            this.sound_fx.stop()
+            this.sound_fx.play()
+          }
+
+          if (this.spritesOffscreen())
+            this.removeSplash(this)
+
+          if (this.delay <= 0) {
+            // console.log ("updating splash sprites")
+            this.spriteExplode(this.sprite1, this, -1)
+            this.spriteExplode(this.sprite2, this, 1)
+            this.spriteExplode(this.sprite3, this, -.5)
+            this.spriteExplode(this.sprite4, this, .5)
+
+            // update splash sprite positions
+            spriteMove(this.sprite1,X_SPEED,Y_SPEED)
+            spriteMove(this.sprite2,X_SPEED,Y_SPEED)
+            spriteMove(this.sprite3,X_SPEED,Y_SPEED)
+            spriteMove(this.sprite4,X_SPEED,Y_SPEED)
+          }
+
+          this.delay--
+
+        }
+
+        this.draw = function() {
+
+          if (this.delay > 0)
+            return
+
+          this.sprite1.draw()
+          this.sprite2.draw()
+          this.sprite3.draw()
+          this.sprite4.draw()
+
+        }
+
+      }
+
+      function Timer(player) {
+
+        this.player = player
+        this.minutes = 0
+        this.seconds = 0
+        this.ticker = 0
+        this.clock_text = "00:00"
+        this.raise_level_timer = raise_level_time
+        this.raise_level_frequency_timer = 0
+
+        // increment the ticker and count the seconds and minutes
+        this.update = function() {
+          if (game_end == "") this.ticker++
+          if (this.ticker >= 60) {
+            this.ticker = 0
+            this.seconds++
+            this.raise_level_frequency_timer++
+
+            if (this.raise_level_frequency_timer >= FREQ_RAISE_LEVEL_TIME) {
+              if (raise_level_time > MIN_RAISE_LEVEL_TIME)
+                raise_level_time--
+              console.log("raise_level_time = " + raise_level_time)
+              this.raise_level_frequency_timer = 0
+            }
+
+            if (marathon && MAX_RAISE_LEVEL_TIME > 0 && !this.player.board.stacksBreaking())
+              this.raise_level_timer--
+
+          }
+          if (this.seconds >= 60) {
+            this.seconds = 0
+            this.minutes++
+          }
+          if (this.raise_level_timer==0) {
+
+            if (!this.player.board.stacksFull()) {
+              this.player.board.raiseStacks()
+            } else {
+              this.player.drop(this.player.board.stacks[this.player.x],this.player.hand.items.length)
+              var record = buildRecordString(this,"W")
+              saveRecord(record)
+              game_end = "L"
+            }
+
+            this.raise_level_timer = raise_level_time
+            console.log("raise_level_time = " + raise_level_time)
+          }
+
+          var min_text = (this.minutes < 10) ? "0" + this.minutes : this.minutes
+          var sec_text = (this.seconds < 10) ? "0" + this.seconds : this.seconds
+
+          this.clock_text = min_text + ":" + sec_text
+          if (!level_edit)
+            screen_data.items[1].text = this.clock_text
+
+
+        }
+
+      }
+
+      function spriteMove(sprite,x_speed,y_speed) {
+        if (Math.abs(sprite.x - sprite.dx) < x_speed) sprite.x = sprite.dx
+        else if (sprite.x < sprite.dx) sprite.x += x_speed
+        else sprite.x -= x_speed
+
+        if (Math.abs(sprite.y - sprite.dy) < y_speed) sprite.y = sprite.dy
+        else if(sprite.y < sprite.dy) sprite.y += y_speed
+        else sprite.y -= y_speed
+      }
+
+    }
+
+    function pauseGame (pause_menu,player,restart_menu_item,save_menu_item) {
+
+      if (pause) {
+        pause = false
+        pause_menu.active = false
+        // pause all sounds currently playing
+        for (var i=0; i<player.board.sounds.length;i++) {
+          var this_sound = player.board.sounds[i]
+          this_sound.play()
+        }
+      } else {
+        pause = true
+        pause_menu.active = true
+        // pause all sounds currently playing
+        for (var i=0; i<player.board.sounds.length;i++) {
+          var this_sound = player.board.sounds[i]
+          this_sound.pause()
+        }
+      }
+
+
+      // construct the pause menu
+      pause_menu.items = new Array()
+      pause_menu.items.push(new MenuItem(pause_menu,"Resume",function() {
+        pause = false
+        player.controls()
+      }))
+      pause_menu.items.push(((level_edit) ? save_menu_item : restart_menu_item))
+      pause_menu.items.push(new MenuItem(pause_menu,"Back to Menu",function() {
+        if (!level_edit) {
+          var record = buildRecordString(player.board,"Q")
+          saveRecord(record)
+          game_end = "Q"
+        }
+        jaws.start(MainMenu)
+      }))
+
+      console.log("constructed pause_menu = " + pause_menu.items.length)
+    }
+
+    function fisherYates ( myArray ) {
+      var i = myArray.length, j, temp;
+      if ( i === 0 ) return false;
+      while ( --i ) {
+         j = Math.floor( Math.random() * ( i + 1 ) );
+         temp = myArray[i];
+         myArray[i] = myArray[j];
+         myArray[j] = temp;
+       }
+    }
+
+    // construct record string
+    function buildRecordString (board, winloss) {
+
+      console.log("Buidling record string")
+
+      var control_text = (board.player.keyboard_actions > board.player.mouse_actions) ? "KB" : (board.player.keyboard_actions == board.player.mouse_actions) ? "KM" : "MS"
+      var record = "\n\n" + new Date((+new Date())) + "\n"
+
+      if (marathon)
+        record += player_name + " " + control_text + " MRTHN-" + MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
+      else
+        record += player_name + " " + control_text + " " + player_level + "-" + player_stage + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
+
+      console.log("new_stars = " + board.player.new_stars)
+      if (board.player.new_stars > 0) {
+        record += "\n"
+        for (var i = 0; i < star_progress.length; i++) {
+          var level_progress = JSON.stringify(star_progress[i])
+          record += level_progress
+        }
+      }
+
+      console.log(record)
+
+      game_record = record
+
+      console.log("game_record = " + game_record)
+
+      return record
+
+    }
+
+    function starTotal() {
+
+      var total = 0
+      for (var i = 0; i < star_progress.length; i++) {
+        for (var key in star_progress[i]) {
+          for (var j = 0; j < star_progress[i][key].length; j++)
+          total += star_progress[i][key][j]
+        }
+      }
+
+      return total
+
+    }
+
+    // update star for a stage
+    function updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data) {
+
+      var stage_star_progress = star_progress[player_level][player_stage.toString()]
+      var new_stars = 0
+
+      if (stage_star_progress == undefined) {
+        star_progress[player_level][player_stage.toString()] = [1,0,0,0] // [complete,time,score,all]
+        stage_star_progress = star_progress[player_level][player_stage.toString()]
+        winlose_data.items[0].sprites[0].setImage("./static/images/STAR.gif")
+        winlose_data.items[0].sprites[0].width = 15
+        winlose_data.items[0].sprites[0].height = 15
+        new_stars++
+      } else {
+        winlose_data.items[0].sprites[0].setImage("./static/images/STAR_BORDER.gif")
+        winlose_data.items[0].sprites[0].width = 15
+        winlose_data.items[0].sprites[0].height = 15
+      }
+
+      console.dir(winlose_data)
+
+      var these_stars = 1
+
+      // check if player got star time
+      if (player.timer.clock_text <= star_time) {
+        console.log("achieved star time = " + star_time)
+
+        if (stage_star_progress[1] == 0) {
+          winlose_data.items[1].sprites[0].setImage("./static/images/STAR.gif")
+          winlose_data.items[1].sprites[0].width = 15
+          winlose_data.items[1].sprites[0].height = 15
+          new_stars++
+        } else {
+          winlose_data.items[1].sprites[0].setImage("./static/images/STAR_BORDER.gif")
+          winlose_data.items[1].sprites[0].width = 15
+          winlose_data.items[1].sprites[0].height = 15
+        }
+
+        stage_star_progress[1] = 1
+        these_stars++
+      }
+
+      // check if player got star score
+      if (player.score >= star_score) {
+        console.log("achieved star score = " + star_score)
+
+        if (stage_star_progress[2] == 0) {
+          winlose_data.items[2].sprites[0].setImage("./static/images/STAR.gif")
+          winlose_data.items[2].sprites[0].width = 15
+          winlose_data.items[2].sprites[0].height = 15
+          new_stars++
+        } else {
+          winlose_data.items[2].sprites[0].setImage("./static/images/STAR_BORDER.gif")
+          winlose_data.items[2].sprites[0].width = 15
+          winlose_data.items[2].sprites[0].height = 15
+        }
+
+        stage_star_progress[2] = 1
+        these_stars++
+      }
+
+      // check if player got star time and star score
+      if (these_stars >= 3) {
+        console.log("achieved bonus star = " + star_score)
+
+        if (stage_star_progress[3] == 0) {
+          winlose_data.items[3].sprites[0].setImage("./static/images/STAR.gif")
+          winlose_data.items[3].sprites[0].width = 15
+          winlose_data.items[3].sprites[0].height = 15
+          new_stars++
+        } else {
+          winlose_data.items[3].sprites[0].setImage("./static/images/STAR_BORDER.gif")
+          winlose_data.items[3].sprites[0].width = 15
+          winlose_data.items[3].sprites[0].height = 15
+        }
+
+        stage_star_progress[3] = 1
+        these_stars++
+      }
+
+      console.log("stage_star_progress = ")
+      console.dir(stage_star_progress)
+
+      return new_stars
+
+    }
+
+    function saveRecord (record) {
+
+      var json_data = JSON.stringify({'type': "saveRecord", 'data': record})
+
+      console.log("savingRecord() with json_data = " + json_data)
+      jQuery.ajax({
+        type: "POST",
+        data: json_data,
+        success: function(data) {
+          console.log("record POSTed to server: " + data)
+          }
+      });
+
+    }
+
+    function saveLevel (level,stage,board,callback) {
+
+      console.log("saving stage = " + level + "-" + stage)
+
+      // construct level string
+      var level_string = ""
+
+      // go through each stack
+      console.log("stacks = " + board.stacks)
+      for (var s = 0; s < board.stacks.length; s++) {
+
+
+
+        var this_stack = board.stacks[s]
+        // go through each item in the stack
+        console.log("this_stack.items = " + this_stack.items)
+        for (var i = 0; i < this_stack.items.length; i++) {
+
+          var this_item = this_stack.items[i]
+          if (i>0) level_string = level_string + ","
+          level_string = level_string + this_item.type + "|" + this_item.color
+
+          console.log ("adding item, level_string = " + level_string)
+
+        }
+
+        level_string = level_string + "\n"
+
+      }
+
+      console.log("level_string = " + level_string)
+
+      var json_data = JSON.stringify({'type': "saveLevel", 'data': level_string, 'level': [level,stage]})
+
+      jQuery.ajax({
+        type: "POST",
+        data: json_data,
+        success: function(data) {
+          window.alert("level saved to server: " + data)
+          callback()
+        }
+      })
+
+    }
+
+    function loadLevel (level,stage,board,callback) {
+
+      var json_data = JSON.stringify({'type': "loadLevel", 'level': [level,stage]})
+
+      console.log("loading stage = " + level)
+      jQuery.ajax({
+        type: "POST",
+        data: json_data,
+        success: function(data) {
+          console.log("retrieved level data from server = " + data)
+          callback(data,board)
+        }
+      })
+
+    }
+
+    function loadLevels (callback) {
+      var json_data = JSON.stringify({'type': "loadLevels"})
+
+      console.log("loading levels")
+      jQuery.ajax({
+        type: "POST",
+        data: json_data,
+        success: function(data) {
+          console.log("retrieved level data from server" + data)
+          callback(data)
+        }
+      })
+    }
+
+    function deleteLevel (level,stage,callback) {
+
+      var json_data = JSON.stringify({'type': "deleteLevel", 'level': [level,stage,latest_edit]})
+
+      console.log("deleting stage = " + stage)
+      jQuery.ajax({
+        type: "POST",
+        data: json_data,
+        success: function(data) {
+          console.log("deleted level data from server. last level found = 0-" + data)
+          callback(data)
+        }
+      })
+
+    }
+
+    function findEditLevels (callback) {
+
+      var json_data = JSON.stringify({'type': "findEditLevels"})
+
+      console.log("finding last edited level")
+      jQuery.ajax({
+        type: "POST",
+        data: json_data,
+        success: function(data) {
+          console.log("last level found = 0-" + data)
+          callback(data)
+        }
+      })
+
+    }
+
+    function MenuItem(menu,text,action) {
+
+      this.menu = menu
+      this.text = text
+      this.action = action
+      this.active = true
+
+      this.locked = false
+      this.star_lock = 100
+
+      this.sprites = new Array()
+
+    }
+
+    function MenuBox(title,parent,x,y,width,items,scrolling) {
+
+      console.log("constructing menubox with title = " + this.title + " at (" + x + "," + y + ")")
+
+
+      var SPRITE_WIDTH = 10
+
+      this.title = title
+      this.parent = parent // parent menu
+      this.submenus = new Array() // submenus (ok box, etc.)
+
+      this.x = x
+      this.y = y
+      this.width = width
+      this.items = items // menu items
+      this.index = 0 // item currently chosen
+      this.back
+      this.active = false
+      this.mouse_inside = false
+      this.scrolling = scrolling || false
+
+      this.setup = function(x,y,width) {
+
+        this.x = x
+        this.y = y
+        // calculate height
+        if (this.scrolling)
+          this.height = 70
+        else
+          this.height = 20 * (items.length + ((this.title == "") ? 0 : 1)) + 30
+
+        this.sprites = new Array()
+
+        this.sprite_sheet = new jaws.SpriteSheet({
+          image: "./static/images/MENUBOX_SPRITES.gif", frame_size: [SPRITE_WIDTH,SPRITE_WIDTH]})
+
+        var edge_width  = width - SPRITE_WIDTH*2
+        var edge_height = this.height - SPRITE_WIDTH*2
+
+        this.sprite_nw = new jaws.Sprite({x:x, y:y, image: this.sprite_sheet.frames[0]})
+        this.sprite_n = new jaws.Sprite({x:x + SPRITE_WIDTH, y:y, image: this.sprite_sheet.frames[1]})
+        this.sprite_ne = new jaws.Sprite({x:x + SPRITE_WIDTH + edge_width, y:y, image: this.sprite_sheet.frames[2]})
+        this.sprite_w = new jaws.Sprite({x:x, y:y + SPRITE_WIDTH, image: this.sprite_sheet.frames[3]})
+        this.sprite_e = new jaws.Sprite({x:x + SPRITE_WIDTH + edge_width, y:y + SPRITE_WIDTH, image: this.sprite_sheet.frames[4]})
+        this.sprite_sw = new jaws.Sprite({x:x, y:y + SPRITE_WIDTH + edge_height, image: this.sprite_sheet.frames[5]})
+        this.sprite_s = new jaws.Sprite({x:x + SPRITE_WIDTH, y:y + SPRITE_WIDTH + edge_height, image: this.sprite_sheet.frames[6]})
+        this.sprite_se = new jaws.Sprite({x:x + SPRITE_WIDTH + edge_width, y:y + SPRITE_WIDTH + edge_height, image: this.sprite_sheet.frames[7]})
+
+        // fix widths and heights for edges
+        this.sprite_n.width = this.sprite_s.width = edge_width
+        this.sprite_w.height = this.sprite_e.height = edge_height
+      }
+
+      this.setup(x,y,width)
+
+      // provide coordinates of clicks with respect to menu item index
+      this.menuCoordinates = function(x,y,right_click) {
+
+        // find click coordinates with respect to board's top-left position in canvas
+        var menu_x = x - this.x
+        var menu_y = y - this.y
+
+        var outside_x = false
+        var outside_y = false
+
+        if (menu_x < 0 || menu_x > this.width)
+          outside_x = true
+        if (menu_y < 0 || menu_y > this.height)
+          outside_y = true
+
+        if (outside_x || outside_y) {
+          this.mouse_inside = false
+          return this.index
+        }
+
+        var index = (menu_y - 30)/20 - ((this.title == "") ? 0 : 1)
+
+        if (index < 0)
+          index = 0
+        else if (index > this.items.length - 1)
+          index = this.items.length - 1
+
+        this.mouse_inside = true
+        return Math.round(index)
+      }
+
+      this.scroll_action = function() {
+
+        console.log("scrolling action")
+        for (var i = 0; i < this.star_sprites.length; i++) {
+          this.star_sprites[i].active = false
+        }
+        var level_name = this.items[this.index].text
+
+        // activate ok submenu of this item is unlocked
+        var level_index = 0
+        for (var i = 0; i < this.items.length; i++)
+          if (this.items[i].text == level_name) {
+            level_index = i
+            break
+          }
+        if (this.items[level_index].locked) {
+          for (var i=0; i < this.submenus[0].menu_box.sprites.length; i++) {
+            this.submenus[0].menu_box.sprites[i].active = true
+          }
+          this.submenus[0].menu_box.items[0].text = "      x " + ((this.items[level_index].star_lock == undefined) ? "?" : this.items[level_index].star_lock)
+        } else {
+          for (var i=0; i < this.submenus[0].menu_box.sprites.length; i++) {
+            this.submenus[0].menu_box.sprites[i].active = false
+          }
+          this.submenus[0].menu_box.items[0].text = "OK"
+        }
+
+        // display how many stars player has earned for this level
+        level_name = level_name.split("-")
+        var level = parseInt(level_name[0])
+        var stage = level_name[1]
+        var these_stars = 0
+        for (var i = 0; i < star_progress[level][stage].length; i++) {
+          these_stars += star_progress[level][stage][i]
+        }
+        for (var i = 0; i < these_stars; i++) {
+          this.star_sprites[i].active = true
+        }
+
+        // TODO: display star lock
+
+      }
+
+      this.up_action = function() {
+
+        if (this.index > 0)
+          if (this.items[this.index-1].active) {
+            this.index--
+            if (this.scrolling) {
+              this.scroll_action()
+            }
+          }
+      }
+
+      this.down_action = function() {
+        if (this.index < this.items.length - 1)
+          if (this.items[this.index+1].active) {
+            this.index++
+            if (this.scrolling) {
+              this.scroll_action()
+            }
+          }
+      }
+
+      this.controls = function(menu,ok_submenu,menus) {
+
+        jaws.on_keydown(["up","w"], function() {
+          (menu.scrolling) ? menu.down_action() : menu.up_action()
+        })
+
+        jaws.on_keydown(["down","s"], function() {
+          (menu.scrolling) ? menu.up_action() : menu.down_action()
+        })
+
+        jaws.on_keydown(["enter","space"], function() {
+          if (menu.items[menu.index].active && !menu.items[menu.index].locked) {
+            console.log("performing action")
+            menu.items[menu.index].action(jaws)
+          }
+        })
+
+        jaws.on_keydown(["esc","a","left"], function() {
+          if (scrolling)
+            menus.pop()
+          menu.back()
+        })
+
+        jaws.on_keydown(["left_mouse_button"], function() {
+
+          if (menu.scrolling) {
+
+            console.log("click button")
+            if (menu.sprites[0].mouse_over) {
+              menu.down_action()
+              console.log("up button")
+            }
+            else if (menu.sprites[1].mouse_over) {
+              console.log("click on down arrow")
+              menu.up_action()
+            }
+            else if (ok_submenu.menu_box.mouse_inside) {
+              if (!menu.items[menu.index].locked)
+                menu.items[menu.index].action()
+            } else if (menu.mouse_inside)
+              return
+            else {
+              menus.pop()
+              menu.back()
+            }
+
+          } else {
+            if(menu.mouse_inside) {
+              if(!menu.items[menu.index].locked)
+                menu.items[menu.index].action()
+            } else
+              menu.back()
+          }
+
+        })
+
+      }
+
+      // sets the game to acknowledge a new active menu
+      this.setActiveMenu = function(new_active,active_menu,ok_submenu) {
+          console.log("set active menu!")
+          this.active = false
+          active_menu = new_active
+          active_menu.active = true
+          active_menu.controls(active_menu,ok_submenu)
+      }
+
+      this.update = function() {
+
+        if (this.scrolling) {
+          // update arrow sprites
+          for (var s=0; s < 2; s++) {
+            var this_sprite = this.sprites[s]
+
+            if (jaws.mouse_x > this_sprite.x && jaws.mouse_x < this_sprite.x + this_sprite.width &&
+                jaws.mouse_y > this_sprite.y && jaws.mouse_y < this_sprite.y + this_sprite.height) {
+              this_sprite.mouse_over = true
+            }
+            else
+              this_sprite.mouse_over = false
+
+            if (this_sprite.mouse_over && this_sprite.image == this.arrow_sprites.frames[s])
+              this_sprite.image = this.arrow_sprites.frames[s+2]
+            else if (!this_sprite.mouse_over && this_sprite.image == this.arrow_sprites.frames[s+2])
+              this_sprite.image = this.arrow_sprites.frames[s]
+          }
+        }
+
+        for (var s=0; s < this.submenus.length; s++) {
+          this.submenus[s].update()
+        }
+
+        return
+      }
+
+      this.draw = function() {
+
+        // update index according to mouse position if menu is active
+        if (this.active && !this.scrolling)
+          this.index = this.menuCoordinates(jaws.mouse_x,jaws.mouse_y)
+
+        jaws.context.fillStyle = "Black"
+        jaws.context.fillRect(this.x + 2,this.y + 2,this.width - 4,this.height - 4)
+
+        // draw edges
+        this.sprite_nw.draw()
+        this.sprite_n.draw()
+        this.sprite_ne.draw()
+        this.sprite_w.draw()
+        this.sprite_e.draw()
+        this.sprite_sw.draw()
+        this.sprite_s.draw()
+        this.sprite_se.draw()
+
+        // draw title
+        var j = 0
+        if (this.title != "") {
+          jaws.context.font = "bold 14pt Monaco";
+          jaws.context.lineWidth = 10
+          jaws.context.fillStyle =  "Red"
+          jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+          jaws.context.fillText(this.title, this.x + 20, this.y + 30)
+          j++
+        }
+
+        if (this.scrolling) {
+
+          var this_item = this.items[this.index]
+
+          jaws.context.font = "bold 12pt Monaco";
+          jaws.context.lineWidth = 10
+          jaws.context.fillStyle =  (this_item.locked) ? "Brown" : "Red"
+          jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+          jaws.context.fillText(this_item.text, this.x + 20, this.y + 20 * (1 + j) + 10)
+
+        } else {
+
+          // draw menu items
+          for (var i=0; i < this.items.length; i++) {
+
+            var this_item = this.items[i]
+
+            if (!this_item.active)
+              continue
+
+            jaws.context.font = "bold 12pt Monaco";
+            jaws.context.lineWidth = 10
+            jaws.context.fillStyle =  (this.index == i) ? ((this_item.locked) ? "Brown" : "Red") : ((this_item.locked) ? "Grey" : "White")
+            jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+            jaws.context.fillText(this_item.text, this.x + 20, this.y + 20 * (i + 1 + j) + 10)
+
+            // draw this menu item's sprites
+            for (var s=0; s < this_item.sprites.length; s++) {
+              this_item.sprites[s].draw()
+            }
+
+          }
+        }
+
+        // draw sprites
+        for (var s=0; s < this.sprites.length; s++) {
+
+          var this_sprite = this.sprites[s]
+
+          if (!this_sprite.active) {
+            this_sprite.mouse_over = false
+            continue
+          }
+
+          this_sprite.draw()
+        }
+
+      }
+
+    }
+
+    // ok sub menu class
+    function OkSubMenu(title,parent,action) {
+
+      this.menu_box = new MenuBox(title,parent,parent.x, parent.y + parent.height, parent.width, [new MenuItem(parent,"OK",function() {
+        action()
+      })])
+
+      this.sprites = new Array()
+
+      this.update = function() {
+        if (this.menu_box.active) {
+          if (this.menu_box.mouse_inside)
+            this.menu_box.index = 0
+          else
+            this.menu_box.index = -1
+        }
+      }
+
+      this.draw = function() {
+        this.menu_box.draw()
+        for(var s=0; s<this.sprites.length; s++) {
+          this.sprites[s].draw()
+        }
+      }
+
+    }
+
+    function MainMenu() {
+
+      var active_menu
+      var menus = new Array()
+      var level_select_string = (player_progress.length-1) + "-" + player_progress[player_progress.length-1]
+      var star_total_sprite
+
+      // unhide progress buttons
+      var progress_buttons = $("progressButtons")
+      progress_buttons.hidden = false
+      $("live_info").innerHTML = ""
+
+      this.back = function() {
+          var this_menu = menus.pop()
+          this_menu.setActiveMenu(this_menu.parent,active_menu)
+      }
+
+      this.setup = function() {
+
+        // main menu
+        var main_menu_items = new Array()
+          main_menu_items.push(new MenuItem(main_menu,"Puzzle Mode",function() {
+            menus.push(level_select_menu)
+            menus.push(level_select_ok)
+            level_select_menu.submenus.push(level_select_ok)
+            // level_select_ok.active = true
+            level_select_ok.menu_box.active = true
+            if (level_select_menu)
+            level_select_menu.parent.setActiveMenu(level_select_menu,active_menu,level_select_ok)
+            level_edit = false
+            marathon = false
+            level_select_menu.controls(level_select_menu,level_select_ok,menus)
+            var level_count = 0
+            for (var i = 0; i < player_progress.length; i++) {
+              console.log(player_progress[i])
+              level_count += parseInt(player_progress[i])
+            }
+            console.log("level_count = " + level_count)
+            console.dir(level_select_menu.items)
+            if (level_count + 1 >= level_select_menu.items.length)
+              level_select_menu.index = level_select_menu.items.length - 1
+            else
+              level_select_menu.index = level_count + 1
+
+            for (var i = 0; i < level_select_menu.star_sprites.length; i++) {
+              level_select_menu.star_sprites[i].active = false
+            }
+            level_select_menu.scroll_action()
+
+
+          }))
+          main_menu_items.push(new MenuItem(main_menu,"Marathon",function() {
+            level_edit = false
+            marathon = true
+            jaws.start(Game)
+          }))
+          var marathon_menu_item = main_menu_items[main_menu_items.length-1]
+          marathon_menu_item.star_lock = MARATHON_STAR_LOCK
+          marathon_menu_item.locked = (starTotal() >= marathon_menu_item.star_lock) ? false : true
+          main_menu_items.push(new MenuItem(main_menu,"Change Name",function() {
+            jaws.start(PlayerNameState)
+          }))
+          main_menu_items.push(new MenuItem(main_menu,"Level Editor",function() {
+            menus.push(level_select_menu)
+            menus.push(level_select_ok)
+            level_select_menu.submenus.push(level_select_ok)
+            // level_select_ok.active = true
+            level_select_ok.menu_box.active = true
+            level_select_menu.parent.setActiveMenu(level_select_menu,active_menu,level_select_ok)
+            level_select_menu.controls(level_select_menu,level_select_ok,menus)
+            level_edit = true
+          }))
+          main_menu_items.push(new MenuItem(main_menu,"Options Mode",function() {
+            menus.push(options_menu)
+            options_menu.parent.setActiveMenu(options_menu,active_menu)
+          }))
+        var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items)
+
+        menus.push(main_menu)
+        active_menu = main_menu
+        active_menu.active = true
+
+
+        // level select menu
+        var level_select_menu = new MenuBox("Level",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, new Array(),true)
+        level_select_menu.back = this.back
+
+        var level_select_ok = new OkSubMenu("",level_select_menu,function() {
+          console.log("hawaiian bread")
+          level_select_menu.items[menu.index].action(jaws)
+        })
+
+        // add level menu items
+        var item_count = 0
+        for (var i = 0; i < level_data.levels.length; i++) {
+          for (var j = 0; j < level_data.levels[i].length; j++) {
+            if (i == 1 && j+1 == 1)
+              level_select_menu.index = item_count
+            var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
+                var level_name = level_select_menu.items[level_select_menu.index].text
+                level_name = level_name.split("-")
+                player_level = level_name[0]
+                player_stage = level_name[1]
+                jaws.start(Game)
+            })
+            var this_level_star_lock = level_data.levels[i][j].split('\n')[8]
+            this_level.star_lock = (this_level.text[0] == "0") ? ((this_level_star_lock == undefined) ? ZERO_STAR_LOCK : this_level_star_lock) : this_level_star_lock
+            this_level.locked = (starTotal() >= this_level.star_lock) ? false : true
+            level_select_menu.items.push(this_level)
+            item_count++
+          }
+        }
+
+        // level select arrows
+        level_select_menu.arrow_sprites = new jaws.SpriteSheet({
+          image: "./static/images/ARROWS.gif", frame_size: [20,10]})
+
+        level_select_menu.up_arrow = new jaws.Sprite({x:level_select_menu.x + 100, y:level_select_menu.y + 20, image: level_select_menu.arrow_sprites.frames[0]})
+        level_select_menu.down_arrow = new jaws.Sprite({x:level_select_menu.x + 100, y:level_select_menu.y + 38, image: level_select_menu.arrow_sprites.frames[1]})
+
+        level_select_menu.up_arrow.height = 15
+        level_select_menu.down_arrow.height = 15
+
+        level_select_menu.up_arrow.mouse_over = false
+        level_select_menu.down_arrow.mouse_over  = false
+
+        level_select_menu.up_arrow.active = true
+        level_select_menu.down_arrow.active = true
+
+        level_select_menu.sprites.push(level_select_menu.up_arrow)
+        level_select_menu.sprites.push(level_select_menu.down_arrow)
+
+        // level select stars
+        level_select_menu.star_sprites = new Array()
+        var star_sprite_1 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+36,image:"./static/images/STAR.gif",anchor:"left"})
+        star_sprite_1.width = 15
+        star_sprite_1.height = 15
+        level_select_menu.sprites.push(star_sprite_1)
+        level_select_menu.star_sprites.push(star_sprite_1)
+        star_sprite_1.active = false
+
+        var star_sprite_2 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+21,image:"./static/images/STAR.gif",anchor:"left"})
+        star_sprite_2.width = 15
+        star_sprite_2.height = 15
+        level_select_menu.sprites.push(star_sprite_2)
+        level_select_menu.star_sprites.push(star_sprite_2)
+        star_sprite_2.active = false
+
+        var star_sprite_3 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+6,image:"./static/images/STAR.gif",anchor:"left"})
+        star_sprite_3.width = 15
+        star_sprite_3.height = 15
+        level_select_menu.sprites.push(star_sprite_3)
+        level_select_menu.star_sprites.push(star_sprite_3)
+        star_sprite_3.active = false
+
+        var star_sprite_4 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+51,image:"./static/images/STAR.gif",anchor:"left"})
+        star_sprite_4.width = 15
+        star_sprite_4.height = 15
+        level_select_menu.sprites.push(star_sprite_4)
+        level_select_menu.star_sprites.push(star_sprite_4)
+        star_sprite_4.active = false
+
+        star_total_sprite = new jaws.Sprite({x:ITEM_WIDTH+140,y:13,image:"./static/images/STAR.gif",anchor:"left"})
+        star_total_sprite.width = 15
+        star_total_sprite.height = 15
+        console.log("star_total_sprite")
+        console.dir(star_total_sprite)
+
+        // lock sprite
+        var lock_sprite = new jaws.Sprite({x:level_select_ok.menu_box.x+21,y:level_select_ok.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"})
+        console.log("lock_sprite")
+        console.dir(lock_sprite)
+        console.dir(level_select_ok)
+        level_select_ok.menu_box.sprites.push(lock_sprite)
+        lock_sprite.active = true
+
+        // star lock sprite
+        var star_lock_sprite = new jaws.Sprite({x:level_select_ok.menu_box.x+64,y:level_select_ok.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})
+        star_lock_sprite.width = 15
+        star_lock_sprite.height = 15
+        console.log("star_lock_sprite")
+        console.dir(star_lock_sprite)
+        console.dir(menus[0].submenus)
+        level_select_ok.menu_box.sprites.push(star_lock_sprite)
+        star_lock_sprite.active = true
+
+        // marathon star lock menu
+        var marathon_star_lock_menu = new OkSubMenu("",main_menu,function(){})
+        marathon_star_lock_menu.menu_box.items[0].text = "      x " + main_menu.items[1].star_lock
+        main_menu.submenus.push(marathon_star_lock_menu)
+        marathon_star_lock_menu.menu_box.setup(main_menu.x + main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 20,level_select_ok.menu_box.width)
+
+
+
+        // options menu
+        var options_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, [new MenuItem(options_menu, "Controls", function() {
+          menus.push(controls_menu)
+          controls_menu.index = control_scheme - 1
+          controls_menu.parent.setActiveMenu(controls_menu,active_menu)
+          })])
+        options_menu.back = this.back
+
+        // controls menu
+        var controls_menu_items = new Array()
+          controls_menu_items.push(new MenuItem(controls_menu, "Keyboard", function() {
+            control_scheme = 1
+            controls_menu.back()
+          }))
+          controls_menu_items.push(new MenuItem(controls_menu, "Mouse", function() {
+            control_scheme = 2
+            controls_menu.back()
+          }))
+        var controls_menu = new MenuBox("",options_menu,options_menu.x + options_menu.width + 1, options_menu.y, 150, controls_menu_items)
+        controls_menu.index = control_scheme - 1
+        controls_menu.back = function() {
+          menus.pop()
+          controls_menu.setActiveMenu(controls_menu.parent,active_menu)
+        }
+
+        // controls
+        active_menu.controls(active_menu)
+      }
+
+      this.update = function() {
+
+        // load save file
+        var open_data = $("openData").innerHTML.split("|")
+        if (open_data[0] == "SuperWizardPotionSave") {
+          player_name = open_data[1]
+          player_progress = JSON.parse(open_data[2])
+          star_progress = JSON.parse(open_data[3])
+          $("openData").innerHTML = ""
+          jaws.start(MainMenu)
+        }
+
+        for (var i = 0; i < menus.length; i++) {
+          menus[i].update()
+        }
+
+      }
+
+      this.draw = function() {
+
+        jaws.context.fillStyle = "Black"
+        jaws.context.fillRect(0,0,jaws.width,jaws.height)
+
+        // player name
+        jaws.context.font = "bold 12pt Monaco";
+        jaws.context.lineWidth = 10
+        jaws.context.fillStyle =  "Red"
+        jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+        jaws.context.fillText(player_name, ITEM_WIDTH + 17, 28)
+
+        // star sprite
+        star_total_sprite.x = ITEM_WIDTH + 19 + player_name.length*12.5
+        star_total_sprite.draw()
+
+        // player star count
+        jaws.context.font = "bold 12pt Monaco";
+        jaws.context.lineWidth = 10
+        jaws.context.fillStyle =  "White"
+        jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+        jaws.context.fillText("x " + starTotal(), star_total_sprite.x + star_total_sprite.width + 10, 28)
+
+        for (var i = 0; i < menus.length; i++) {
+          menus[i].draw()
+        }
+        if (menus[0].index == 1 && menus[0].items[1].locked) {
+          var marathon_submenu = menus[0].submenus[0]
+          marathon_submenu.sprites.push(new jaws.Sprite({x:marathon_submenu.menu_box.x+21,y:marathon_submenu.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"}))
+          var star_lock_sprite = new jaws.Sprite({x:marathon_submenu.menu_box.x+64,y:marathon_submenu.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})
+          star_lock_sprite.width = 15
+          star_lock_sprite.height = 15
+          marathon_submenu.sprites.push(star_lock_sprite)
+          menus[0].submenus[0].draw()
+        }
+
+      }
+
+    }
+
+    /*
+    *
+    * MenuState is our lobby/welcome menu were gamer can chose start, high score and settings.
+    * For this example we have only implemented start. Start switches active game state by simply:
+    *   jaws.switchGameState(play)   (jaws.switchGameState(PlayState) would have worked too)
+    *
+    */
+    function MenuState() {
+
+      jaws.start(MainMenu)
+
+      var index = 0
+      var items = [player_level, "-", player_stage]
+
+      this.setup = function() {
+        index = 0
+        jaws.on_keydown(["left","a"],       function()  { index=0; if(index >= items.length) {index=items.length-1} } )
+        jaws.on_keydown(["right","d"],         function()  { index=2; if(index < 0) {index=0} } )
+        jaws.on_keydown(["up","w"], function() {
+          if (index==0) {
+            if (player_level < 6) {
+              player_level++
+            }
+          } else if (index==2) {
+            if (player_stage < 6) {
+              player_stage++
+            }
+          }
+          items[0] = player_level
+          items[2] = player_stage
+
+          console.log("items[0] = " + items[0])
+          console.log("items[2] = " + items[2])
+        })
+        jaws.on_keydown(["down","s"], function() {
+          if (index==0) {
+            if (player_level > 0) {
+              player_level--
+            }
+          } else if (index==2) {
+            if (player_stage > 1) {
+              player_stage--
+            }
+          }
+          items[0] = player_level
+          items[2] = player_stage
+
+          console.log("items[0] = " + items[0])
+          console.log("items[2] = " + items[2])
+        })
+        jaws.on_keydown(["enter","space"],  function()  {
+          level_edit = false
+          jaws.switchGameState(Game)
+        } )
+
+        jaws.on_keydown(["left_mouse_button","right_mouse_button"], function() {
+          jaws.switchGameState(Game)
+        })
+
+        // name mode
+        jaws.on_keydown(["n"], function() {
+          jaws.switchGameState(PlayerNameState)
+        })
+
+        // control mode
+        jaws.on_keydown(["c"], function() {
+          if(control_scheme == 1) control_scheme = 2
+          else if (control_scheme == 2) control_scheme  = 1
+        })
+
+        // game mode
+        jaws.on_keydown(["m"], function() {
+          if(game_mode == 1) game_mode = 2
+          else if (game_mode == 2) game_mode  = 1
+        })
+
+        // game mode
+        jaws.on_keydown(["l"], function() {
+          level_edit = true
+          jaws.switchGameState(Game)
+        })
+      }
+
+      this.draw = function() {
+        jaws.context.clearRect(0,0,jaws.width,jaws.height)
+
+        for(var i=0; i < items.length; i++) {
+          // jaws.context.translate(0.5, 0.5)
+          jaws.context.font = "bold 50pt terminal";
+          jaws.context.lineWidth = 10
+          jaws.context.fillStyle =  (i == index) ? "Red" : "Black"
+          jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+          jaws.context.fillText(items[i], 225 + i * 60, 225)
+        }
+
+        jaws.context.font = "bold 30pt terminal";
+        jaws.context.lineWidth = 10
+        jaws.context.fillStyle =  "Black"
+        jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+        jaws.context.fillText("change (n)ame", 200, 350)
+
+        jaws.context.font = "bold 30pt terminal";
+        jaws.context.lineWidth = 10
+        jaws.context.fillStyle =  "Black"
+        jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+        var control_text = (control_scheme == 1) ? "KB" : "MS"
+        jaws.context.fillText(" (c)ontrols: " + control_text, 200, 400)
+
+        // jaws.context.font = "bold 30pt terminal";
+        // jaws.context.lineWidth = 10
+        // jaws.context.fillStyle =  "Black"
+        // jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+        // var mode_text = (game_mode == 1) ? "easy" : "hard"
+        // jaws.context.fillText("(m)ode: " + mode_text, 210, 450)
+      }
+    }
+
+    function PlayerNameState() {
+
+      messageConsole = function() {
+        console.log("player_name = " + player_name)
+      }
+
+      var name_text = "       " + player_name
+      if (player_name.length < 10) name_text = name_text + "_"
+
+      var enter_name
+      var enter_name_items = new Array()
+        enter_name_items.push(new MenuItem(enter_name,"Please enter your name: ",function(){return
+        }))
+        enter_name_items.push(new MenuItem(enter_name,name_text,function(){
+          return
+        }))
+
+      enter_name = new MenuBox("",enter_name,ITEM_WIDTH,ITEM_WIDTH,300,enter_name_items)
+      enter_name.index = 1
+
+      // enter name OK sub menu
+      var enter_name_ok = new MenuBox("",enter_name,enter_name.x, enter_name.y + enter_name.height, 300, [new MenuItem(enter_name_ok,"          OK",function() {
+        if (player_name.length > 0)
+          jaws.switchGameState(MainMenu)
+      })])
+      enter_name_ok.active = true
+
+      this.setup = function() {
+
+        this.controls(enter_name,enter_name_ok)
+      }
+
+      this.draw = function() {
+
+        // load save file
+        var open_data = $("openData").innerHTML.split("|")
+        if (open_data[0] == "SuperWizardPotionSave") {
+          player_name = open_data[1]
+          player_progress = JSON.parse(open_data[2])
+          star_progress = JSON.parse(open_data[3])
+          $("openData").innerHTML = ""
+          jaws.start(MainMenu)
+        }
+
+        jaws.context.clearRect(0,0,jaws.width,jaws.height)
+
+        jaws.context.fillStyle = "Black"
+        jaws.context.fillRect(0,0,jaws.width,jaws.height)
+
+        // update name_text
+        name_text = "       " + player_name
+        if (player_name.length < 10) name_text = name_text + "_"
+        enter_name.items[1].text = name_text
+        enter_name.draw()
+
+        if (enter_name_ok.active) {
+          if (enter_name_ok.mouse_inside)
+            enter_name_ok.index = 0
+          else
+            enter_name_ok.index = -1
+        }
+        enter_name_ok.draw()
+
+        jaws.context.font = "bold 30pt terminal";
+        jaws.context.lineWidth = 10
+        jaws.context.fillStyle =  "Black"
+        jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+        jaws.context.fillText("Please enter your name:", 125, 225)
+
+        jaws.context.font = "bold 30pt terminal";
+        jaws.context.lineWidth = 10
+        jaws.context.fillStyle =  "Black"
+        jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+
+        var name_text = player_name
+        if (player_name.length < 10) name_text += "_"
+
+        jaws.context.fillText(name_text, 210, 275)
+      }
+
+      this.controls = function(menu,ok_submenu) {
+
+
+        var shift = false
+
+        jaws.on_keydown(["left_mouse_button"], function() {
+
+          if (ok_submenu.mouse_inside) {
+            ok_submenu.items[ok_submenu.index].action()
+          }
+        })
+
+        jaws.on_keydown(["shift"], function () {
+          shift = true
+        })
+
+        jaws.on_keyup(["shift"], function () {
+          shift = false
+        })
+
+        jaws.on_keydown(["enter"],  function()  {
+          if (player_name.length > 0)
+            jaws.switchGameState(MainMenu)
+        } )
+
+        jaws.on_keydown(["backspace"], function() {
+          player_name = player_name.substring(0,player_name.length-1)
+          messageConsole()
+        })
+
+        jaws.on_keydown(["space"], function () {
+          if (player_name.length < 10)
+            player_name += " "
+          messageConsole()
+        })
+
+        jaws.on_keydown(["a"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "A" : "a"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["b"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "B" : "b"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["c"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "C" : "c"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["d"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "D" : "d"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["e"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "E" : "e"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["f"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "F" : "f"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["g"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "G" : "g"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["h"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "H" : "h"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["i"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "I" : "i"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["j"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "J" : "j"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["k"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "K" : "k"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["l"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "L" : "l"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["m"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "M" : "m"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["n"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "N" : "n"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["o"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "O" : "o"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["p"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "P" : "p"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["q"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "Q" : "q"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["r"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "R" : "r"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["s"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "S" : "s"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["t"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "T" : "t"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["u"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "U" : "u"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["v"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "V" : "v"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["w"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "W" : "w"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["x"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "X" : "x"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["y"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "Y" : "y"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["z"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "Z" : "z"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["0"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? ")" : "0"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["1"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "!" : "1"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["2"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "@" : "2"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["3"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "#" : "3"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["4"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "$$" : "4"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["5"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "%" : "5"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["6"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "^" : "6"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["7"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "&" : "7"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["8"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "*" : "8"
+          messageConsole()
+        })
+
+        jaws.on_keydown(["9"], function () {
+          if (player_name.length < 10)
+            player_name += (shift) ? "(" : "9"
+          messageConsole()
+        })
+      }
+    }
+
+    jaws.onload = function() {
+      console.log("Bugs: need to check if there's enough flasks for lose condition")
+      jaws.unpack()
+      jaws.assets.add(["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/sfx/drop.mp3","./static/sfx/grab.mp3"])
+
+      console.log("loading levels TEST")
+      loadLevels(function(data) {
+
+        level_data = JSON.parse(data)
+        latest_edit = level_data.levels[0].length + 1
+        player_progress[0] = latest_edit - 2
+
+        if (name_entered)
+          jaws.start(MainMenu)  // Our convenience function jaws.start() will load assets, call setup and loop update/draw in 60 FPS
+        else
+          jaws.start(PlayerNameState)
+      })
+
+    }
+
+  </script>
+
+</body>
+</html>
+
