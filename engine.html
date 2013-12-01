@@ -122,7 +122,7 @@ $def with (name)
     var splash_audio
     var melt_audio
     var white_audio
-    setupSounds()
+    // setupSounds()
 
     // load cookies if possible
     var cookie_save = getCookie("player_save")
@@ -1107,12 +1107,12 @@ $def with (name)
           }
 
           // play sound effect
-          if (depth > 0) {
-            grab_sound.stop()
-            removeFromPlayingSounds(grab_sound)
-            if (!mute)
-              drop_sound.play()
-          }
+          // if (depth > 0) {
+          //   grab_sound.stop()
+          //   removeFromPlayingSounds(grab_sound)
+          //   if (!mute)
+          //     drop_sound.play()
+          // }
         }
 
         // drop depth amount of items onto stack
@@ -1159,12 +1159,12 @@ $def with (name)
             this.y = stack_items.length - depth // at item at bottom of hand stack
 
           // play sound effects
-          drop_sound.stop()
-          removeFromPlayingSounds(drop_sound)
-          grab_sound.stop()
-          removeFromPlayingSounds(grab_sound)
-          if (!mute)
-            grab_sound.play()
+          // drop_sound.stop()
+          // removeFromPlayingSounds(drop_sound)
+          // grab_sound.stop()
+          // removeFromPlayingSounds(grab_sound)
+          // if (!mute)
+          //   grab_sound.play()
 
         }
 
@@ -2122,7 +2122,7 @@ $def with (name)
                   winlose_menu.items[0].locked = false
                 else
                   winlose_menu.items[0].locked = true
-                winlose_menu.items[0].text = "Continue to " + (parseInt(player_level) + 1) + "-1"
+                winlose_menu.items[0].text = "Cont. to " + (parseInt(player_level) + 1) + "-1"
                 winlose_menu.items[0].action = function() {
                   player_level++
                   player_stage = 1
@@ -2351,10 +2351,10 @@ $def with (name)
                 console.log("matches found!!! " + matches.length + " of color (" + matches[0].color + ")")
                 this.matchesFound(matches)
                 match_found = true
-                melt_audio.stop()
-                removeFromPlayingSounds(melt_audio)
-                if (!mute)
-                  melt_audio.play()
+                // melt_audio.stop()
+                // removeFromPlayingSounds(melt_audio)
+                // if (!mute)
+                //   melt_audio.play()
               }
 
               matches = new Array()
@@ -2366,10 +2366,10 @@ $def with (name)
                 console.log("matches found!!! " + matches.length + " of color (" + matches[0].color + ")")
                 this.matchesFound(matches)
                 match_found = true
-                melt_audio.stop()
-                removeFromPlayingSounds(melt_audio)
-                if (!mute)
-                  melt_audio.play()
+                // melt_audio.stop()
+                // removeFromPlayingSounds(melt_audio)
+                // if (!mute)
+                //   melt_audio.play()
               }
             }
           }
@@ -2500,9 +2500,9 @@ $def with (name)
           // stop sound effects
           if (old_item.type == 1) {
             console.log("stop sound effect")
-            console.dir(old_item.break_audio)
-            break_audio.stop()
-            removeFromPlayingSounds(break_audio)
+            // console.dir(old_item.break_audio)
+            // break_audio.stop()
+            // removeFromPlayingSounds(break_audio)
             if (old_item.chain > 1)
               this.board.effects.push(new ChainEffect(this,old_item))
           }
@@ -2638,12 +2638,12 @@ $def with (name)
             this_flask.sprite.dy = this_flask.stack.board.posy(this_flask.y)
 
             // stop flask's sound effects
-            break_audio.stop()
-            removeFromPlayingSounds(break_audio)
+            // break_audio.stop()
+            // removeFromPlayingSounds(break_audio)
 
-            // play robot breaking sound effects
-            if (!mute)
-              break_audio.play()
+            // // play robot breaking sound effects
+            // if (!mute)
+            //   break_audio.play()
 
 
 
@@ -2952,17 +2952,17 @@ $def with (name)
                 this.stack.board.flask_count[above.color]++
 
                 // play sound effect for brewing
-                brew_audio.stop()
-                removeFromPlayingSounds(brew_audio)
-                melt_audio.stop()
-                removeFromPlayingSounds(melt_audio)
-                white_audio.stop()
-                removeFromPlayingSounds(white_audio)
-                console.log("brewing color potion")
-                if (!mute) {
-                  brew_audio.play()
-                  white_audio.play()
-                }
+                // brew_audio.stop()
+                // removeFromPlayingSounds(brew_audio)
+                // melt_audio.stop()
+                // removeFromPlayingSounds(melt_audio)
+                // white_audio.stop()
+                // removeFromPlayingSounds(white_audio)
+                // console.log("brewing color potion")
+                // if (!mute) {
+                //   brew_audio.play()
+                //   white_audio.play()
+                // }
 
               // only accept white blocks above if empty
               // break if other colors brewed
@@ -2985,13 +2985,13 @@ $def with (name)
                   this.stack.board.flask_count[above.color]++
 
                   // play sound effect for brewing
-                  white_audio.stop()
-                  removeFromPlayingSounds(white_audio)
-                  melt_audio.stop()
-                  removeFromPlayingSounds(melt_audio)
-                  console.log("brewing white potion")
-                  if (!mute)
-                    white_audio.play()
+                  // white_audio.stop()
+                  // removeFromPlayingSounds(white_audio)
+                  // melt_audio.stop()
+                  // removeFromPlayingSounds(melt_audio)
+                  // console.log("brewing white potion")
+                  // if (!mute)
+                  //   white_audio.play()
 
                 // melting colored blocks over empty flask creates an unstable reaction
                 } else {
@@ -3022,11 +3022,11 @@ $def with (name)
                   this.stack.board.flask_count[this.color]++
 
                   // play sound effect for unstable reaction
-                  break_audio.stop()
-                  removeFromPlayingSounds(break_audio)
-                  console.log("brewing unstable potion")
-                  if (!mute)
-                    break_audio.play()
+                  // break_audio.stop()
+                  // removeFromPlayingSounds(break_audio)
+                  // console.log("brewing unstable potion")
+                  // if (!mute)
+                  //   break_audio.play()
                 }
 
               }
@@ -3190,10 +3190,10 @@ $def with (name)
 
           if (this.delay == 0) {
             console.log("playing break sfx")
-            splash_audio.stop()
-            removeFromPlayingSounds(splash_audio)
-            if (!mute)
-              splash_audio.play()
+            // splash_audio.stop()
+            // removeFromPlayingSounds(splash_audio)
+            // if (!mute)
+            //   splash_audio.play()
           }
 
           if (this.spritesOffscreen())
@@ -3316,7 +3316,7 @@ $def with (name)
         pause = true
         pause_menu.active = true
         // pause all sounds currently playing
-        stopSounds()
+        // stopSounds()
       }
 
 
@@ -5158,7 +5158,9 @@ $def with (name)
     jaws.onload = function() {
       console.log("Bugs: need to check if there's enough flasks for lose condition")
       jaws.unpack()
-      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/sfx/grab.wav","./static/sfx/drop.wav","./static/sfx/robot_death.wav","./static/sfx/brew.wav","./static/sfx/break.wav","./static/sfx/melt1.wav","./static/sfx/white3.wav"]
+      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif"]
+
+      // "./static/sfx/grab.wav","./static/sfx/drop.wav","./static/sfx/robot_death.wav","./static/sfx/brew.wav","./static/sfx/break.wav","./static/sfx/melt1.wav","./static/sfx/white3.wav"
 
       jaws.assets.add(assets_array)
 
