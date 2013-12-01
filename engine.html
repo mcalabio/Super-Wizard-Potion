@@ -13,7 +13,7 @@ $def with (name)
   </head>
 <body>
 
-  <a id="muteButton" href="#" onClick="toggleMute()" style="float:right">Sound: On</a>  
+  <a id="muteButton" href="#" onClick="toggleMute()" style="visibility:hidden;float:right">Sound: On</a>  
   <canvas id="gameScreen" width=600 height=500 style="position:fixed; top:10px; margin-top:10px"></canvas>
   <br>
   <div id="progressButtons" margin="100">
@@ -110,7 +110,7 @@ $def with (name)
     var latest_edit
     var pause = false
     var main_menu_auto = undefined
-    var mute = false
+    var mute = true
     var sound_effects = new Array()
     var paused_sound_effects = new Array()
     var playing_sound_effects = new Array()
@@ -1161,6 +1161,8 @@ $def with (name)
           // play sound effects
           drop_sound.stop()
           removeFromPlayingSounds(drop_sound)
+          grab_sound.stop()
+          removeFromPlayingSounds(grab_sound)
           if (!mute)
             grab_sound.play()
 
@@ -3360,7 +3362,7 @@ $def with (name)
       console.log("constructed pause_menu = " + pause_menu.items.length)
     }
 
-    function setupSounds () {
+    function setupHowls () {
       // player sound effects
       grab_sound = new Howl({
         urls: ['./static/sfx/grab.mp3','./static/sfx/grab.ogg'],
@@ -3421,6 +3423,53 @@ $def with (name)
 
 
       // }
+    }
+
+    function setupSounds () {
+      // player sound effects
+      grab_sound = new jaws.Audio({
+        volume:.3
+      })
+      grab_sound.setAudio("./static/sfx/grab.wav")
+      sound_effects.push(grab_sound)
+
+      drop_sound = new jaws.Audio({
+        volume:.3
+      })
+      drop_sound.setAudio("./static/sfx/drop.wav")
+      sound_effects.push(drop_sound)
+
+      // flask sound effects
+      break_audio = new jaws.Audio({
+        volume:.25
+      })
+      break_audio.setAudio("./static/sfx/robot_death.wav")
+      sound_effects.push(break_audio)
+
+      brew_audio = new jaws.Audio({
+        volume:.2
+      })
+      brew_audio.setAudio("./static/sfx/brew.wav")
+      sound_effects.push(brew_audio)
+
+      splash_audio = new jaws.Audio({
+          volume:1
+        })
+      splash_audio.setAudio("./static/sfx/break.wav")
+      sound_effects.push(splash_audio)
+
+      melt_audio = new jaws.Audio({
+          volume:.1
+      })
+      melt_audio.setAudio("./static/sfx/melt1.wav")
+      sound_effects.push(melt_audio)
+
+      white_audio = new jaws.Audio({
+          volume:.5
+      })
+      white_audio.setAudio("./static/sfx/white3.wav")
+      sound_effects.push(white_audio)
+
     }
 
     function stopSounds () {
@@ -5094,7 +5143,7 @@ $def with (name)
     jaws.onload = function() {
       console.log("Bugs: need to check if there's enough flasks for lose condition")
       jaws.unpack()
-      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif"]
+      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/sfx/grab.wav","./static/sfx/drop.wav","./static/sfx/robot_death.wav","./static/sfx/brew.wav","./static/sfx/break.wav","./static/sfx/melt1.wav","./static/sfx/white3.wav"]
 
       jaws.assets.add(assets_array)
 
