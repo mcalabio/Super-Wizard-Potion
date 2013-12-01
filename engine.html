@@ -2064,13 +2064,11 @@ $def with (name)
         this.winLose = function() {
 
           winlose = true
-          winlose_data.active = false
           winlose_menu.active = true
           winlose_menu.controls(winlose_menu)
 
           if (game_end == "W") {
 
-            winlose_data.active = true
             winlose_data.items[1].text += "  " + player.timer.clock_text
             winlose_data.items[2].text += " \u03BB" + player.score
 
@@ -2204,7 +2202,6 @@ $def with (name)
 
           } else if (game_end == "L") {
 
-            winlose_data.active = false
             winlose_menu.y = winlose_data.y
             winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
 
@@ -2311,8 +2308,7 @@ $def with (name)
 
           // draw winlose menu
           if (game_end != "") {
-            if (winlose_data.active)
-              winlose_data.draw()
+            winlose_data.draw()
             winlose_menu.draw()
           }
 
@@ -3545,9 +3541,9 @@ $def with (name)
       var record = "\n\n" + new Date((+new Date())) + "\n"
 
       if (marathon)
-        record += player_name + " " + control_text + " MRTHN-" + MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
+        record += player_name + " " + starTotal() + " " + control_text + " MRTHN-" + MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
       else
-        record += player_name + " " + control_text + " " + player_level + "-" + player_stage + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
+        record += player_name + " " + starTotal() + " " + control_text + " " + player_level + "-" + player_stage + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
 
       // append data for replays
       var player_moves = JSON.stringify(board.player.replay_data)
@@ -3558,7 +3554,7 @@ $def with (name)
         record += "\n"
         for (var i = 0; i < star_progress.length; i++) {
           var level_progress = JSON.stringify(star_progress[i])
-          record += level_progress
+          record += "world " + i + " - " + level_progress + "\n"
         }
       }
 
@@ -3897,7 +3893,7 @@ $def with (name)
 
     }
 
-    function MenuBox(title,parent,x,y,width,items,scrolling) {
+    function MenuBox(title,parent,x,y,width,items,scrolling,right_for_ok) {
 
       console.log("constructing menubox with title = " + this.title + " at (" + x + "," + y + ")")
 
@@ -3917,6 +3913,7 @@ $def with (name)
       this.active = false
       this.mouse_inside = false
       this.scrolling = scrolling || false
+      this.right_for_ok = right_for_ok || false
       this.old_mouse_x = jaws.mouse_x
       this.old_mouse_y = jaws.mouse_y
 
@@ -4092,6 +4089,15 @@ $def with (name)
         })
 
         jaws.on_keydown(["enter","space","k"], function() {
+          if (menu.items[menu.index].active && !menu.items[menu.index].locked) {
+            console.log("performing action")
+            menu.items[menu.index].action(jaws)
+          }
+        })
+
+        jaws.on_keydown(["right","d"], function() {
+          if (!right_for_ok)
+            return
           if (menu.items[menu.index].active && !menu.items[menu.index].locked) {
             console.log("performing action")
             menu.items[menu.index].action(jaws)
@@ -4379,11 +4385,13 @@ $def with (name)
           }))
           main_menu_items[main_menu_items.length-1].description
             = "Let's make some levels, Kris."
-          main_menu_items.push(new MenuItem(main_menu,"Options Mode",function() {
-            menus.push(options_menu)
-            active_menu = options_menu.parent.setActiveMenu(options_menu,active_menu)
+          main_menu_items.push(new MenuItem(main_menu,"How to Play",function() {
+            menus.push(help_menu)
+            active_menu = help_menu.parent.setActiveMenu(help_menu,active_menu)
           }))
-          main_menu_items[main_menu_items.length-1].active = false
+          // main_menu_items[main_menu_items.length-1].active = false
+          main_menu_items[main_menu_items.length-1].description
+            = "Learn about the controls and scoring system."
           main_menu_items.push(new MenuItem(main_menu,"Save Progress",function() {
             menus.push(save_menu)
             active_menu = save_menu.parent.setActiveMenu(save_menu,active_menu)
@@ -4392,7 +4400,7 @@ $def with (name)
           main_menu_items[main_menu_items.length-1].description
             = "Click the buttons below to save or load\n" +
             "your progress using a .txt file."
-        var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items)
+        var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items,false,true)
 
         main_menu.items[3].active = false
 
@@ -4402,7 +4410,7 @@ $def with (name)
 
 
         // level select menu
-        var level_select_menu = new MenuBox("Level",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, new Array(),true)
+        var level_select_menu = new MenuBox("Level",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, new Array(),true,true)
         level_select_menu.back = this.back
 
         var level_select_ok = new OkSubMenu("",level_select_menu,function() {
@@ -4533,30 +4541,34 @@ $def with (name)
 
 
 
-        // options menu
-        var options_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, [new MenuItem(options_menu, "Controls", function() {
-          menus.push(controls_menu)
-          controls_menu.index = control_scheme - 1
-          active_menu = controls_menu.parent.setActiveMenu(controls_menu,active_menu)
-          })])
-        options_menu.back = this.back
-
-        // controls menu
-        var controls_menu_items = new Array()
-          controls_menu_items.push(new MenuItem(controls_menu, "Keyboard", function() {
-            control_scheme = 1
-            controls_menu.back()
+        // help menu
+        var help_menu_items = new Array()
+        help_menu_items.push(new MenuItem(help_menu, "Keyboard Controls", function() {
+          menus.push(keyboard_menu)
+          active_menu = keyboard_menu.parent.setActiveMenu(keyboard_menu,active_menu)
           }))
-          controls_menu_items.push(new MenuItem(controls_menu, "Mouse", function() {
-            control_scheme = 2
-            controls_menu.back()
+        help_menu_items[help_menu_items.length-1].description
+          = "Move the cursor with the arrow keys (or WASD).\n"
+          + "Press SPACE (or J) to grab items.\n"
+          + "While holding items, SPACE (or J) drops an item.\n"
+          + "Press C (or K) to grab/drop a whole stack."
+        help_menu_items.push(new MenuItem(help_menu, "Mouse Controls", function() {
+          menus.push(mouse_menu)
+          active_menu = mouse_menu.parent.setActiveMenu(mouse_menu,active_menu)
           }))
-        var controls_menu = new MenuBox("",options_menu,options_menu.x + options_menu.width + 1, options_menu.y, 150, controls_menu_items)
-        controls_menu.index = control_scheme - 1
-        controls_menu.back = function() {
-          menus.pop()
-          active_menu = controls_menu.setActiveMenu(controls_menu.parent,active_menu)
-        }
+        help_menu_items[help_menu_items.length-1].description
+          = "Click items to grab them.\n"
+          + "While holding, click the board to drop one item\n"
+          + "or click on held items to drop them.\n"
+          + "Right click to grab/drop a whole stack."
+        help_menu_items.push(new MenuItem(help_menu, "Scoring", function() {return}))
+        help_menu_items[help_menu_items.length-1].description
+          = "Melt block    : \u03BB100\n"
+          + "Brew potion   : \u03BB100\n"
+          + "Destroy robot : \u03BB500\n"
+          + "Perform chains to multiply your score."
+        var help_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 50, 200, help_menu_items)
+        help_menu.back = this.back
 
         // save menu
         var save_menu_items = new Array()
@@ -4597,10 +4609,10 @@ $def with (name)
           }))
           save_menu_items.push(new MenuItem(save_menu, "Reset", function() {
             menus.push(reset_menu)
-            reset_menu.index = control_scheme - 1
+            reset_menu.index = 1
             active_menu = reset_menu.parent.setActiveMenu(reset_menu,active_menu)
           }))
-        var save_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 160, save_menu_items)
+        var save_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 160, save_menu_items, false, true)
         save_menu.back = this.back
         save_menu_items[0].description = "Save your progress manually\n"
           + "(the game autosaves after each level)."
