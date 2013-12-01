@@ -964,7 +964,7 @@ $def with (name)
 
             console.log("player (" + player.x + " , " + player.y + ")")
           })
-          jaws.on_keydown(["z","k"], function() {
+          jaws.on_keydown(["z","k","c","alt"], function() {
             if (pause || game_end != "") return
             if(player.hand.items.length == 0) {
               player.grab(player.board.stacks[player.x],player.board.stacks[player.x].items.length)
@@ -2307,7 +2307,7 @@ $def with (name)
           }
 
           // draw winlose menu
-          if (game_end != "") {
+          if (game_end != "" && game_end != "R") {
             winlose_data.draw()
             winlose_menu.draw()
           }
@@ -4104,7 +4104,7 @@ $def with (name)
           }
         })
 
-        jaws.on_keydown(["esc","a","left","j"], function() {
+        jaws.on_keydown(["esc","a","left","j","z","c","alt"], function() {
           if (scrolling)
             menus.pop()
           menu.back()
@@ -4391,15 +4391,14 @@ $def with (name)
           }))
           // main_menu_items[main_menu_items.length-1].active = false
           main_menu_items[main_menu_items.length-1].description
-            = "Learn about the controls and scoring system."
+            = "Learn about the controls and score system."
           main_menu_items.push(new MenuItem(main_menu,"Save Progress",function() {
             menus.push(save_menu)
             active_menu = save_menu.parent.setActiveMenu(save_menu,active_menu)
             console.dir(active_menu)
           }))
           main_menu_items[main_menu_items.length-1].description
-            = "Click the buttons below to save or load\n" +
-            "your progress using a .txt file."
+            = "Save, Load, or Reset your progress.\n"
         var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items,false,true)
 
         main_menu.items[3].active = false
@@ -4543,23 +4542,23 @@ $def with (name)
 
         // help menu
         var help_menu_items = new Array()
-        help_menu_items.push(new MenuItem(help_menu, "Keyboard Controls", function() {
+        help_menu_items.push(new MenuItem(help_menu, "Keyboard Control", function() {
           menus.push(keyboard_menu)
           active_menu = keyboard_menu.parent.setActiveMenu(keyboard_menu,active_menu)
           }))
         help_menu_items[help_menu_items.length-1].description
-          = "Move the cursor with the arrow keys (or WASD).\n"
+          = "Move cursor with the arrow keys (or WASD).\n"
           + "Press SPACE (or J) to grab items.\n"
-          + "While holding items, SPACE (or J) drops an item.\n"
+          + "While holding, SPACE (or J) drops an item.\n"
           + "Press C (or K) to grab/drop a whole stack."
-        help_menu_items.push(new MenuItem(help_menu, "Mouse Controls", function() {
+        help_menu_items.push(new MenuItem(help_menu, "Mouse Control", function() {
           menus.push(mouse_menu)
           active_menu = mouse_menu.parent.setActiveMenu(mouse_menu,active_menu)
           }))
         help_menu_items[help_menu_items.length-1].description
           = "Click items to grab them.\n"
-          + "While holding, click the board to drop one item\n"
-          + "or click on held items to drop them.\n"
+          + "While holding, click the board to drop an\n"
+          + "item or click on held items to drop them.\n"
           + "Right click to grab/drop a whole stack."
         help_menu_items.push(new MenuItem(help_menu, "Scoring", function() {return}))
         help_menu_items[help_menu_items.length-1].description
@@ -4569,6 +4568,9 @@ $def with (name)
           + "Perform chains to multiply your score."
         var help_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 50, 200, help_menu_items)
         help_menu.back = this.back
+
+        if (starTotal() <= 0)
+          main_menu.index = 4
 
         // save menu
         var save_menu_items = new Array()
@@ -4616,10 +4618,10 @@ $def with (name)
         save_menu.back = this.back
         save_menu_items[0].description = "Save your progress manually\n"
           + "(the game autosaves after each level)."
-        save_menu_items[1].description = "Back up your save or transfer\n"
-          + "it to another computer."
-        save_menu_items[2].description = "Back up your save or transfer\n"
-          + "it to another computer."
+        save_menu_items[1].description = "Back up your progress by exporting\n"
+          + "it as a save string."
+        save_menu_items[2].description = "Load your progress with\n"
+          + "a save string."
         save_menu_items[3].description = "Delete all your progress.\n"
 
         // reset sub menu
@@ -4631,6 +4633,7 @@ $def with (name)
             marathon_progress = ["00:00",0]
             player_level = 1
             player_stage = 1
+            main_menu_auto = undefined
             jaws.start(PlayerNameState)
           }))
           reset_menu_items.push(new MenuItem(reset_menu, "No", function() {
