@@ -206,6 +206,10 @@ $def with (name)
       var beat_marathon_score = false
       var drew_puzzle_screen = false
 
+      // undo states
+      var undo_hand = new Array()
+      var undo_board = new Array()
+
       // hide progress buttons
       var progress_buttons = $("progressButtons")
       progress_buttons.hidden = true
@@ -286,6 +290,7 @@ $def with (name)
           if (level_data.levels[player_level][player_stage-1] != undefined) {
             console.log("filling level " + player_level + "-" + player_stage)
             player.board.fillLevel(player_level,player_stage)
+            addStateForUndo(player.hand,player.board)
 
             console.log("player_progress")
             console.dir(player_progress)
@@ -964,7 +969,7 @@ $def with (name)
 
             console.log("player (" + player.x + " , " + player.y + ")")
           })
-          jaws.on_keydown(["z","k","c","alt"], function() {
+          jaws.on_keydown(["k","c","alt"], function() {
             if (pause || game_end != "") return
             if(player.hand.items.length == 0) {
               player.grab(player.board.stacks[player.x],player.board.stacks[player.x].items.length)
@@ -988,6 +993,9 @@ $def with (name)
             player.keyboard_actions++
           })
 
+          jaws.on_keydown(["z"], function() {
+            undoLastMove()
+          })
 
           jaws.on_keydown(["left_mouse_button"], function() {
             if (pause || game_end != "") return
@@ -1061,38 +1069,30 @@ $def with (name)
           this.replay_data[this.timer.frame_ticker.toString()]
             = [this.x,this.y,"grab",depth]
 
+          // start the timer
           if (!game_start)
             game_start = true
 
+          // count player moves
           this.moves++
-          console.log("player moves = " + this.moves)
 
           // move the cursor quickly to the top of the screen
           Y_SPEED = FAST
           this.cursor_speed = Y_SPEED
 
-
           // loop through the items of the stack according to depth passed in
           // pop items and push to the player hand, one by one
           for(var i=0; i<depth; i++) {
 
-            // stop pushing to hand when breaking item encountered
-            // if (stack.items[stack.items.length-1].breaking)
-            //   break
-
+            // push top of stack to hand
             var item = stack.items.pop()
             if (item.breaking) {
               stack.items.push(item)
               break
             }
-
-
-            // push top of stack to hand
-
             this.hand.items.push(item)
 
             // update hand position
-            // var item = this.hand.items.pop()
             item.x = this.x
             item.y = BOARD_HEIGHT - 1 - i
             item.stack = this.hand
@@ -1105,6 +1105,9 @@ $def with (name)
             item.chain = 0
 
           }
+
+          // add current state of board and hand to undo arrays
+          addStateForUndo(this.hand,this.board)
 
           // play sound effect
           // if (depth > 0) {
@@ -1157,6 +1160,9 @@ $def with (name)
           // reposition player's y position if hand is now empty
           if (hand_items.length == 0)
             this.y = stack_items.length - depth // at item at bottom of hand stack
+
+          // add current state of board and hand to undo arrays
+          addStateForUndo(this.hand,this.board)
 
           // play sound effects
           // drop_sound.stop()
@@ -1715,9 +1721,11 @@ $def with (name)
 
         }
 
-        this.fillLevel = function(level,stage) {
+        this.fillLevel = function(level,stage,undo) {
 
-          var data = level_data.levels[level][stage-1]
+          var undo_state = undo || undefined
+
+          var data = (undo_state != undefined) ? undo_state : level_data.levels[level][stage-1]
 
           console.log("level_data")
           console.dir(level_data)
@@ -3306,6 +3314,110 @@ $def with (name)
         else sprite.y -= y_speed
       }
 
+      // adds the current state of the player hand and board
+      // to the undo state arrays
+      function addStateForUndo (hand,board) {
+
+        // construct level string
+        var level_string = ""
+        // go through each stack
+        for (var s = 0; s < board.stacks.length; s++) {
+          // go through each item in the stack
+          var this_stack = board.stacks[s]
+          for (var i = 0; i < this_stack.items.length; i++) {
+            // append this item string to level_string
+            var this_item = this_stack.items[i]
+            if (i>0) level_string = level_string + ","
+            level_string = level_string + this_item.type + "|" + this_item.color
+          }
+          level_string = level_string + "\n"
+        }
+
+        // add level string to undo state array
+        undo_board.push(level_string)
+
+        // construct hand string
+        var hand_string = ""        
+        // go through each item in the stack
+        for (var i = 0; i < hand.items.length; i++) {
+          // append this item string to hand_string
+          var this_item = hand.items[i]
+          if (i>0) hand_string = hand_string + ","
+          hand_string = hand_string + this_item.type + "|" + this_item.color
+        }
+        hand_string = hand_string + "\n"
+
+        // add hand string to undo state array
+        undo_hand.push([player.x,player.y,player.hand.level,hand_string])
+
+        console.log("added hand and board states!")
+        console.dir(undo_hand)
+        console.dir(undo_board)
+
+      }
+
+      // takes back the players last action
+      function undoLastMove () {
+
+        // SANITY CHECK!!!
+        if (undo_hand.length <= 0 || undo_board.length <= 0)
+          return
+
+        // empty the players hand
+        player.hand.items = new Array()
+        Y_SPEED = FAST
+        player.cursor_speed = Y_SPEED
+
+        if (undo_hand.length > 1)
+          undo_hand.pop()
+        var player_state = undo_hand.pop()
+        player.x = player_state[0]
+        player.y = player_state[1]
+        player.hand.level = player_state[2]
+        var hand_state = player_state[3].split('\n')[0]
+
+        // go through each item in this stack
+        var items = (hand_state.length > 0) ? hand_state.split(',') : []
+        for (var i=0; i < items.length; i++) {
+
+          // construct new item from string data
+          var item = items[i]
+          var item_string = item.split('|')
+          var type = item_string[0]
+          var color = item_string[1]
+          var this_item = new Item(player.hand,type,color,player.x,i)
+
+          // push item to player hand
+          player.hand.items.push(this_item)
+
+          // update hand position
+          this_item.x = player.x
+          this_item.y = BOARD_HEIGHT - 1 - i
+          this_item.stack = player.hand
+
+          // update sprite destination
+          this_item.sprite.dx = player.board.posx(this_item.x)
+          this_item.sprite.dy = player.board.posy(this_item.y)
+
+        }
+
+        if (undo_board.length > 1)
+          undo_board.pop()
+        var board_state = undo_board.pop()
+
+        player.board.clearBoard()
+        player.board.fillLevel(player_level,player_stage,board_state)
+
+        addStateForUndo(player.hand,player.board)
+
+        console.log("popped the last hand and board states!")
+        console.dir(undo_hand)
+        console.dir(undo_board)
+        console.dir(hand_state)
+        console.dir(board_state)
+
+      }
+
     }
 
     function pauseGame (pause_menu,player,restart_menu_item,save_menu_item) {
@@ -3744,8 +3856,6 @@ $def with (name)
       // go through each stack
       console.log("stacks = " + board.stacks)
       for (var s = 0; s < board.stacks.length; s++) {
-
-
 
         var this_stack = board.stacks[s]
         // go through each item in the stack
