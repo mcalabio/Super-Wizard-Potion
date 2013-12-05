@@ -969,7 +969,7 @@ $def with (name)
 
             console.log("player (" + player.x + " , " + player.y + ")")
           })
-          jaws.on_keydown(["k","c","alt"], function() {
+          jaws.on_keydown(["k","c"], function() {
             if (pause || game_end != "") return
             if(player.hand.items.length == 0) {
               player.grab(player.board.stacks[player.x],player.board.stacks[player.x].items.length)
@@ -1742,11 +1742,6 @@ $def with (name)
               jaws.start(MainMenu)
             }
           }
-
-          // reset item counts
-          this.block_count = [0,0,0,0,0,0,0,0]
-          this.flask_count = [0,0,0,0,0,0,0,0,0]
-          this.robot_count = [0,0,0,0,0,0]
 
           // array of stacks in string form
           var stacks_string = data.split('\n')
@@ -3316,7 +3311,9 @@ $def with (name)
 
       // adds the current state of the player hand and board
       // to the undo state arrays
-      function addStateForUndo (hand,board) {
+      function addStateForUndo (hand,board,undo) {
+
+        var called_by_undo = undo || false
 
         // construct level string
         var level_string = ""
@@ -3347,6 +3344,11 @@ $def with (name)
         }
         hand_string = hand_string + "\n"
 
+        // update player.x of previous state
+        if (undo_hand[undo_hand.length-1] != undefined && !called_by_undo) {
+          undo_hand[undo_hand.length-1][0] = player.x
+        }
+
         // add hand string to undo state array
         undo_hand.push([player.x,player.y,player.hand.level,hand_string])
 
@@ -3362,6 +3364,13 @@ $def with (name)
         // SANITY CHECK!!!
         if (undo_hand.length <= 0 || undo_board.length <= 0)
           return
+
+        console.log('UNDOING')
+
+        // reset item counts
+        player.board.block_count = [0,0,0,0,0,0,0,0]
+        player.board.flask_count = [0,0,0,0,0,0,0,0,0]
+        player.board.robot_count = [0,0,0,0,0,0]
 
         // empty the players hand
         player.hand.items = new Array()
@@ -3408,13 +3417,19 @@ $def with (name)
         player.board.clearBoard()
         player.board.fillLevel(player_level,player_stage,board_state)
 
-        addStateForUndo(player.hand,player.board)
+        addStateForUndo(player.hand,player.board,true)
 
         console.log("popped the last hand and board states!")
         console.dir(undo_hand)
         console.dir(undo_board)
         console.dir(hand_state)
         console.dir(board_state)
+
+        // finally, check for matches
+        for(var s=0; s < player.board.stacks.length; s++) {
+          var this_stack = player.board.stacks[s]
+          this_stack.checkForMatches()
+        }
 
       }
 
@@ -4214,7 +4229,7 @@ $def with (name)
           }
         })
 
-        jaws.on_keydown(["esc","a","left","j","z","c","alt"], function() {
+        jaws.on_keydown(["esc","a","left","j","z","c"], function() {
           if (scrolling)
             menus.pop()
           menu.back()
