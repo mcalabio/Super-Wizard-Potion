@@ -2069,7 +2069,8 @@ $def with (name)
             winlose_data.items[2].text += " \u03BB" + player.score
 
             // update star progress
-            player.new_stars = updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
+            if (!player_undid)
+              player.new_stars = updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
 
             player.stars = starTotal()
             player_data.items[0].text = "  x " + player.stars
@@ -3336,7 +3337,6 @@ $def with (name)
         // update player.x of previous state
         if (undo_hand[undo_hand.length-1] != undefined && !called_by_undo) {
           undo_hand[undo_hand.length-1][0] = player.x
-          // undo_hand[undo_hand.length-1][4] = player.score
         }
 
         // add hand string to undo state array
