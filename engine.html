@@ -207,6 +207,7 @@ $def with (name)
       var drew_puzzle_screen = false
 
       // undo states
+      var player_undid = false
       var undo_hand = new Array()
       var undo_board = new Array()
 
@@ -692,19 +693,6 @@ $def with (name)
         player.update()
 
         if (marathon) {
-          // UPDATE BEST TIME AND SCORE IF PLAYER BEAT THEM
-          // // check if player beat marathon time
-          // if (beat_marathon_time)
-          //   marathon_data.items[0].text = "Best Time:  " + player.timer.clock_text
-          // else if (player.timer.clock_text > marathon_progress[0])
-          //   beat_marathon_time = true
-
-          // // check if player beat marathon high score
-          // if (beat_marathon_score)
-          //   marathon_data.items[1].text = "High Score: \u03BB" + player.score
-          // else if (player.score > marathon_progress[1])
-          //   beat_marathon_score = true          
-          // check if player beat marathon time
           if (!beat_marathon_time) {
             if (player.timer.clock_text > marathon_progress[0]) {
               beat_marathon_time = true
@@ -3247,6 +3235,7 @@ $def with (name)
 
         // increment the ticker and count the seconds and minutes
         this.update = function() {
+          // start the timer
           if (game_start && game_end == "") {
             this.ticker++
             this.frame_ticker++
@@ -3292,7 +3281,7 @@ $def with (name)
 
           this.clock_text = min_text + ":" + sec_text
           if (!level_edit)
-            screen_data.items[1].text = this.clock_text
+            screen_data.items[1].text = (player_undid) ? "--:--" : this.clock_text
 
 
         }
@@ -3362,10 +3351,21 @@ $def with (name)
       function undoLastMove () {
 
         // SANITY CHECK!!!
-        if (undo_hand.length <= 0 || undo_board.length <= 0)
+        if (undo_hand.length <= 0 || undo_board.length <= 0 || !game_start)
           return
 
         console.log('UNDOING')
+
+        // record this action for replays
+        player.replay_data[player.timer.frame_ticker.toString()]
+          = [player.x,player.y,"undo",0]
+
+        console.log("replay_data")
+        console.dir(player.replay_data)
+
+        // disable player from earning stars and beating records
+        player_undid = true
+        screen_data.items[1].text = "__:__"
 
         // reset item counts
         player.board.block_count = [0,0,0,0,0,0,0,0]
