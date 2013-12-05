@@ -165,6 +165,9 @@ $def with (name)
       var level_select_ok
       var winlose = false
       var raise_level_time = MAX_RAISE_LEVEL_TIME
+      var continue_menu_item
+      var undo_menu_item
+      var back_menu_item
       var restart_menu_item = new MenuItem(pause_menu,"Restart",function() {
         // update marathon progress
         if (marathon) {
@@ -355,36 +358,44 @@ $def with (name)
         }
 
         // winlose menu
-        var winlose_menu_items = new Array()
-          winlose_menu_items.push(new MenuItem(winlose_menu,"Continue",function() {
+        continue_menu_item = new MenuItem(winlose_menu,"Continue",function() {
 
-            // advance the player to the next level
-            console.log("player_stage = " + player_stage)
-            console.dir(level_data)
-            if (player_stage < level_data["levels"][player_level].length) {
-              player_stage++
-            } else {
-              player_level++
-              player_stage = 1
-            }
-            console.log("player_stage = " + player_stage)
+          // advance the player to the next level
+          console.log("player_stage = " + player_stage)
+          console.dir(level_data)
+          if (player_stage < level_data["levels"][player_level].length) {
+            player_stage++
+          } else {
+            player_level++
+            player_stage = 1
+          }
+          console.log("player_stage = " + player_stage)
 
-            // reset board
-            jaws.start(Game)
+          // reset board
+          jaws.start(Game)
 
-          }))
-          winlose_menu_items[0].active = false
-          winlose_menu_items.push(new MenuItem(winlose_menu,"Restart",function() {
-            jaws.start(Game)
-          }))
-          winlose_menu_items.push(new MenuItem(winlose_menu,"Back to Menu",function() {
-            if (!marathon)
-              main_menu_auto = [(level_edit) ? 3 : 0,player_level,player_stage]
-            else
-              main_menu_auto = [1,0,0]
-            jaws.start(MainMenu)
-          }))
-        winlose_menu = new MenuBox(" ",winlose_menu,menu_x, winlose_data.y + winlose_data.height,4*ITEM_WIDTH+15,winlose_menu_items)
+        })
+        undo_menu_item = new MenuItem(winlose_menu,"Undo",function() {
+          winlose = false
+          winlose_menu.active = false
+
+          winlose_menu.y = winlose_data.y + winlose_data.height
+          winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+
+          // color timer to be red to indicate game end
+          screen_data.index = -1
+          game_end = ""
+          player.controls()
+          undoLastMove()
+        })
+        back_menu_item = new MenuItem(winlose_menu,"Back to Menu",function() {
+          if (!marathon)
+            main_menu_auto = [(level_edit) ? 3 : 0,player_level,player_stage]
+          else
+            main_menu_auto = [1,0,0]
+          jaws.start(MainMenu)
+        })
+        winlose_menu = new MenuBox(" ",winlose_menu,menu_x, winlose_data.y + winlose_data.height,4*ITEM_WIDTH+15,[])
 
         // to display star lock to continue to next world
         continue_lock_box = new OkSubMenu("",winlose_menu,function() { return })
@@ -2061,7 +2072,8 @@ $def with (name)
 
           winlose = true
           winlose_menu.active = true
-          winlose_menu.controls(winlose_menu)
+          winlose_menu.controls(winlose_menu)   
+          var winlose_menu_items = new Array()       
 
           if (game_end == "W") {
 
@@ -2097,10 +2109,9 @@ $def with (name)
             // stage menu if beat last stage (already)
             if (player_stage == level_data.levels[player_level].length ||
                 player_progress[player_level][0] >= level_data.levels[player_level].length) {
-              // keep Back to Menu item
-              var back_to_menu = winlose_menu.items.pop()
-              // remove Restart Menu item
-              winlose_menu.items.pop()
+
+              winlose_menu_items.push(continue_menu_item)              
+
               // add MenuItem for each stage of this level
               for (var s = 0; s < level_data.levels[player_level].length; s++) {
                 var stage_menu_item = new MenuItem(winlose_menu,player_level.toString() + "-" + (s+1).toString(), function() {
@@ -2108,10 +2119,11 @@ $def with (name)
                   console.dir(this)
                   jaws.start(Game)
                 })
-                winlose_menu.items.push(stage_menu_item)
+                winlose_menu_items.push(stage_menu_item)
               }
               // add Back to Menu item
-              winlose_menu.items.push(back_to_menu)
+              winlose_menu_items.push(back_menu_item)
+              winlose_menu.items = winlose_menu_items
               winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
 
               next_level = (level_data.levels[parseInt(player_level) + 1] != undefined) ? level_data.levels[parseInt(player_level) + 1][0] : undefined
@@ -2141,6 +2153,16 @@ $def with (name)
 
             // beating puzzles for the first time
             } else {
+
+              winlose_menu_items.push(continue_menu_item)
+              winlose_menu_items.push(restart_menu_item)
+              restart_menu_item.action = function () {
+                jaws.start(Game) // no need to save record here
+              }
+              winlose_menu_items.push(back_menu_item)
+              winlose_menu.items = winlose_menu_items
+              winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+
               // continue
               if (next_level != undefined) {
                 winlose_menu.items[0].active = true
@@ -2200,6 +2222,13 @@ $def with (name)
           } else if (game_end == "L") {
 
             winlose_menu.y = winlose_data.y
+            winlose_menu_items.push(undo_menu_item)
+            winlose_menu_items.push(restart_menu_item)
+            restart_menu_item.action = function () {
+              jaws.start(Game) // no need to save record here
+            }
+            winlose_menu_items.push(back_menu_item)
+            winlose_menu.items = winlose_menu_items
             winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
 
 
@@ -4053,7 +4082,7 @@ $def with (name)
         if (this.scrolling)
           this.height = 70
         else
-          this.height = 20 * (items.length + ((this.title == "") ? 0 : 1)) + 30
+          this.height = 20 * (this.items.length + ((this.title == "") ? 0 : 1)) + 30
 
         this.sprites = new Array()
 
