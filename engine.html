@@ -743,14 +743,13 @@ $def with (name)
                 level_record.items[2].text = "High Score: \u03BB" + player_progress[level][1][stage][1]
                 
                 // show appropriate stars
-                level_record.sprites[0].active = true
-
-                
-                level_record.sprites[1].active = (star_progress[level][stage][1] > 0) ? true : false
-                level_record.sprites[2].active = (star_progress[level][stage][2] > 0) ? true : false
-                level_record.sprites[3].active = (star_progress[level][stage][3] > 0) ? true : false
-                level_record.items[3].text = (star_progress[level][stage][3] > 0) ? "Perfect" : ""                         
-                }
+                level_record.sprites[0].active = (star_progress[level][stage] != undefined && star_progress[level][stage][0] >= 0) ? true : false
+                level_record.sprites[1].active = (star_progress[level][stage] != undefined && star_progress[level][stage][1] >= 0) ? true : false
+                level_record.sprites[2].active = (star_progress[level][stage] != undefined && star_progress[level][stage][2] >= 0) ? true : false
+                level_record.sprites[3].active = (star_progress[level][stage] != undefined && star_progress[level][stage][3] >= 0) ? true : false
+                level_record.items[0].text = (star_progress[level][stage] != undefined && star_progress[level][stage][0] > 0) ? "Completed!" : "Completed (undo)"
+                level_record.items[3].text = (star_progress[level][stage] != undefined && star_progress[level][stage][3] > 0) ? "Perfect" : ""
+              }
             } else if (winlose_menu.index == 0) {
               level_record.active = false
               if (winlose_menu.items[0].active && winlose_menu.items[0].locked) {
@@ -2077,7 +2076,7 @@ $def with (name)
 
           if (game_end == "W") {
 
-            winlose_data.items[1].text += "  " + ((player_undid) ? "--:--" : player.timer.clock_text)
+            winlose_data.items[1].text += "  " + player.timer.clock_text
             winlose_data.items[2].text += " \u03BB" + player.score
 
             // update star progress
@@ -2303,9 +2302,6 @@ $def with (name)
         // draw all stacks and effects on this board
         this.draw = function() {
 
-          // board sprite
-          //jaws.context.drawImage(jaws.assets.get("./static/images/BOARD.gif"), this.board.x, this.board.y )
-
           // draw pause menu
           if (pause) {
             jaws.context.fillStyle = PURPLE_HEX //"Black"
@@ -2314,8 +2310,16 @@ $def with (name)
             return
           }
 
+          // draw background
           jaws.context.fillStyle = PURPLE_HEX //"Black"
           jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
+
+          // draw undo background
+          if (player_undid) {
+            var pulse = player.timer.ticker / 60
+            jaws.context.fillStyle = "rgba(100,0,0," + pulse + ")"
+            jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)            
+          }
 
           // draw all stacks in this board and containing items
           for (var i=0; i < this.stacks.length; i++) {
@@ -3311,8 +3315,7 @@ $def with (name)
 
           this.clock_text = min_text + ":" + sec_text
           if (!level_edit)
-            screen_data.items[1].text = (player_undid) ? "--:--" : this.clock_text
-
+            screen_data.items[1].text = this.clock_text
 
         }
 
@@ -3395,7 +3398,12 @@ $def with (name)
 
         // disable player from earning stars and beating records
         player_undid = true
-        screen_data.items[1].text = "__:__"
+        screen_data.items[0].locked = true
+        screen_data.items[1].locked = true
+        screen_data.items[2].locked = true
+        winlose_data.items[0].locked = true
+        winlose_data.items[1].locked = true
+        winlose_data.items[2].locked = true
 
         // reset item counts
         player.board.block_count = [0,0,0,0,0,0,0,0]
@@ -4475,7 +4483,7 @@ $def with (name)
           active_menu = this_menu.setActiveMenu(this_menu.parent,active_menu)
       }
 
-      this.setup = function() {
+      this.setup = function() {        
 
         // main menu
         var main_menu_items = new Array()
@@ -4861,7 +4869,6 @@ $def with (name)
               active_menu.controls(active_menu)
             }
         } else
-
         // controls
         active_menu.controls(active_menu)
       }
@@ -4960,13 +4967,12 @@ $def with (name)
             level_record.items[2].text = "High Score: \u03BB" + player_progress[level][1][stage][1]
             
             // show appropriate stars
-            level_record.sprites[0].active = true
-
-            
-            level_record.sprites[1].active = (star_progress[level][stage][1] > 0) ? true : false
-            level_record.sprites[2].active = (star_progress[level][stage][2] > 0) ? true : false
-            level_record.sprites[3].active = (star_progress[level][stage][3] > 0) ? true : false
-            level_record.items[3].text = (star_progress[level][stage][3] > 0) ? "Perfect" : ""           
+            level_record.sprites[0].active = (star_progress[level][stage] != undefined && star_progress[level][stage][0] >= 0) ? true : false
+            level_record.sprites[1].active = (star_progress[level][stage] != undefined && star_progress[level][stage][1] >= 0) ? true : false
+            level_record.sprites[2].active = (star_progress[level][stage] != undefined && star_progress[level][stage][2] >= 0) ? true : false
+            level_record.sprites[3].active = (star_progress[level][stage] != undefined && star_progress[level][stage][3] >= 0) ? true : false
+            level_record.items[0].text = (star_progress[level][stage] != undefined && star_progress[level][stage][0] > 0) ? "Completed!" : "Completed (undo)"
+            level_record.items[3].text = (star_progress[level][stage] != undefined && star_progress[level][stage][3] > 0) ? "Perfect" : ""
             if (!level_menu_item.locked) {
               level_record.draw()
             }
