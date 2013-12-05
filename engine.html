@@ -2065,7 +2065,7 @@ $def with (name)
 
           if (game_end == "W") {
 
-            winlose_data.items[1].text += "  " + player.timer.clock_text
+            winlose_data.items[1].text += "  " + ((player_undid) ? "--:--" : player.timer.clock_text)
             winlose_data.items[2].text += " \u03BB" + player.score
 
             // update star progress
@@ -3336,10 +3336,11 @@ $def with (name)
         // update player.x of previous state
         if (undo_hand[undo_hand.length-1] != undefined && !called_by_undo) {
           undo_hand[undo_hand.length-1][0] = player.x
+          // undo_hand[undo_hand.length-1][4] = player.score
         }
 
         // add hand string to undo state array
-        undo_hand.push([player.x,player.y,player.hand.level,hand_string])
+        undo_hand.push([player.x,player.y,player.hand.level,hand_string,player.score])
 
         console.log("added hand and board states!")
         console.dir(undo_hand)
@@ -3384,6 +3385,8 @@ $def with (name)
         player.y = player_state[1]
         player.hand.level = player_state[2]
         var hand_state = player_state[3].split('\n')[0]
+        player.score = player_state[4]
+        screen_data.items[2].text = '\u03BB' + player.score
 
         // go through each item in this stack
         var items = (hand_state.length > 0) ? hand_state.split(',') : []
