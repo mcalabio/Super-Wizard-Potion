@@ -386,7 +386,7 @@ $def with (name)
           screen_data.index = -1
           game_end = ""
           player.controls()
-          undoLastMove()
+          undoLastMove(true)
         })
         back_menu_item = new MenuItem(winlose_menu,"Back to Menu",function() {
           if (!marathon)
@@ -743,10 +743,10 @@ $def with (name)
                 level_record.items[2].text = "High Score: \u03BB" + player_progress[level][1][stage][1]
                 
                 // show appropriate stars
-                level_record.sprites[0].active = (star_progress[level][stage] != undefined && star_progress[level][stage][0] >= 0) ? true : false
-                level_record.sprites[1].active = (star_progress[level][stage] != undefined && star_progress[level][stage][1] >= 0) ? true : false
-                level_record.sprites[2].active = (star_progress[level][stage] != undefined && star_progress[level][stage][2] >= 0) ? true : false
-                level_record.sprites[3].active = (star_progress[level][stage] != undefined && star_progress[level][stage][3] >= 0) ? true : false
+                level_record.sprites[0].active = (star_progress[level][stage] != undefined && star_progress[level][stage][0] > 0) ? true : false
+                level_record.sprites[1].active = (star_progress[level][stage] != undefined && star_progress[level][stage][1] > 0) ? true : false
+                level_record.sprites[2].active = (star_progress[level][stage] != undefined && star_progress[level][stage][2] > 0) ? true : false
+                level_record.sprites[3].active = (star_progress[level][stage] != undefined && star_progress[level][stage][3] > 0) ? true : false
                 level_record.items[0].text = (star_progress[level][stage] != undefined && star_progress[level][stage][0] > 0) ? "Completed!" : "Completed (undo)"
                 level_record.items[3].text = (star_progress[level][stage] != undefined && star_progress[level][stage][3] > 0) ? "Perfect" : ""
               }
@@ -880,31 +880,6 @@ $def with (name)
 
           })
 
-          jaws.on_keydown(["r"], function() {
-            // stop all sounds currently playing
-            for (var i=0; i<player.board.sounds.length;i++) {
-              var this_sound = player.board.sounds[i]
-              this_sound.stop()
-              removeFromPlayingSounds(this_sound)
-            }
-            // update marathon progress
-            if (marathon) {
-              if (player.timer.clock_text > marathon_progress[0])
-                marathon_progress[0] = player.timer.clock_text
-              if (player.score > marathon_progress[1])
-                marathon_progress[1] = player.score
-              // update player_save data
-              var player_save = $("saveData")
-              player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
-              // update cookie save
-              setCookie("player_save",player_save.innerHTML,360000)
-            }
-            var record = buildRecordString(player.board,"R")
-            saveRecord(record)
-            game_end = "R"
-            jaws.start(Game)
-          })
-
           jaws.on_keydown(["l"], function() {
             if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
               player.board.raiseStacks()
@@ -991,8 +966,49 @@ $def with (name)
             player.keyboard_actions++
           })
 
+
+          var ctrl = false
+
+          jaws.on_keydown(["ctrl"], function () {
+            ctrl = true
+          })
+
+          jaws.on_keyup(["ctrl"], function () {
+            ctrl = false
+          })
+
           jaws.on_keydown(["z"], function() {
-            undoLastMove()
+            if (ctrl)
+              undoLastMove()
+          })
+
+          jaws.on_keydown(["r"], function() {
+
+            if (!ctrl)
+              return
+
+            // stop all sounds currently playing
+            for (var i=0; i<player.board.sounds.length;i++) {
+              var this_sound = player.board.sounds[i]
+              this_sound.stop()
+              removeFromPlayingSounds(this_sound)
+            }
+            // update marathon progress
+            if (marathon) {
+              if (player.timer.clock_text > marathon_progress[0])
+                marathon_progress[0] = player.timer.clock_text
+              if (player.score > marathon_progress[1])
+                marathon_progress[1] = player.score
+              // update player_save data
+              var player_save = $("saveData")
+              player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+              // update cookie save
+              setCookie("player_save",player_save.innerHTML,360000)
+            }
+            var record = buildRecordString(player.board,"R")
+            saveRecord(record)
+            game_end = "R"
+            jaws.start(Game)
           })
 
           jaws.on_keydown(["left_mouse_button"], function() {
@@ -1566,6 +1582,8 @@ $def with (name)
 
         this.effects = new Array()
         this.sounds = new Array()
+
+        this.undo_alpha = 0
 
         // provide position with respect to this Board
         this.posx = function(x) { return this.board.x + x * ITEM_WIDTH }
@@ -2220,6 +2238,9 @@ $def with (name)
 
           } else if (game_end == "L") {
 
+            // drop player hand
+            player.drop(player.board.stacks[player.x],player.hand.items.length)
+
             winlose_menu.y = winlose_data.y
             winlose_menu_items.push(undo_menu_item)
             winlose_menu_items.push(restart_menu_item)
@@ -2229,6 +2250,12 @@ $def with (name)
             winlose_menu_items.push(back_menu_item)
             winlose_menu.items = winlose_menu_items
             winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+
+            // change menu item text
+            if (marathon) {
+              undo_menu_item.active = false
+              restart_menu_item.text = "Play again"
+            }
 
 
             winlose_menu.title = (marathon) ? "GAME OVER!" : "YOU LOSE!"
@@ -2249,9 +2276,6 @@ $def with (name)
             player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
             // update cookie save
             setCookie("player_save",player_save.innerHTML,360000)
-
-            // change menu item text
-            winlose_menu.items[0].text = "Play again"
           }
 
           var record = buildRecordString(this,game_end)
@@ -2306,6 +2330,8 @@ $def with (name)
           if (pause) {
             jaws.context.fillStyle = PURPLE_HEX //"Black"
             jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
+            jaws.context.fillStyle = "rgba(10,0,10," + this.undo_alpha + ")"
+            jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
             pause_menu.draw()
             return
           }
@@ -2316,8 +2342,9 @@ $def with (name)
 
           // draw undo background
           if (player_undid) {
-            var pulse = player.timer.ticker / 60
-            jaws.context.fillStyle = "rgba(100,0,0," + pulse + ")"
+            if (this.undo_alpha < 1)
+              this.undo_alpha += .05
+            jaws.context.fillStyle = "rgba(10,0,10," + this.undo_alpha + ")"
             jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)            
           }
 
@@ -3299,7 +3326,6 @@ $def with (name)
             if (!this.player.board.stacksFull()) {
               this.player.board.raiseStacks()
             } else {
-              this.player.drop(this.player.board.stacks[this.player.x],this.player.hand.items.length)
               this.player.board.raiseStacks()
               var record = buildRecordString(this,"W")
               saveRecord(record)
@@ -3381,17 +3407,24 @@ $def with (name)
       }
 
       // takes back the players last action
-      function undoLastMove () {
+      function undoLastMove (from_menu) {
 
         // SANITY CHECK!!!
-        if (undo_hand.length <= 0 || undo_board.length <= 0 || !game_start)
+        if (undo_hand.length <= 0 || undo_board.length <= 0 || !game_start || marathon)
           return
+
+        var called_by_menu = from_menu || false
 
         console.log('UNDOING')
 
         // record this action for replays
-        player.replay_data[player.timer.frame_ticker.toString()]
-          = [player.x,player.y,"undo",0]
+        if (called_by_menu) {
+          player.replay_data[player.timer.frame_ticker.toString()]
+            = [player.x,player.y,"undo_menu",0]
+        } else {
+          player.replay_data[player.timer.frame_ticker.toString()]
+            = [player.x,player.y,"undo",0]
+        }
 
         console.log("replay_data")
         console.dir(player.replay_data)
@@ -4731,7 +4764,13 @@ $def with (name)
           + "Brew potion   : \u03BB100\n"
           + "Destroy robot : \u03BB500\n"
           + "Perform chains to multiply your score."
-        var help_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 50, 200, help_menu_items)
+        help_menu_items.push(new MenuItem(help_menu, "Misc.", function() {return}))
+        help_menu_items[help_menu_items.length-1].description
+          = "Press CTRL+Z to undo your last move.\n"
+          + "(no stars can be earned if you undo)\n"
+          + "Press L or click outside of the board\n"
+          + "to make the stacks rise in marathon."
+        var help_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 200, help_menu_items)
         help_menu.back = this.back
 
         if (starTotal() <= 0)
@@ -4967,11 +5006,16 @@ $def with (name)
             level_record.items[2].text = "High Score: \u03BB" + player_progress[level][1][stage][1]
             
             // show appropriate stars
-            level_record.sprites[0].active = (star_progress[level][stage] != undefined && star_progress[level][stage][0] >= 0) ? true : false
-            level_record.sprites[1].active = (star_progress[level][stage] != undefined && star_progress[level][stage][1] >= 0) ? true : false
-            level_record.sprites[2].active = (star_progress[level][stage] != undefined && star_progress[level][stage][2] >= 0) ? true : false
-            level_record.sprites[3].active = (star_progress[level][stage] != undefined && star_progress[level][stage][3] >= 0) ? true : false
+            level_record.sprites[0].active = (star_progress[level][stage] != undefined && star_progress[level][stage][0] > 0) ? true : false
+            level_record.sprites[1].active = (star_progress[level][stage] != undefined && star_progress[level][stage][1] > 0) ? true : false
+            level_record.sprites[2].active = (star_progress[level][stage] != undefined && star_progress[level][stage][2] > 0) ? true : false
+            level_record.sprites[3].active = (star_progress[level][stage] != undefined && star_progress[level][stage][3] > 0) ? true : false
             level_record.items[0].text = (star_progress[level][stage] != undefined && star_progress[level][stage][0] > 0) ? "Completed!" : "Completed (undo)"
+            if (star_progress[level][stage] == undefined) {
+              level_menu_item.description = "Complete the level without\n"
+                + "undoing to earn stars."
+            } else
+              level_menu_item.description = ""
             level_record.items[3].text = (star_progress[level][stage] != undefined && star_progress[level][stage][3] > 0) ? "Perfect" : ""
             if (!level_menu_item.locked) {
               level_record.draw()
