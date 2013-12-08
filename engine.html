@@ -2241,6 +2241,11 @@ $def with (name)
             // drop player hand
             player.drop(player.board.stacks[player.x],player.hand.items.length)
 
+            // but don't add this action to the undo_state
+            undo_hand.pop()
+            undo_board.pop()
+
+
             winlose_menu.y = winlose_data.y
             winlose_menu_items.push(undo_menu_item)
             winlose_menu_items.push(restart_menu_item)
