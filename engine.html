@@ -373,8 +373,8 @@ $def with (name)
 
           // reset board
           jaws.start(Game)
-
         })
+        continue_menu_item.active = false
         undo_menu_item = new MenuItem(winlose_menu,"Undo",function() {
           winlose = false
           winlose_menu.active = false
