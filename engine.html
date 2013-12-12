@@ -293,21 +293,12 @@ $def with (name)
         } else {
           console.dir(level_data)
           if (level_data.levels[player_level][player_stage-1] != undefined) {
-            console.log("filling level " + player_level + "-" + player_stage)
             player.board.fillLevel(player_level,player_stage)
             addStateForUndo(player.hand,player.board)
-
-            console.log("player_progress")
-            console.dir(player_progress)
-
             if (player_progress[player_level][1][player_stage.toString()] != undefined) {
-              var best_time = player_progress[player_level][1][player_stage.toString()][0]
-              var best_score = player_progress[player_level][1][player_stage.toString()][1]
-
               var puzzle_data_items = new Array()
-              puzzle_data_items.push(new MenuItem(puzzle_data,"Best Time:  " + best_time,function(){return}))
-              puzzle_data_items.push(new MenuItem(puzzle_data,"High Score: \u03BB" + best_score,function(){return}))
-
+              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){return}))
+              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Score: \u03BB" + star_score,function(){return}))
               puzzle_data = new MenuBox("",puzzle_data,screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,puzzle_data_items)
               puzzle_data.index = -1
             }
@@ -4975,12 +4966,8 @@ $def with (name)
         console.dir(main_menu_auto)
         if (main_menu_auto != undefined) {
           if (main_menu_auto[0] == 0 || main_menu_auto[0] == 3) {
-            
             main_menu.items[main_menu_auto[0]].action()
             main_menu.index = main_menu_auto[0]
-
-            console.log("here")
-
             var item_count = 0
             for (var i = 0; i < level_data.levels.length; i++) {
               for (var j = 0; j < level_data.levels[i].length; j++) {
@@ -4993,7 +4980,6 @@ $def with (name)
                 item_count++
               }
             }
-            console.log("there")
           } else {
               main_menu.index = main_menu_auto[0]
               active_menu.controls(active_menu)
