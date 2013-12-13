@@ -3330,6 +3330,20 @@ $def with (name)
 
               player.y = frame[1]
               player.drop(player.board.stacks[player.x],frame[3])
+          } else if (frame[2] == "undo") {
+            undoLastMove()
+          } else if (frame[2] == "undo_menu") {
+            winlose = false
+            winlose_menu.active = false
+
+            winlose_menu.y = winlose_data.y + winlose_data.height
+            winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+
+            // color timer to be red to indicate game end
+            screen_data.index = -1
+            game_end = ""
+            player.controls()
+            undoLastMove(true)
           }
 
 
