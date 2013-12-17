@@ -293,22 +293,25 @@ $def with (name)
 
         } else {
           console.dir(level_data)
-          if (level_data.levels[player_level][player_stage-1] != undefined) {
+          if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
             player.board.fillLevel(player_level,player_stage)
             addStateForUndo(player.hand,player.board)
-            if (player_progress[player_level][1][player_stage.toString()] != undefined) {
+            if (player_progress[player_level][1][player_stage.toString()] != undefined || level_edit) {
               var puzzle_data_items = new Array()
-              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){return}))
-              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Score: \u03BB" + star_score,function(){return}))
+              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){
+                  var result = window.prompt("enter star time",(star_time==undefined)?"MM:SS":star_time)
+                  if (result != null) star_time = result
+                  puzzle_data_items[0].text = "Star Time:  " + star_time
+              }))
+              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Score: \u03BB" + star_score,function(){
+                  var result = window.prompt("enter star score",(star_score)==undefined?"":star_score)
+                  if (result != null) star_score = result
+                  puzzle_data_items[1].text = "Star Score: \u03BB" + star_score
+              }))
               puzzle_data = new MenuBox("",puzzle_data,(level_edit)?screen_data.x - 2*ITEM_WIDTH:screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,puzzle_data_items)
               puzzle_data.index = -1
+              puzzle_data.active = (level_edit) ? true : false
             }
-          } else if (level_edit) {
-              var puzzle_data_items = new Array()
-              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){return}))
-              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Score: \u03BB" + star_score,function(){return}))
-              puzzle_data = new MenuBox("",puzzle_data,screen_data.x - 2*ITEM_WIDTH,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,puzzle_data_items)
-              puzzle_data.index = -1
           }
         }
 
@@ -728,6 +731,8 @@ $def with (name)
 
         if(level_edit) {
           level_editor.update()
+          if(!puzzle_data.mouse_inside)
+            puzzle_data.index = -1
           if(!level_edit_menu.mouse_inside)
             level_edit_menu.index = -1
           if(level_select_menu.active)
@@ -1275,6 +1280,8 @@ $def with (name)
             level_editor.controls(click_x, click_y, right_click)
             if (level_edit_menu.mouse_inside) {
               level_edit_menu.items[level_edit_menu.index].action()
+            } else if (puzzle_data.mouse_inside) {
+              puzzle_data.items[puzzle_data.index].action()
             }
 
           }
