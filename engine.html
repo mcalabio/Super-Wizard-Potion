@@ -206,6 +206,8 @@ $def with (name)
       var marathon_data
       var star_time
       var star_score
+      var star_lock
+      var level_name
       var beat_marathon_time = false
       var beat_marathon_score = false
       var drew_puzzle_screen = false
@@ -307,6 +309,11 @@ $def with (name)
                   var result = window.prompt("enter star score",(star_score)==undefined?"":star_score)
                   if (result != null) star_score = result
                   puzzle_data_items[1].text = "Star Score: \u03BB" + star_score
+              }))
+              if (level_edit) puzzle_data_items.push(new MenuItem(puzzle_data,"Star Lock:  " + star_lock,function(){
+                  var result = window.prompt("enter star lock",(star_lock)==undefined?"":star_lock)
+                  if (result != null) star_lock = result
+                  puzzle_data_items[2].text = "Star Lock:  " + star_lock
               }))
               puzzle_data = new MenuBox("",puzzle_data,(level_edit)?screen_data.x - 2*ITEM_WIDTH:screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,puzzle_data_items)
               puzzle_data.index = -1
@@ -1777,6 +1784,8 @@ $def with (name)
           var items
           star_time = stacks_string[6]
           star_score = stacks_string[7]
+          star_lock = stacks_string[8]
+          level_name = stacks_string[9]
 
           // go through each stack
           for (var s=0; s < BOARD_WIDTH; s++) {
