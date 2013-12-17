@@ -94,9 +94,26 @@ class engine:
 		# loadLevels()
 		elif (data["type"] == "loadLevels"):
 
-			levels_data = {"levels": []}
+			levels_data = {"levels": [[]]}
 
-			level = 0
+			home_path = os.getcwd()
+
+			os.chdir("levels/")
+			web.debug(os.getcwd())
+
+			all_levels = os.listdir(".")
+
+			stage = 0
+			for files in all_levels:
+				if files.startswith("0-"):
+					f = open(files)
+					levels_data["levels"][0].append(f.read())
+					f.close()
+					stage += 1
+
+			os.chdir(home_path)
+
+			level = 1
 
 			while (level < 100):
 
