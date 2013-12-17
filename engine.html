@@ -4668,7 +4668,7 @@ $def with (name)
             menus.push(help_menu)
             active_menu = help_menu.parent.setActiveMenu(help_menu,active_menu)
           }))
-          // main_menu_items[main_menu_items.length-1].active = false
+          main_menu_items[main_menu_items.length-1].active = true
           main_menu_items[main_menu_items.length-1].description
             = "Learn about the controls and score system."
           main_menu_items.push(new MenuItem(main_menu,"Save Progress",function() {
@@ -4693,7 +4693,7 @@ $def with (name)
           }))
         var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items,false,true)
 
-        main_menu.items[3].active = false // set level editor to be inactive
+        main_menu.items[3].active = true // set level editor to be active
 
         menus.push(main_menu)
         active_menu = main_menu
