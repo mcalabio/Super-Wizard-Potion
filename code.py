@@ -153,7 +153,10 @@ class engine:
 			level_string = data["data"]
 			web.debug("level = " + level)
 			web.debug("level_string = " + level_string)
-			f = open('levels/' + str(level),'w')
+			if (data["level"][0]==0):
+				f = open('levels/0-' + data["name"],'w')
+			else:
+				f = open('levels/' + str(level),'w')
 			f.write(level_string)
 			f.close()
 

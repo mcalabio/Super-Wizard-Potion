@@ -189,7 +189,7 @@ $def with (name)
       })
 
       var save_menu_item = new MenuItem(pause_menu,"Save Level",function() {
-        saveLevel(player_level,player_stage,player.board,function() {
+        saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
           loadLevels(function(data) {
             level_data = JSON.parse(data)
             latest_edit = level_data.levels[0].length + 1
@@ -475,7 +475,12 @@ $def with (name)
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
             console.log("Save")
-            saveLevel(player_level,player_stage,player.board,function() {
+            var result = window.prompt("enter level name","")
+            if (result == null)
+              return
+            else
+              level_name = result
+              saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
               loadLevels(function(data) {
                 level_data = JSON.parse(data)
                 latest_edit = level_data.levels[0].length + 1
@@ -4036,7 +4041,7 @@ $def with (name)
 
     }
 
-    function saveLevel (level,stage,board,callback) {
+    function saveLevel (level,stage,board,star_time,star_score,star_lock,level_name,callback) {
 
       console.log("saving stage = " + level + "-" + stage)
 
@@ -4064,9 +4069,14 @@ $def with (name)
 
       }
 
+      level_string = level_string + star_time + "\n"
+      level_string = level_string + star_score + "\n"
+      level_string = level_string + star_lock + "\n"
+      level_string = level_string + level_name + "\n"
+
       console.log("level_string = " + level_string)
 
-      var json_data = JSON.stringify({'type': "saveLevel", 'data': level_string, 'level': [level,stage]})
+      var json_data = JSON.stringify({'type': "saveLevel", 'data': level_string, 'level': [level,stage], 'name': level_name})
 
       jQuery.ajax({
         type: "POST",
