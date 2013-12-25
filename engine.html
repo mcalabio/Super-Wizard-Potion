@@ -253,7 +253,7 @@ $def with (name)
 
         // setup screen data in a menu box
         var screen_data_items = new Array()
-        screen_data_items.push(new MenuItem(screen_data,(marathon)?("Marathon"):(player_level + "-" + player_stage),function(){return}))
+        screen_data_items.push(new MenuItem(screen_data,(marathon)?("Marathon"):(player_level + "-" + ((level_name==undefined||level_name=="")?player_stage:level_name)),function(){return}))
         if (!level_edit) {
           screen_data_items.push(new MenuItem(screen_data,player.timer.clock_text,function(){return}))
           screen_data_items.push(new MenuItem(screen_data,'\u03BB'+player.score,function(){return}))
@@ -470,8 +470,13 @@ $def with (name)
             level_select_menu.active = true
             level_select_menu.controls(level_select_menu,level_select_ok)
             level_select_ok.menu_box.active = true
-            level_select_string = player_level + "-" + player_stage
-            level_select_menu.items[0].text = level_select_string
+            level_select_menu.index = (player_level==0)?(player_stage-1):((player_level-1)*6+parseInt(player_stage)-1+level_data.levels[0].length)
+            console.log("player_level - 1 = " + (player_level-1))
+            console.log("(player_level - 1)*6 = " + (player_level-1)*6)
+            console.log("(player_level - 1)*6+player_stage = " + ((player_level-1)*6+player_stage))
+            console.log("(player_level - 1)*6+player_stage-1 = " + ((player_level-1)*6+player_stage-1))
+            console.log("(player_level - 1)*6+player_stage-1+level_data.levels[0].length = " + ((player_level-1)*6+player_stage-1+level_data.levels[0].length))
+            console.log("index = " + level_select_menu.index)
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
             console.log("Save")
@@ -524,18 +529,31 @@ $def with (name)
           var level_select_string = player_level + "-" + player_stage
 
           // level select menu
-          level_select_menu = new MenuBox("Level",level_edit_menu,level_edit_menu.x, level_edit_menu.y + level_edit_menu.height + 1, level_edit_menu.width, [new MenuItem(level_select_menu,level_select_string,function() {
-            if (player_stage == latest_edit) {
-              level_select_menu.active = false
-              level_select_ok.menu_box.active = false
-              player.controls()
-            }
-            else
-              jaws.start(Game)
-          })])
+          level_select_menu = new MenuBox("Level",level_edit_menu,level_edit_menu.x, level_edit_menu.y + level_edit_menu.height + 1, level_edit_menu.width, [],true)
 
-          level_select_menu.level = player_level
-          level_select_menu.stage = player_stage
+          // add level menu items
+          console.log("ADDING LEVEL MENU ITEMS")
+          var item_count = 0
+          for (var i = 0; i < level_data.levels.length; i++) {
+            for (var j = 0; j < level_data.levels[i].length; j++) {
+              if (i == 1 && j+1 == 1)
+                level_select_menu.index = item_count
+              var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
+                  var level_name = level_select_menu.items[level_select_menu.index].text
+                  level_name = level_name.split("-")
+                  player_level = level_name[0]
+                  player_stage = level_name[1]
+                  replay = null
+                  jaws.start(Game)
+              })
+
+              level_select_menu.items.push(this_level)
+              item_count++
+            }
+          }
+
+          console.log("level_select_menu")
+          console.dir(level_select_menu)
 
           // level select arrows
           level_select_menu.arrow_sprites = new jaws.SpriteSheet({
@@ -556,91 +574,65 @@ $def with (name)
           level_select_menu.sprites.push(level_select_menu.up_arrow)
           level_select_menu.sprites.push(level_select_menu.down_arrow)
 
-          level_select_menu.update = function() {
+          // level_select_menu.update = function() {
 
-            // update arrow sprites
-            for (var s=0; s < level_select_menu.sprites.length; s++) {
-              var this_sprite = level_select_menu.sprites[s]
-              if (this_sprite.mouse_over && this_sprite.image == level_select_menu.arrow_sprites.frames[s])
-                this_sprite.image = level_select_menu.arrow_sprites.frames[s+2]
-              else if (!this_sprite.mouse_over && this_sprite.image == level_select_menu.arrow_sprites.frames[s+2])
-                this_sprite.image = level_select_menu.arrow_sprites.frames[s]
-            }
+          //   // update arrow sprites
+          //   for (var s=0; s < level_select_menu.sprites.length; s++) {
+          //     var this_sprite = level_select_menu.sprites[s]
+          //     if (this_sprite.mouse_over && this_sprite.image == level_select_menu.arrow_sprites.frames[s])
+          //       this_sprite.image = level_select_menu.arrow_sprites.frames[s+2]
+          //     else if (!this_sprite.mouse_over && this_sprite.image == level_select_menu.arrow_sprites.frames[s+2])
+          //       this_sprite.image = level_select_menu.arrow_sprites.frames[s]
+          //   }
 
-            if (level_edit) {
-              if (level_select_menu.stage == latest_edit)
-                this.sprites[0].active = false
-              else
-                this.sprites[0].active = true
-              if (level_select_menu.stage == 1)
-                this.sprites[1].active = false
-              else
-                this.sprites[1].active = true
-            } else {
-              if (level_select_menu.level == player_progress.length-1 && level_select_menu.stage == player_progress[player_progress.length-1][0])
-                this.sprites[0].active = false
-              else
-                this.sprites[0].active = true
-              if (player_progress[0][0] > 0) {
-                if (level_select_menu.level == 0 && level_select_menu.stage == 1)
-                  this.sprites[1].active = false
-                else
-                  this.sprites[1].active = true
-              } else {
-                if (level_select_menu.level == 1 && level_select_menu.stage == 1)
-                  this.sprites[1].active = false
-                else
-                  this.sprites[1].active = true
+          //   if (level_edit) {
+          //     if (level_select_menu.stage == latest_edit)
+          //       this.sprites[0].active = false
+          //     else
+          //       this.sprites[0].active = true
+          //     if (level_select_menu.stage == 1)
+          //       this.sprites[1].active = false
+          //     else
+          //       this.sprites[1].active = true
+          //   } else {
+          //     if (level_select_menu.level == player_progress.length-1 && level_select_menu.stage == player_progress[player_progress.length-1][0])
+          //       this.sprites[0].active = false
+          //     else
+          //       this.sprites[0].active = true
+          //     if (player_progress[0][0] > 0) {
+          //       if (level_select_menu.level == 0 && level_select_menu.stage == 1)
+          //         this.sprites[1].active = false
+          //       else
+          //         this.sprites[1].active = true
+          //     } else {
+          //       if (level_select_menu.level == 1 && level_select_menu.stage == 1)
+          //         this.sprites[1].active = false
+          //       else
+          //         this.sprites[1].active = true
 
-              }
+          //     }
 
-            }
+          //   }
 
-          }
+          // }
 
           level_select_menu.controls = function(menu,ok_submenu) {
 
             menu.up_action = function() {
 
-              console.log("down_action")
+              console.log("up_action")
 
-              if (level_edit) {
-
-                if (level_select_menu.stage < latest_edit)
-                  level_select_menu.stage++
-
-              } else {
-
-                if (level_select_menu.stage < player_progress[level_select_menu.level][0]) {
-                  level_select_menu.stage++
-                } else {
-                  if (level_select_menu.level < player_progress.length - 1) {
-                    level_select_menu.level++
-                    level_select_menu.stage = 1
-                  }
-                }
-
-              }
-
-              level_select_string = level_select_menu.level + "-" + level_select_menu.stage
-              menu.items[0].text = level_select_string
+              if (level_select_menu.index < level_select_menu.items.length-1)
+                level_select_menu.index++
 
             }
 
             menu.down_action = function() {
 
-              console.log("down_action")
+              console.log("up_action")
 
-              if (level_select_menu.stage > 1)
-                level_select_menu.stage--
-              else if (level_select_menu.level > 0 && player_progress[level_select_menu.level-1][0] > 0){
-                if(level_edit) return
-                level_select_menu.level--
-                level_select_menu.stage = player_progress[level_select_menu.level][0]
-              }
-
-              level_select_string = level_select_menu.level + "-" + level_select_menu.stage
-              menu.items[0].text = level_select_string
+              if (level_select_menu.index > 0)
+                level_select_menu.index--
 
             }
 
