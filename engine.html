@@ -207,7 +207,7 @@ $def with (name)
       var star_time
       var star_score
       var star_lock
-      var level_name
+      var level_name = level_data.levels[player_level][player_stage-1].split('\n')[9]
       var beat_marathon_time = false
       var beat_marathon_score = false
       var drew_puzzle_screen = false
@@ -471,12 +471,6 @@ $def with (name)
             level_select_menu.controls(level_select_menu,level_select_ok)
             level_select_ok.menu_box.active = true
             level_select_menu.index = (player_level==0)?(player_stage-1):((player_level-1)*6+parseInt(player_stage)-1+level_data.levels[0].length)
-            console.log("player_level - 1 = " + (player_level-1))
-            console.log("(player_level - 1)*6 = " + (player_level-1)*6)
-            console.log("(player_level - 1)*6+player_stage = " + ((player_level-1)*6+player_stage))
-            console.log("(player_level - 1)*6+player_stage-1 = " + ((player_level-1)*6+player_stage-1))
-            console.log("(player_level - 1)*6+player_stage-1+level_data.levels[0].length = " + ((player_level-1)*6+player_stage-1+level_data.levels[0].length))
-            console.log("index = " + level_select_menu.index)
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
             console.log("Save")
@@ -538,16 +532,20 @@ $def with (name)
             for (var j = 0; j < level_data.levels[i].length; j++) {
               if (i == 1 && j+1 == 1)
                 level_select_menu.index = item_count
+              console.log("i = " + i + ", j = " + j)
               var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
-                  var level_name = level_select_menu.items[level_select_menu.index].text
-                  level_name = level_name.split("-")
-                  player_level = level_name[0]
-                  player_stage = level_name[1]
+                  player_level = this.level
+                  player_stage = this.stage
                   replay = null
                   jaws.start(Game)
               })
 
+              var data = level_data.levels[i][j].split('\n')
+              this_level.text = (data[9]!=undefined)?data[9]:(i+"-"+(j+1).toString())
+              this_level.level = i
+              this_level.stage = j+1
               level_select_menu.items.push(this_level)
+              console.dir(this_level)
               item_count++
             }
           }
@@ -1782,7 +1780,6 @@ $def with (name)
           star_time = stacks_string[6]
           star_score = stacks_string[7]
           star_lock = stacks_string[8]
-          level_name = stacks_string[9]
 
           // go through each stack
           for (var s=0; s < BOARD_WIDTH; s++) {
