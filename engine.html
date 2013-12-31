@@ -207,7 +207,11 @@ $def with (name)
       var star_time
       var star_score
       var star_lock
-      var level_name = (level_data.levels[player_level][player_stage-1]==undefined)?"new":level_data.levels[player_level][player_stage-1].split('\n')[9]
+      var level_name = (level_data.levels[player_level][player_stage-1]==undefined)?
+        "new" :
+        (level_data.levels[player_level][player_stage-1].split('\n')[9]==undefined)?
+          player_stage.toString() :
+          level_data.levels[player_level][player_stage-1].split('\n')[9]
       var beat_marathon_time = false
       var beat_marathon_score = false
       var drew_puzzle_screen = false
@@ -480,9 +484,15 @@ $def with (name)
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
             console.log("Save")
-            var result = window.prompt("enter level name","")
-            if (result == null)
+            console.log("level_name = " + level_name)
+            var result = (level_name == "new")?
+              window.prompt("enter level name","") :
+              result = level_name
+            console.log("result = " + result)
+            if (result == null) {
+              console.log("NULLED!!!!!")
               return
+            }
             else
               level_name = result
               saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
@@ -490,11 +500,12 @@ $def with (name)
                 level_data = JSON.parse(data)
                 latest_edit = level_data.levels[0].length + 1
                 player_progress[0][0] = latest_edit - 2
+                jaws.start(Game)
               })
             })
           }))
-          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Copy",function() {
-            console.log("Copy")
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save As",function() {
+            console.log("Save As")
             player_level = 0
             player_stage = latest_edit
             console.log(player_stage)
