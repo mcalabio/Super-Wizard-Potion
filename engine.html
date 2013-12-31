@@ -207,7 +207,7 @@ $def with (name)
       var star_time
       var star_score
       var star_lock
-      var level_name = level_data.levels[player_level][player_stage-1].split('\n')[9]
+      var level_name = (level_data.levels[player_level][player_stage-1]==undefined)?"new":level_data.levels[player_level][player_stage-1].split('\n')[9]
       var beat_marathon_time = false
       var beat_marathon_score = false
       var drew_puzzle_screen = false
@@ -461,7 +461,7 @@ $def with (name)
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"New",function() {
             console.log("New")
             player_level = 0
-            player_stage = latest_edit
+            player_stage = level_data.levels[0].length + 1
             console.log("editing level 0-" + player_stage)
             jaws.start(Game)
           }))

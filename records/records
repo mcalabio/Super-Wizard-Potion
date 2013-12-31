@@ -4999,3 +4999,23 @@ zonksasd 86 KM 2-4 (0)/(00:00)/(0) Q
 Tue Dec 24 2013 11:16:56 GMT-0800 (PST)
 zonksasd 86 KM 2-2 (0)/(00:00)/(0) Q
 {}
+
+Sun Dec 29 2013 15:21:43 GMT-0800 (PST)
+zonk 2 KB 1-1 (500)/(00:06)/(3) W
+{"0":[3,0,"grab",0],"307":[5,0,"grab",2],"370":[1,0,"drop",2]}
+world 0 - {}
+world 1 - {"1":[1,0,1,0]}
+world 2 - {}
+world 3 - {}
+world 4 - {}
+world 5 - {}
+world 6 - {}
+
+
+Tue Dec 31 2013 12:07:27 GMT-0800 (PST)
+zonk 2 KM 0-3 (0)/(00:00)/(0) R
+{}
+
+Tue Dec 31 2013 12:07:29 GMT-0800 (PST)
+zonk 2 KM 0-3 (0)/(00:00)/(0) R
+{}
