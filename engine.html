@@ -484,31 +484,38 @@ $def with (name)
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
             console.log("Save")
-            console.log("level_name = " + level_name)
             var result = (level_name == "new")?
               window.prompt("enter level name","") :
               result = level_name
-            console.log("result = " + result)
-            if (result == null) {
-              console.log("NULLED!!!!!")
+            if (result == null)
               return
-            }
             else
               level_name = result
               saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
-              loadLevels(function(data) {
-                level_data = JSON.parse(data)
-                latest_edit = level_data.levels[0].length + 1
-                player_progress[0][0] = latest_edit - 2
-                jaws.start(Game)
+                  loadLevels(function(data) {
+                    level_data = JSON.parse(data)
+                    latest_edit = level_data.levels[0].length + 1
+                    player_progress[0][0] = latest_edit - 2
+                    jaws.start(Game)
+                  })
               })
-            })
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save As",function() {
             console.log("Save As")
-            player_level = 0
-            player_stage = latest_edit
-            console.log(player_stage)
+            var result = window.prompt("enter level name","")
+            if (result == null)
+              return
+            else
+              level_name = result
+              saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
+                  loadLevels(function(data) {
+                    level_data = JSON.parse(data)
+                    latest_edit = level_data.levels[0].length
+                    console.log("latest_edit = " + latest_edit)
+                    player_progress[0][0] = latest_edit - 1
+                    jaws.start(Game)
+                  })
+              })
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Delete",function() {
             console.log("Delete")
