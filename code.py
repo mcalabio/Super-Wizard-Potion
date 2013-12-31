@@ -54,27 +54,7 @@ class engine:
 
 			latest = int(data["level"][2]) - 1
 
-			web.debug("latest = " + str(latest))
-			web.debug("stage = " + str(data["level"][1]))
-
-			if (latest == int(data["level"][1])):
-				web.debug("deleting latest level")
-				return latest
-
-			stage = int(data["level"][1]) + 1
-			next_level = str(data["level"][0]) + "-" + str(stage)
-
-			while (stage < 100):
-				try:
-					os.rename('levels/' + next_level,'levels/' + level)
-					level = next_level
-					stage += 1
-					next_level = str(data["level"][0]) + "-" + str(stage)
-
-				except:
-					break
-
-			return stage - 1
+			return 0
 
 		# loadLevel()
 		elif (data["type"] == "loadLevel"):
