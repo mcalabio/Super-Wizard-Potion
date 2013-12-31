@@ -511,8 +511,19 @@ $def with (name)
                   loadLevels(function(data) {
                     level_data = JSON.parse(data)
                     latest_edit = level_data.levels[0].length
-                    console.log("latest_edit = " + latest_edit)
                     player_progress[0][0] = latest_edit - 1
+
+                    window.alert("level_name = " + level_name)
+                    player_level = 0
+                    player_stage = 1
+                    // find stage number of level_name
+                    for (var i = 0; i < level_data.levels[0].length; i++) {
+                      if (level_data.levels[0][i].split('\n')[9]==level_name) {
+                        player_stage = i + 1
+                        break
+                      }
+                    }
+
                     jaws.start(Game)
                   })
               })
@@ -522,8 +533,6 @@ $def with (name)
             deleteLevel (player_level,level_name,function(latest){
               loadLevels(function(data) {
                 level_data = JSON.parse(data)
-                console.log("done loading levels after delete")
-                console.log("latest = " + latest)
                 latest_edit = latest - 1
                 player_progress[0][0] = latest_edit
                 player_level = 0
