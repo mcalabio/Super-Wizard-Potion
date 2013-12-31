@@ -347,7 +347,13 @@ $def with (name)
           jaws.start(MainMenu)
         }))
 
+        this.pause_back = function() {
+          pause = false
+          player.controls()
+        }
+
         pause_menu = new MenuBox("Pause!",pause_menu,menu_x, menu_y,4*ITEM_WIDTH+15,pause_menu_items)
+        pause_menu.back = this.pause_back
 
         // winlose data
         var winlose_data_items = new Array()
@@ -524,6 +530,11 @@ $def with (name)
 
           // level select menu
           level_select_menu = new MenuBox("Level",level_edit_menu,level_edit_menu.x, level_edit_menu.y + level_edit_menu.height + 1, level_edit_menu.width, [],true)
+          level_select_menu.back = function() {
+            level_select_menu.active = false
+            level_select_ok.menu_box.active = false
+            player.controls()
+          }
 
           // add level menu items
           console.log("ADDING LEVEL MENU ITEMS")
@@ -651,7 +662,8 @@ $def with (name)
               menu.items[menu.index].action(jaws)
             })
 
-            jaws.on_keydown(["esc","a","left"], function() {
+            jaws.on_keydown(["esc"], function() {
+              console.log("MENU BACK")
               menu.back()
             })
 
@@ -4609,11 +4621,6 @@ $def with (name)
       player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)  
       // update cookie save
       setCookie("player_save",player_save.innerHTML,360000)
-
-      this.back = function() {
-          var this_menu = menus.pop()
-          active_menu = this_menu.setActiveMenu(this_menu.parent,active_menu)
-      }
 
       this.setup = function() {        
 
