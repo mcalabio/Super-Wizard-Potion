@@ -210,7 +210,7 @@ $def with (name)
       var level_name = (level_data.levels[player_level][player_stage-1]==undefined)?
         "new" :
         (level_data.levels[player_level][player_stage-1].split('\n')[9]==undefined)?
-          player_stage.toString() :
+          (player_level.toString() + "-" + player_stage.toString()) :
           level_data.levels[player_level][player_stage-1].split('\n')[9]
       var beat_marathon_time = false
       var beat_marathon_score = false
@@ -257,7 +257,14 @@ $def with (name)
 
         // setup screen data in a menu box
         var screen_data_items = new Array()
-        screen_data_items.push(new MenuItem(screen_data,(marathon)?("Marathon"):(player_level + "-" + ((level_name==undefined||level_name=="")?player_stage:level_name)),function(){return}))
+        screen_data_items.push(new MenuItem(screen_data,
+          (marathon) ?
+            ("Marathon") :
+            ((level_name==undefined || level_name=="") ?
+              ("player_level + "-" + player_stage") :
+              level_name
+            ),function(){return}
+            ))
         if (!level_edit) {
           screen_data_items.push(new MenuItem(screen_data,player.timer.clock_text,function(){return}))
           screen_data_items.push(new MenuItem(screen_data,'\u03BB'+player.score,function(){return}))
@@ -490,7 +497,7 @@ $def with (name)
             if (result == null)
               return
             else
-              level_name = result
+              level_name = (player_level==0)?result:(player_level+"-"+player_stage)
               saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
                   loadLevels(function(data) {
                     level_data = JSON.parse(data)
