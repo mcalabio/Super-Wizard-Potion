@@ -1471,7 +1471,7 @@ $def with (name)
 
                 }
 
-              // remove item clicked
+              // add item on hand
               } else {
 
                 if (this_stack.items.length < BOARD_HEIGHT) {
@@ -1494,67 +1494,110 @@ $def with (name)
 
               if (right_click) {
 
-                var matches = new Array()
-                var last_match = this_stack.items[0]
-                var this_match
-                var touched_this_item = false
+                // remove clicked item
+                this_stack.removeItem(this_item)
 
-                matches.push(last_match)
-                console.log("pushing onto matches: (" + last_match.type + "," + last_match.color + ")")
+                var sprite_stack = (this_item.type == 0) ? this.blocks : (
+                  (this_item.type == 1) ? this.flasks : this.robots
+                  )
 
-                // THIS WAS DONE WITH TRIAL AND ERROR. TODO: COMMENTS
-                for (var i=1; i < this_stack.items.length; i++) {
+                if(this_item.color == WHITE)
+                  color = 6
+                else if (this_item.color == EMPTY)
+                  color = 7
+                else
+                  color = this_item.color
 
-                  console.log("i = " + i)
-
-                  this_match = this_stack.items[i]
-
-                  if (this_match.type==last_match.type && this_match.color==last_match.color) {
-                    matches.push(this_match)
-                    console.log("pushing onto matches: (" + this_match.type + "," + this_match.color + ")")
-                    last_match = this_match
-                  } else {
-
-                    if (i > click_y)
-                      touched_this_item = true
-
-                    if (!touched_this_item) {
-                      matches = new Array()
-                      matches.push(this_match)
-                      console.log("pushing onto matches: (" + this_match.type + "," + this_match.color + ")")
-                      last_match = this_match
-                    } else {
-                      break
-                    }
-
-                  }
-
-                }
-
-                console.log("matches = " + matches)
-                this_stack.removeItems(matches)
+                this.hand = new jaws.Sprite(sprite_stack[color])
+                this.hand.type = this_item.type
+                this.hand.color = this_item.color
 
               } else {
 
                 // remove clicked item
                 this_stack.removeItem(this_item)
 
+                // replace clicked item with item on hand by:
+
+                // remove but save all items above clicked item
+                var stack_above = new Array()
+                for (var i=this_stack.items.length-1; i>=click_y; i--) {
+                  this_item = this_stack.items[i]
+                  stack_above.push(this_item)
+                  this_stack.removeItem(this_item)
+                }
+
+                // first add item from hand
+                this_stack.items.push(new Item(this_stack,level_editor.hand.type,level_editor.hand.color,click_x,this_stack.items.length))
+                this_item = this_stack.items[this_stack.items.length-1]
+                this_item.sprite.x = player.board.posx(click_x)
+                this_item.sprite.y = player.board.posy(click_y)
+
+                // then add back the stack above
+                var i = 1
+                while (stack_above.length>0) {
+                  this_stack.items.push(stack_above.pop())
+                  this_item = this_stack.items[this_stack.items.length-1]
+                  this_item.y = this_stack.items.length - 1
+                  i++
+                }
+
+                // stack.items.push(hand_items.pop())
+
+                // // update stack items
+                // var item = stack_items.pop()
+                // item.x = this.x
+                // item.y = stack_items.length
+                // item.stack = stack
+
+                // // update sprite destination
+                // item.sprite.dx = this.board.posx(item.x)
+                // item.sprite.dy = this.board.posy(item.y)
+
+                // stack_items.push(item)
+
+                // OLD CODE FOR REVERSE FILL
+                // var matches = new Array()
+                // var last_match = this_stack.items[0]
+                // var this_match
+                // var touched_this_item = false
+
+                // matches.push(last_match)
+                // console.log("pushing onto matches: (" + last_match.type + "," + last_match.color + ")")
+
+                // // THIS WAS DONE WITH TRIAL AND ERROR. TODO: COMMENTS
+                // for (var i=1; i < this_stack.items.length; i++) {
+
+                //   console.log("i = " + i)
+
+                //   this_match = this_stack.items[i]
+
+                //   if (this_match.type==last_match.type && this_match.color==last_match.color) {
+                //     matches.push(this_match)
+                //     console.log("pushing onto matches: (" + this_match.type + "," + this_match.color + ")")
+                //     last_match = this_match
+                //   } else {
+
+                //     if (i > click_y)
+                //       touched_this_item = true
+
+                //     if (!touched_this_item) {
+                //       matches = new Array()
+                //       matches.push(this_match)
+                //       console.log("pushing onto matches: (" + this_match.type + "," + this_match.color + ")")
+                //       last_match = this_match
+                //     } else {
+                //       break
+                //     }
+
+                //   }
+
+                // }
+
+                // console.log("matches = " + matches)
+                // this_stack.removeItems(matches)
+
               }
-
-              var sprite_stack = (this_item.type == 0) ? this.blocks : (
-                (this_item.type == 1) ? this.flasks : this.robots
-                )
-
-              if(this_item.color == WHITE)
-                color = 6
-              else if (this_item.color == EMPTY)
-                color = 7
-              else
-                color = this_item.color
-
-              this.hand = new jaws.Sprite(sprite_stack[color])
-              this.hand.type = this_item.type
-              this.hand.color = this_item.color
 
             }
           }
