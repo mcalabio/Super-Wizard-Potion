@@ -476,77 +476,19 @@ $def with (name)
           // level edit menu
           var level_edit_menu_items = new Array()
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"New",function() {
-            console.log("New")
-            player_level = 0
-            player_stage = level_data.levels[0].length + 1
-            console.log("editing level 0-" + player_stage)
-            jaws.start(Game)
+            player.level_new()
           }))
-          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Load",function() {
-            console.log("Load")
-            level_select_menu.active = true
-            level_select_menu.controls(level_select_menu,level_select_ok)
-            level_select_ok.menu_box.active = true
-            level_select_menu.index = (player_level==0)?(player_stage-1):((player_level-1)*6+parseInt(player_stage)-1+level_data.levels[0].length)
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Open",function() {
+            player.level_open()
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
-            console.log("Save")
-            var result = (level_name == "new")?
-              window.prompt("enter level name","") :
-              result = level_name
-            if (result == null)
-              return
-            else
-              level_name = (player_level==0)?result:(player_level+"-"+player_stage)
-              saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
-                  loadLevels(function(data) {
-                    level_data = JSON.parse(data)
-                    latest_edit = level_data.levels[0].length + 1
-                    player_progress[0][0] = latest_edit - 2
-                    jaws.start(Game)
-                  })
-              })
+            player.level_save()
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save As",function() {
-            console.log("Save As")
-            var result = window.prompt("enter level name","")
-            if (result == null)
-              return
-            else
-              level_name = result
-              saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
-                  loadLevels(function(data) {
-                    level_data = JSON.parse(data)
-                    latest_edit = level_data.levels[0].length
-                    player_progress[0][0] = latest_edit - 1
-
-                    window.alert("level_name = " + level_name)
-                    player_level = 0
-                    player_stage = 1
-                    // find stage number of level_name
-                    for (var i = 0; i < level_data.levels[0].length; i++) {
-                      if (level_data.levels[0][i].split('\n')[9]==level_name) {
-                        player_stage = i + 1
-                        break
-                      }
-                    }
-
-                    jaws.start(Game)
-                  })
-              })
+            player.level_save_as()
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Delete",function() {
-            console.log("Delete")
-            deleteLevel (player_level,level_name,function(latest){
-              loadLevels(function(data) {
-                level_data = JSON.parse(data)
-                latest_edit = latest - 1
-                player_progress[0][0] = latest_edit
-                player_level = 0
-                player_stage = level_data.levels[0].length + 1
-                jaws.start(Game)
-              })
-            })
+            player.level_delete()
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Clear",function() {
             console.log("Clear")
@@ -909,6 +851,18 @@ $def with (name)
             }
           })
 
+          jaws.on_keydown(["n"], function() {
+            if (level_edit && ctrl) {
+              player.level_new()
+            }
+          })
+
+          jaws.on_keydown(["o"], function() {
+            if (level_edit && ctrl) {
+              player.level_open()
+            }
+          })
+
           jaws.on_keydown(["left","a"], function() {
             if (pause || game_end != "") return
             X_SPEED = SLOW
@@ -953,6 +907,18 @@ $def with (name)
           jaws.on_keydown(["down","s"], function() {
 
             if (pause || game_end != "") return
+
+            if (level_edit) {
+              if (ctrl && shift) {
+                player.level_save()
+                return
+              } else if (ctrl) {
+                player.level_save()
+                return
+              }
+
+            }
+
             player.control_scheme = 0
             if(player.hand.items.length>0) {
               player.drop(player.board.stacks[player.x],player.hand.items.length)
@@ -987,13 +953,19 @@ $def with (name)
 
 
           var ctrl = false
-
           jaws.on_keydown(["ctrl"], function () {
             ctrl = true
           })
-
           jaws.on_keyup(["ctrl"], function () {
             ctrl = false
+          })
+
+          var shift = false
+          jaws.on_keydown(["shift"], function () {
+            shift = true
+          })
+          jaws.on_keyup(["shift"], function () {
+            shift = false
           })
 
           jaws.on_keydown(["z"], function() {
@@ -1046,6 +1018,85 @@ $def with (name)
             player.clickAction(click_coordinates,true)
           })
 
+        }
+
+        // level edit menu actions
+        this.level_new = function() {
+          console.log("New")
+          player_level = 0
+          player_stage = level_data.levels[0].length + 1
+          console.log("editing level 0-" + player_stage)
+          jaws.start(Game)
+        }
+
+        this.level_open = function() {
+          console.log("Open")
+          level_select_menu.active = true
+          level_select_menu.controls(level_select_menu,level_select_ok)
+          level_select_ok.menu_box.active = true
+          level_select_menu.index = (player_level==0)?(player_stage-1):((player_level-1)*6+parseInt(player_stage)-1+level_data.levels[0].length)
+        }
+
+        this.level_save = function() {
+          console.log("Save")
+          var result = (level_name == "new")?
+            window.prompt("enter level name","") :
+            result = level_name
+          if (result == null)
+            return
+          else
+            level_name = (player_level==0)?result:(player_level+"-"+player_stage)
+            saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
+                loadLevels(function(data) {
+                  level_data = JSON.parse(data)
+                  latest_edit = level_data.levels[0].length + 1
+                  player_progress[0][0] = latest_edit - 2
+                  jaws.start(Game)
+                })
+            })
+        }
+
+        this.level_save_as = function() {
+          console.log("Save As")
+          var result = window.prompt("enter level name","")
+          if (result == null)
+            return
+          else
+            level_name = result
+            saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
+                loadLevels(function(data) {
+                  level_data = JSON.parse(data)
+                  latest_edit = level_data.levels[0].length
+                  player_progress[0][0] = latest_edit - 1
+
+                  window.alert("level_name = " + level_name)
+                  player_level = 0
+                  player_stage = 1
+                  // find stage number of level_name
+                  for (var i = 0; i < level_data.levels[0].length; i++) {
+                    if (level_data.levels[0][i].split('\n')[9]==level_name) {
+                      player_stage = i + 1
+                      break
+                    }
+                  }
+
+                  jaws.start(Game)
+                })
+            })
+        }
+
+        this.level_delete = function() {
+          console.log("Delete")
+          deleteLevel (player_level,level_name,function(latest){
+            loadLevels(function(data) {
+              level_data = JSON.parse(data)
+              latest_edit = latest - 1
+              player_progress[0][0] = latest_edit
+              player_level = 0
+              player_stage = level_data.levels[0].length + 1
+              jaws.start(Game)
+            })
+          })
         }
 
         // check if player hand can move in x direction
