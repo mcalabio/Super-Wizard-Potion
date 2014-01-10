@@ -125,28 +125,7 @@ $def with (name)
     var white_audio
     // setupSounds()
 
-    // load cookies if possible
     var cookie_save = getCookie("player_save")
-    if (cookie_save != null && cookie_save != "") {
-      console.log("cookie loaded")
-      console.log(cookie_save.toString())
-      var open_data = cookie_save.split("|")
-      if (open_data[0] == "SuperWizardPotionSave") {
-
-        console.log("open_data = ")
-        console.dir(open_data)
-        // window.alert("OPEN DATA")
-
-        player_name = open_data[1]
-        player_progress = JSON.parse(open_data[2])
-        star_progress = JSON.parse(open_data[3])
-        marathon_progress = JSON.parse(open_data[4])
-
-        name_entered = true
-      }
-    } else {
-      console.log("failed to load cookie data")
-    }
 
     function Game() {
       var player
@@ -4006,6 +3985,37 @@ $def with (name)
       return c_value;
     }
 
+    function loadProgress(level_data,open_data) {
+
+      var player_data = JSON.parse(open_data[2])
+      var player_progress = []
+
+      for (var i=0; i<level_data.levels.length; i++) {
+        if (player_data[i]==undefined)
+          player_progress.push([0,{}])
+        else
+          player_progress.push(player_data[i])
+      }
+
+      var star_data = JSON.parse(open_data[3])
+      var star_progress = []
+
+      for (var i=0; i<level_data.levels.length; i++) {
+        if (star_data[i]==undefined)
+          star_progress.push({})
+        else
+          star_progress.push(star_data[i])
+      }
+
+      console.log("player_progress = ")
+      console.dir(player_progress)
+      console.log("star_progress = ")
+      console.dir(star_progress)
+
+      return [player_progress,star_progress]
+
+    }
+
     // update star for a stage
     function updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data) {
 
@@ -5179,13 +5189,14 @@ $def with (name)
         var open_data = $("openData").innerHTML.split("|")
         if (open_data[0] == "SuperWizardPotionSave") {
 
-          console.log("open_data = ")
+          console.log("MAIN MENU open_data = ")
           console.dir(open_data)
           // window.alert("OPEN DATA")
 
           player_name = open_data[1]
-          player_progress = JSON.parse(open_data[2])
-          star_progress = JSON.parse(open_data[3])
+          // player_progress = JSON.parse(open_data[2])
+          // star_progress = JSON.parse(open_data[3])
+          loadProgress(level_data,JSON.parse(open_data))
           marathon_progress = JSON.parse(open_data[4])
           $("openData").innerHTML = ""
           jaws.start(MainMenu)
@@ -5636,8 +5647,29 @@ $def with (name)
       loadLevels(function(data) {
 
         level_data = JSON.parse(data)
-        console.log("level_data = ")
-        console.dir(level_data)
+        if (cookie_save != null && cookie_save != "") {
+          console.log("cookie loaded")
+          console.log(cookie_save.toString())
+          var open_data = cookie_save.split("|")
+          if (open_data[0] == "SuperWizardPotionSave") {
+
+            console.log("open_data = ")
+            console.dir(open_data)
+            // window.alert("OPEN DATA")
+
+            player_name = open_data[1]
+            // player_progress = JSON.parse(open_data[2])
+            // star_progress = JSON.parse(open_data[3])
+            var loaded_progress = loadProgress(level_data,open_data)
+            player_progress = loaded_progress[0]
+            star_progress = loaded_progress[1]
+            marathon_progress = JSON.parse(open_data[4])
+
+            name_entered = true
+          }
+        } else {
+          console.log("failed to load cookie data")
+        }
         latest_edit = level_data.levels[0].length + 1
         player_progress[0][0] = latest_edit - 2
         console.log("player_progress = " + player_progress[0][0])
