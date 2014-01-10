@@ -49,7 +49,11 @@ class engine:
 
 
 		elif (data["type"] == "deleteLevel"):
-			level = str(data["level"][0]) + "-" + str(data["level"][1])
+
+			if (data["level"][0] == 0):
+				level = str(data["level"][0]) + "-" + str(data["level"][1])
+			else:
+				level = str(data["level"][1])
 			os.remove('levels/' + level)
 
 			latest = int(data["level"][2]) - 1

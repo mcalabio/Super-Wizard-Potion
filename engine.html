@@ -466,12 +466,12 @@ $def with (name)
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save As",function() {
             player.level_save_as()
           }))
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Publish",function() {
+            console.log("Publish")
+            player.level_publish()
+          }))          
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Delete",function() {
             player.level_delete()
-          }))
-          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Clear",function() {
-            console.log("Clear")
-            player.board.clearBoard()
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Quit",function() {
             console.log("Quit")
@@ -1062,6 +1062,31 @@ $def with (name)
                   jaws.start(Game)
                 })
             })
+        }
+
+        this.level_publish = function() {
+          console.log("Publish")
+
+          var level_count = level_data.levels.length - 1
+          var latest_stage = level_data.levels[level_count].length
+
+          if (latest_stage >= 6) {
+            player_level = level_count + 1
+            player_stage = 1
+          } else {
+            player_level = level_count
+            player_stage = latest_stage
+          }
+
+          var level_name = player_level.toString() + "-" + player_stage.toString()
+          saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
+              loadLevels(function(data) {
+                level_data = JSON.parse(data)
+                latest_edit = level_data.levels[0].length + 1
+                player_progress[0][0] = latest_edit - 2
+                jaws.start(Game)
+              })
+          })
         }
 
         this.level_delete = function() {
