@@ -4007,13 +4007,22 @@ $def with (name)
           star_progress.push(star_data[i])
       }
 
-      console.log("player_progress = ")
-      console.dir(player_progress)
-      console.log("star_progress = ")
-      console.dir(star_progress)
-
       return [player_progress,star_progress]
 
+    }
+
+    function clearProgress(level_data) {
+      var player_progress = []
+      var star_progress = []
+      for (var i=0; i<level_data.levels.length; i++) {
+        player_progress.push([0,{}])
+        star_progress.push({})
+      }
+
+      console.log("CLEAR PROGRESS ARRAYS = ")
+      console.dir([player_progress,star_progress])
+
+      return [player_progress,star_progress]
     }
 
     // update star for a stage
@@ -5108,8 +5117,9 @@ $def with (name)
         var reset_menu_items = new Array()
           reset_menu_items.push(new MenuItem(reset_menu, "Yes", function() {
             player_name = ""
-            player_progress = [[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}]]
-            star_progress = [{},{},{},{},{},{},{}]
+            var reset_progress = clearProgress(level_data)
+            player_progress = reset_progress[0]
+            star_progress = reset_progress[1]
             marathon_progress = ["00:00",0]
             player_level = 1
             player_stage = 1
