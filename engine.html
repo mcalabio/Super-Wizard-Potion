@@ -1075,7 +1075,7 @@ $def with (name)
             player_stage = 1
           } else {
             player_level = level_count
-            player_stage = latest_stage
+            player_stage = latest_stage + 1
           }
 
           var level_name = player_level.toString() + "-" + player_stage.toString()
@@ -1083,6 +1083,15 @@ $def with (name)
               loadLevels(function(data) {
                 level_data = JSON.parse(data)
                 latest_edit = level_data.levels[0].length + 1
+
+                // load save file
+                var open_data = cookie_save.split("|")
+                if (open_data[0] == "SuperWizardPotionSave") {
+                  var loaded_progress = loadProgress(level_data,open_data)
+                  player_progress = loaded_progress[0]
+                  star_progress = loaded_progress[1]
+                }
+
                 player_progress[0][0] = latest_edit - 2
                 jaws.start(Game)
               })
