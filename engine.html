@@ -1042,6 +1042,7 @@ $def with (name)
             return
           else
             level_name = result
+            player_level = 0
             saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
                 loadLevels(function(data) {
                   level_data = JSON.parse(data)
