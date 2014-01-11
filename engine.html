@@ -461,14 +461,20 @@ $def with (name)
             player.level_open()
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
+            if (player_level > 0)
+              return
             player.level_save()
           }))
+          level_edit_menu_items[level_edit_menu_items.length-1].locked = (player_level > 0) ? true : false
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save As",function() {
             player.level_save_as()
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Publish",function() {
             console.log("Publish")
-            player.level_publish()
+            if (player_level > 0)
+              player.level_save()
+            else
+              player.level_publish()
           }))          
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Delete",function() {
             player.level_delete()
@@ -1040,7 +1046,7 @@ $def with (name)
           var result = window.prompt("enter level name","")
           if (result == null)
             return
-          else
+          else {
             level_name = result
             player_level = 0
             saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
@@ -1063,6 +1069,7 @@ $def with (name)
                   jaws.start(Game)
                 })
             })
+          }
         }
 
         this.level_publish = function() {
