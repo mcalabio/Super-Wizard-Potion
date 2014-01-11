@@ -810,10 +810,11 @@ $def with (name)
         this.replay_data = {}
 
         this.addScore = function(points) {
-          if (level_edit)
-            return
           this.score += points
-          screen_data.items[2].text = '\u03BB' + this.score
+          if (!level_edit)
+            screen_data.items[2].text = '\u03BB' + this.score
+          else
+            console.log("SCORE = " + this.score)
         }
 
         // player controls
@@ -2653,8 +2654,8 @@ $def with (name)
               this.board.robot_count[old_item.color]--
           }
 
-          if (level_edit)
-            return
+          // if (level_edit)
+          //   return
 
           // check for win/lose only when blocks and robots are broken since flasks break first
           // but only check when items aren't breaking
@@ -3268,8 +3269,6 @@ $def with (name)
             this_effect.index = i
           }
 
-          console.log("effects array:")
-          console.dir(this.stack.board.effects)
         }
 
         this.update = function() {
@@ -3376,8 +3375,6 @@ $def with (name)
             this_effect.index = i
           }
 
-          console.log("effects array:")
-          console.dir(this.stack.board.effects)
         }
 
         this.update = function() {
@@ -3640,13 +3637,15 @@ $def with (name)
         console.dir(player.replay_data)
 
         // disable player from earning stars and beating records
-        player_undid = true
-        screen_data.items[0].locked = true
-        screen_data.items[1].locked = true
-        screen_data.items[2].locked = true
-        winlose_data.items[0].locked = true
-        winlose_data.items[1].locked = true
-        winlose_data.items[2].locked = true
+        if (!level_edit) {
+          player_undid = true
+          screen_data.items[0].locked = true
+          screen_data.items[1].locked = true
+          screen_data.items[2].locked = true
+          winlose_data.items[0].locked = true
+          winlose_data.items[1].locked = true
+          winlose_data.items[2].locked = true
+        }
 
         // reset item counts
         player.board.block_count = [0,0,0,0,0,0,0,0]
@@ -3666,7 +3665,10 @@ $def with (name)
         player.hand.level = player_state[2]
         var hand_state = player_state[3].split('\n')[0]
         player.score = player_state[4]
-        screen_data.items[2].text = '\u03BB' + player.score
+        if (!level_edit)
+          screen_data.items[2].text = '\u03BB' + player.score
+        else
+          console.log("SCORE = " + player.score)
 
         // go through each item in this stack
         var items = (hand_state.length > 0) ? hand_state.split(',') : []
