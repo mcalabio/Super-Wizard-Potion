@@ -676,7 +676,7 @@ $def with (name)
             level_select_ok.update()
         }
 
-        if (winlose_menu.active && game_end == "W") {
+        if (winlose_menu.active && game_end == "W" && !level_edit) {
           if (player_progress[player_level][0] >= level_data.levels[player_level].length){
             if (winlose_menu.index > 0 && winlose_menu.index <= level_data.levels[player_level].length) {
               level_record.active = true
@@ -2268,13 +2268,18 @@ $def with (name)
               winlose_menu_items.push(continue_menu_item)              
 
               // add MenuItem for each stage of this level
-              for (var s = 0; s < level_data.levels[player_level].length; s++) {
-                var stage_menu_item = new MenuItem(winlose_menu,player_level.toString() + "-" + (s+1).toString(), function() {
-                  player_stage = parseInt(this.text[2])
-                  console.dir(this)
-                  jaws.start(Game)
-                })
-                winlose_menu_items.push(stage_menu_item)
+              if (!level_edit) {
+                for (var s = 0; s < level_data.levels[player_level].length; s++) {
+                  var stage_menu_item = new MenuItem(winlose_menu,player_level.toString() + "-" + (s+1).toString(), function() {
+                    player_stage = parseInt(this.text[2])
+                    console.dir(this)
+                    jaws.start(Game)
+                  })
+                  winlose_menu_items.push(stage_menu_item)
+                }
+              } else {
+                winlose_menu_items.push(restart_menu_item)
+                restart_menu_item.text = "Back to Editor"
               }
               // add Back to Menu item
               winlose_menu_items.push(back_menu_item)
@@ -2288,7 +2293,7 @@ $def with (name)
               console.dir(level_data)        
 
               // continue
-              if (next_level != undefined) {
+              if (next_level != undefined && !level_edit) {
                 winlose_menu.items[0].active = true
                 if (next_star_lock == undefined || starTotal() >= next_star_lock)
                   winlose_menu.items[0].locked = false
@@ -2309,8 +2314,11 @@ $def with (name)
             // beating puzzles for the first time
             } else {
 
-              winlose_menu_items.push(continue_menu_item)
+              if (!level_edit)
+                winlose_menu_items.push(continue_menu_item)
               winlose_menu_items.push(restart_menu_item)
+              if (level_edit)
+                restart_menu_item.text = "Back to Editor"
               restart_menu_item.action = function () {
                 jaws.start(Game) // no need to save record here
               }
