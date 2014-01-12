@@ -5306,3 +5306,20 @@ world 4 - {}
 world 5 - {}
 world 6 - {"1":[1,1,1,1],"2":[1,1,1,1]}
 world 7 - {}
+
+
+Sat Jan 11 2014 19:44:20 GMT-0800 (PST)
+"zonkuid" [d91584b4-1137-4b84-8a34-a6166ae77dfe] 0 KM 1-1 (0)/(00:00)/(0) Q
+{}
+
+Sat Jan 11 2014 19:44:26 GMT-0800 (PST)
+"zonkuid" [d91584b4-1137-4b84-8a34-a6166ae77dfe] 4 KB 1-1 (500)/(00:01)/(2) W
+{"0":[5,0,"grab",2],"40":[1,0,"drop",2]}
+world 0 - {}
+world 1 - {"1":[1,1,1,1]}
+world 2 - {}
+world 3 - {}
+world 4 - {}
+world 5 - {}
+world 6 - {}
+world 7 - {}

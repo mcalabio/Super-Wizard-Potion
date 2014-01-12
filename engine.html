@@ -96,11 +96,12 @@ $def with (name)
     var Y_SPEED = FAST
     var name_entered = false
     var player_name = ""
+    var player_uid = ""
     var level_data
     var player_level = 1
     var player_stage = 1
-    var player_progress = [[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}],[0,{}]]
-    var star_progress = [{},{},{},{},{},{},{}]
+    var player_progress = []
+    var star_progress = []
     var marathon_progress = ["00:00",0]
     var control_scheme = 1
     var game_mode = 1
@@ -155,11 +156,8 @@ $def with (name)
             marathon_progress[0] = player.timer.clock_text
           if (player.score > marathon_progress[1])
             marathon_progress[1] = player.score
-          // update player_save data
-          var player_save = $("saveData")
-          player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
-          // update cookie save
-          setCookie("player_save",player_save.innerHTML,360000)
+          // update player_save data and cookie data
+          updateSaveAndCookie()
         }
         var record = buildRecordString(player.board,"R")
         saveRecord(record)
@@ -976,11 +974,8 @@ $def with (name)
                 marathon_progress[0] = player.timer.clock_text
               if (player.score > marathon_progress[1])
                 marathon_progress[1] = player.score
-              // update player_save data
-              var player_save = $("saveData")
-              player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
-              // update cookie save
-              setCookie("player_save",player_save.innerHTML,360000)
+              // update player_save data and cookie data
+              updateSaveAndCookie()
             }
             var record = buildRecordString(player.board,"R")
             saveRecord(record)
@@ -2360,11 +2355,8 @@ $def with (name)
             console.log("player_progress = ")
             console.dir(player_progress)
 
-            // update player_save data
-            var player_save = $("saveData")
-            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)    
-            // update cookie save
-            setCookie("player_save",player_save.innerHTML,360000)
+            // update player_save data and cookie data
+            updateSaveAndCookie()
 
             // update level data if player beat star_score
             // if (star_score == undefined || player.score > star_score) {
@@ -2422,11 +2414,8 @@ $def with (name)
             if (player.score > marathon_progress[1])
               marathon_progress[1] = player.score
 
-            // update player_save data
-            var player_save = $("saveData")
-            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
-            // update cookie save
-            setCookie("player_save",player_save.innerHTML,360000)
+            // update player_save data and cookie data
+            updateSaveAndCookie()
           }
 
           var record = buildRecordString(this,game_end)
@@ -3758,11 +3747,8 @@ $def with (name)
             if (player.score > marathon_progress[1])
               marathon_progress[1] = player.score
 
-            // update player_save data
-            var player_save = $("saveData")
-            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
-            // update cookie save
-            setCookie("player_save",player_save.innerHTML,360000)
+            // update player_save data and cookie data
+            updateSaveAndCookie()
           }
           var record = buildRecordString(player.board,"Q")
           saveRecord(record)
@@ -3965,9 +3951,9 @@ $def with (name)
       var record = "\n\n" + new Date((+new Date())) + "\n"
 
       if (marathon)
-        record += player_name + " " + starTotal() + " " + control_text + " MRTHN-" + MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
+        record += "\"" + player_name + "\"" + " " + "[" + player_uid + "]" + " " + starTotal() + " " + control_text + " MRTHN-" + MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
       else
-        record += player_name + " " + starTotal() + " " + control_text + " " + player_level + "-" + player_stage + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
+        record += "\"" + player_name + "\"" + " " + "[" + player_uid + "]" + " " + starTotal() + " " + control_text + " " + player_level + "-" + player_stage + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
 
       // append data for replays
       var player_moves = JSON.stringify(board.player.replay_data)
@@ -4035,6 +4021,14 @@ $def with (name)
       c_value = unescape(c_value.substring(c_start,c_end));
       }
       return c_value;
+    }
+
+    function updateSaveAndCookie() {
+      // update player_save data
+      var player_save = $("saveData")
+      player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress) + "|" + player_uid
+      // update cookie save
+      setCookie("player_save",player_save.innerHTML,360000)
     }
 
     function loadProgress(level_data,open_data) {
@@ -4776,10 +4770,8 @@ $def with (name)
       progress_buttons.hidden = false
       $("live_info").innerHTML = ""
 
-      var player_save = $("saveData")
-      player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)  
-      // update cookie save
-      setCookie("player_save",player_save.innerHTML,360000)
+      // update player_save data and cookie data
+      updateSaveAndCookie()
 
       this.back = function() {
           var this_menu = menus.pop()
@@ -4902,7 +4894,9 @@ $def with (name)
         // add level menu items
         var item_count = 0
         for (var i = 0; i < level_data.levels.length; i++) {
+          console.log("add level menu item, i = " + i)
           for (var j = 0; j < level_data.levels[i].length; j++) {
+            console.log("add level menu item, j = " + j)
             if (i == 1 && j+1 == 1)
               level_select_menu.index = item_count
             var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
@@ -5146,6 +5140,7 @@ $def with (name)
               player_progress = JSON.parse(open_data[2])
               star_progress = JSON.parse(open_data[3])
               marathon_progress = JSON.parse(open_data[4])
+              player_uid = open_data[5]
               $("openData").innerHTML = ""
               jaws.start(MainMenu)
             }
@@ -5260,6 +5255,7 @@ $def with (name)
           // star_progress = JSON.parse(open_data[3])
           loadProgress(level_data,JSON.parse(open_data))
           marathon_progress = JSON.parse(open_data[4])
+          player_uid = open_data[5]
           $("openData").innerHTML = ""
           jaws.start(MainMenu)
         }
@@ -5402,6 +5398,7 @@ $def with (name)
           player_progress = JSON.parse(open_data[2])
           star_progress = JSON.parse(open_data[3])
           marathon_progress = JSON.parse(open_data[4])
+          player_uid = open_data[5]
           $("openData").innerHTML = ""
           jaws.start(MainMenu)
         }
@@ -5726,11 +5723,24 @@ $def with (name)
             player_progress = loaded_progress[0]
             star_progress = loaded_progress[1]
             marathon_progress = JSON.parse(open_data[4])
+            player_uid = open_data[5]
 
             name_entered = true
           }
         } else {
           console.log("failed to load cookie data")
+
+          // clear progress
+          var cleared_progress = clearProgress(level_data)
+          player_progress = cleared_progress[0]
+          star_progress = cleared_progress[1]
+
+          // generate unique id for this player
+          player_uid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+              var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+              return v.toString(16);
+          });
+          console.log(player_uid)
         }
         latest_edit = level_data.levels[0].length + 1
         player_progress[0][0] = latest_edit - 2
