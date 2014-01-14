@@ -165,7 +165,6 @@ $def with (name)
           saveRecord(record)
           game_end = "R"
         }
-        level_edit_play = false
         jaws.start(Game)
       })
 
@@ -316,6 +315,7 @@ $def with (name)
 
         // pause menu
         pause = false
+        level_edit_play = false
 
         var menu_x = player.board.board.x + player.board.board.width/2 - (4*ITEM_WIDTH+15)/2
         var menu_y = player.board.board.y + player.board.board.height/2 - 3*ITEM_WIDTH
@@ -326,7 +326,6 @@ $def with (name)
             pause = false
             level_edit_play = true
             // playPausedSounds()
-            jaws.start(Game)
           }))
         } else {
           pause_menu_items.push(new MenuItem(pause_menu,"Resume",function() {
@@ -3746,16 +3745,15 @@ $def with (name)
       pause_menu.items = new Array()
       console.log("CREATING PAUSE MENU")
       console.log("level_edit_play = " + level_edit_play)
+      pause_menu.items.push(new MenuItem(pause_menu,"Resume",function() {
+        pause = false
+        // playPausedSounds()
+        player.controls()
+      }))
       if (level_edit &&!level_edit_play) {
         pause_menu.items.push(new MenuItem(pause_menu,"Play Level",function() {
           pause = false
           level_edit_play = true
-          // playPausedSounds()
-          jaws.start(Game)
-        }))
-      } else {
-        pause_menu.items.push(new MenuItem(pause_menu,"Resume",function() {
-          pause = false
           // playPausedSounds()
           player.controls()
         }))
@@ -3790,6 +3788,8 @@ $def with (name)
           main_menu_auto = [0,player_level,player_stage]
         jaws.start(MainMenu)
       }))
+
+      pause_menu.setup(pause_menu.x,pause_menu.y,pause_menu.width)
 
       console.log("constructed pause_menu = " + pause_menu.items.length)
     }
