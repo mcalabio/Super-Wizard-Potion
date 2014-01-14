@@ -107,6 +107,7 @@ $def with (name)
     var game_mode = 1
     var game_record = ""
     var level_edit = false
+    var level_edit_play = false
     var marathon = false
     var replay = null
     var latest_edit
@@ -159,9 +160,12 @@ $def with (name)
           // update player_save data and cookie data
           updateSaveAndCookie()
         }
-        var record = buildRecordString(player.board,"R")
-        saveRecord(record)
-        game_end = "R"
+        if (!level_edit) {
+          var record = buildRecordString(player.board,"R")
+          saveRecord(record)
+          game_end = "R"
+        }
+        level_edit_play = false
         jaws.start(Game)
       })
 
@@ -317,11 +321,20 @@ $def with (name)
         var menu_y = player.board.board.y + player.board.board.height/2 - 3*ITEM_WIDTH
 
         var pause_menu_items = new Array()
-        pause_menu_items.push(new MenuItem(pause_menu,"Resume",function() {
-          pause = false
-          // playPausedSounds()
-          player.controls()
-        }))
+        if (level_edit &&!level_edit_play) {
+          pause_menu_items.push(new MenuItem(pause_menu,"Play Level",function() {
+            pause = false
+            level_edit_play = true
+            // playPausedSounds()
+            jaws.start(Game)
+          }))
+        } else {
+          pause_menu_items.push(new MenuItem(pause_menu,"Resume",function() {
+            pause = false
+            // playPausedSounds()
+            player.controls()
+          }))
+        }
         pause_menu_items.push(((level_edit) ? save_menu_item : restart_menu_item))
         pause_menu_items.push(new MenuItem(pause_menu,"Back to Menu",function() {
           if (level_edit)
@@ -2651,8 +2664,8 @@ $def with (name)
               this.board.robot_count[old_item.color]--
           }
 
-          // if (level_edit)
-          //   return
+          if (level_edit && !level_edit_play)
+            return
 
           // check for win/lose only when blocks and robots are broken since flasks break first
           // but only check when items aren't breaking
@@ -3731,12 +3744,25 @@ $def with (name)
 
       // construct the pause menu
       pause_menu.items = new Array()
-      pause_menu.items.push(new MenuItem(pause_menu,"Resume",function() {
-        pause = false
-        // playPausedSounds()
-        player.controls()
-      }))
-      pause_menu.items.push(((level_edit) ? save_menu_item : restart_menu_item))
+      console.log("CREATING PAUSE MENU")
+      console.log("level_edit_play = " + level_edit_play)
+      if (level_edit &&!level_edit_play) {
+        pause_menu.items.push(new MenuItem(pause_menu,"Play Level",function() {
+          pause = false
+          level_edit_play = true
+          // playPausedSounds()
+          jaws.start(Game)
+        }))
+      } else {
+        pause_menu.items.push(new MenuItem(pause_menu,"Resume",function() {
+          pause = false
+          // playPausedSounds()
+          player.controls()
+        }))
+      }
+      pause_menu.items.push(((level_edit && !level_edit_play) ? save_menu_item : restart_menu_item))
+      if (level_edit_play)
+        restart_menu_item.text = "Back to Editor"
       pause_menu.items.push(new MenuItem(pause_menu,"Back to Menu",function() {
         if (!level_edit) {
 
