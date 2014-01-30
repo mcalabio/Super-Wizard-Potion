@@ -769,7 +769,7 @@ $def with (name)
 
           // window.prompt("encoded data",data_url.substring(data_url.indexOf(",")+1,data_url.length))
 
-          saveImage(player_level,player_stage,data_url.substring(data_url.indexOf(",")+1,data_url.length))
+          saveImage(player_level,player_stage,level_name,data_url.substring(data_url.indexOf(",")+1,data_url.length))
 
           // window.open(data_url, '_blank')
 
@@ -4188,9 +4188,9 @@ $def with (name)
 
     }
 
-    function saveImage (level,stage,encoded_data) {
+    function saveImage (level,stage,name,encoded_data) {
 
-      var json_data = JSON.stringify({'type': "saveImage", 'data': encoded_data, 'level': [level,stage]})
+      var json_data = JSON.stringify({'type': "saveImage", 'data': encoded_data, 'level': [level,stage,name]})
 
       console.log("saving image with json_data = " + json_data)
       jQuery.ajax({

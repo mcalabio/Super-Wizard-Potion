@@ -151,7 +151,14 @@ class engine:
 		elif (data["type"] == "saveImage"):
 
 			encoded_data = data["data"]
-			level = str(data["level"][0]) + "-" + str(data["level"][1])
+
+			if (data["level"][0]==0):
+				level = "0-" + str(data["level"][2])
+
+			else:
+				level = str(data["level"][0]) + "-" + str(data["level"][1])
+
+			web.debug("level_name = " + level)
 
 			binary_data = a2b_base64(encoded_data)
 
@@ -159,7 +166,6 @@ class engine:
 			fd.write(binary_data)
 			fd.close()
 
-			web.debug("encoded data = " + encoded_data)
 			return 0
 
 		return
