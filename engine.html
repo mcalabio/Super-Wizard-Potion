@@ -315,7 +315,6 @@ $def with (name)
 
         // pause menu
         pause = false
-        level_edit_play = false
 
         var menu_x = player.board.board.x + player.board.board.width/2 - (4*ITEM_WIDTH+15)/2
         var menu_y = player.board.board.y + player.board.board.height/2 - 3*ITEM_WIDTH
@@ -325,6 +324,7 @@ $def with (name)
           pause_menu_items.push(new MenuItem(pause_menu,"Play Level",function() {
             pause = false
             level_edit_play = true
+            jaws.start(Game)
             // playPausedSounds()
           }))
         } else {
@@ -520,6 +520,7 @@ $def with (name)
                   player_level = this.level
                   player_stage = this.stage
                   replay = null
+                  level_edit_play = false
                   jaws.start(Game)
               })
 
@@ -906,7 +907,7 @@ $def with (name)
 
             if (level_edit) {
               if (ctrl && shift) {
-                player.level_save()
+                player.level_save_as()
                 return
               } else if (ctrl) {
                 player.level_save()
@@ -1019,6 +1020,7 @@ $def with (name)
           player_level = 0
           player_stage = level_data.levels[0].length + 1
           console.log("editing level 0-" + player_stage)
+          level_edit_play = false
           jaws.start(Game)
         }
 
@@ -1044,6 +1046,7 @@ $def with (name)
                   level_data = JSON.parse(data)
                   latest_edit = level_data.levels[0].length + 1
                   player_progress[0][0] = latest_edit - 2
+                  level_edit_play = false
                   jaws.start(Game)
                 })
             })
@@ -1074,6 +1077,7 @@ $def with (name)
                     }
                   }
 
+                  level_edit_play = false
                   jaws.start(Game)
                 })
             })
@@ -1109,6 +1113,7 @@ $def with (name)
                 }
 
                 player_progress[0][0] = latest_edit - 2
+                level_edit_play = false
                 jaws.start(Game)
               })
           })
@@ -1123,6 +1128,7 @@ $def with (name)
               player_progress[0][0] = latest_edit
               player_level = 0
               player_stage = level_data.levels[0].length + 1
+              level_edit_play = false
               jaws.start(Game)
             })
           })
@@ -2275,18 +2281,21 @@ $def with (name)
               winlose_menu_items.push(continue_menu_item)              
 
               // add MenuItem for each stage of this level
-              if (!level_edit) {
-                for (var s = 0; s < level_data.levels[player_level].length; s++) {
-                  var stage_menu_item = new MenuItem(winlose_menu,player_level.toString() + "-" + (s+1).toString(), function() {
-                    player_stage = parseInt(this.text[2])
-                    console.dir(this)
-                    jaws.start(Game)
-                  })
-                  winlose_menu_items.push(stage_menu_item)
-                }
-              } else {
+              for (var s = 0; s < level_data.levels[player_level].length; s++) {
+                var stage_menu_item = new MenuItem(winlose_menu,player_level.toString() + "-" + (s+1).toString(), function() {
+                  player_stage = parseInt(this.text[2])
+                  console.dir(this)
+                  jaws.start(Game)
+                })
+                winlose_menu_items.push(stage_menu_item)
+              }
+              if (level_edit) {
                 winlose_menu_items.push(restart_menu_item)
                 restart_menu_item.text = "Back to Editor"
+                restart_menu_item.action = function() {
+                  level_edit_play = false
+                  jaws.start(Game)
+                }
               }
               // add Back to Menu item
               winlose_menu_items.push(back_menu_item)
@@ -2321,13 +2330,14 @@ $def with (name)
             // beating puzzles for the first time
             } else {
 
-              if (!level_edit)
-                winlose_menu_items.push(continue_menu_item)
+              winlose_menu_items.push(continue_menu_item)
               winlose_menu_items.push(restart_menu_item)
-              if (level_edit)
+              if (level_edit) {
                 restart_menu_item.text = "Back to Editor"
-              restart_menu_item.action = function () {
-                jaws.start(Game) // no need to save record here
+                restart_menu_item.action = function() {
+                  level_edit_play = false
+                  jaws.start(Game)
+                }
               }
               winlose_menu_items.push(back_menu_item)
               winlose_menu.items = winlose_menu_items
@@ -3750,17 +3760,23 @@ $def with (name)
         // playPausedSounds()
         player.controls()
       }))
-      if (level_edit &&!level_edit_play) {
+      if (level_edit && !level_edit_play) {
         pause_menu.items.push(new MenuItem(pause_menu,"Play Level",function() {
           pause = false
           level_edit_play = true
           // playPausedSounds()
           player.controls()
+          jaws.start(Game)
         }))
       }
       pause_menu.items.push(((level_edit && !level_edit_play) ? save_menu_item : restart_menu_item))
-      if (level_edit_play)
+      if (level_edit_play) {
         restart_menu_item.text = "Back to Editor"
+        restart_menu_item.action = function() {
+          level_edit_play = false
+          jaws.start(Game)
+        }
+      }
       pause_menu.items.push(new MenuItem(pause_menu,"Back to Menu",function() {
         if (!level_edit) {
 
