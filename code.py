@@ -86,6 +86,7 @@ class engine:
 			web.debug(os.getcwd())
 
 			all_levels = os.listdir(".")
+			all_levels.sort()
 
 			stage = 0
 			for files in all_levels:
