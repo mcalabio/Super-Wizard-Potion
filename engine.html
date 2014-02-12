@@ -975,6 +975,13 @@ $def with (name)
             if (!ctrl)
               return
 
+            if (level_edit) {
+              if (shift) {
+                player.level_shuffle()
+                return
+              }
+            }
+
             // stop all sounds currently playing
             for (var i=0; i<player.board.sounds.length;i++) {
               var this_sound = player.board.sounds[i]
@@ -1132,6 +1139,54 @@ $def with (name)
               jaws.start(Game)
             })
           })
+        }
+
+        this.level_shuffle = function() {
+          console.log("Shuffle")
+
+          var this_board = this.board
+          var all_items = []
+
+          // push all items into an array
+          for (var s = 0; s < this_board.stacks.length; s++) {
+            var this_stack = this_board.stacks[s]
+            for (var i = 0; i < this_stack.items.length; i++) {
+              all_items.push(this_stack.items[i])
+            }
+          }
+
+          // clear the board
+          this_board.clearBoard()
+
+          // shuffle all items
+          fisherYates(all_items)
+
+          // push back all items into random stacks
+          while(all_items.length > 0) {
+            var random_s = Math.floor(Math.random()*6)
+            var this_stack = this_board.stacks[random_s]
+
+            while (this_stack.items.length >= BOARD_HEIGHT) {
+              random_s = Math.floor(Math.random()*6)
+              this_stack = this_board.stacks[random_s]
+            }
+
+            var this_item = all_items.pop()
+            
+            // update stack items
+            this_item.x = random_s
+            this_item.y = this_stack.items.length
+            this_item.stack = this_stack
+
+            // update sprite destination
+            this_item.sprite.dx = this_board.posx(this_item.x)
+            this_item.sprite.dy = this_board.posy(this_item.y)
+
+            this_stack.items.push(this_item)
+          }
+
+
+
         }
 
         // check if player hand can move in x direction
