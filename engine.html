@@ -3005,6 +3005,9 @@ $def with (name)
             // skip items on player hand
             if (item.stack != player.hand && !item.breaking) {
 
+              if (level_edit && !level_edit_play)
+                continue
+
               // update flasks
               if (item.type == 1) {
 
