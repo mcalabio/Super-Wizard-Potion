@@ -1536,12 +1536,22 @@ $def with (name)
 
         // flasks
         for (var f = 0; f < 8; f++) {
-          this.flasks.push(new jaws.Sprite({x:this.posx(0),y:this.posy(f),image:"./static/images/POTION_" + COLORS[(f==6) ? 7 : ((f==7) ? 6 : f)] + ".gif",anchor:"left"}))
+
+          if (f == 3 || f == 4 || f == 5) {
+            this.flasks.push(new jaws.Sprite({x:this.posx(0),y:this.posy(f),image:"./static/images/POTION_" + COLORS[(f==6) ? 7 : ((f==7) ? 6 : f)] + ".gif",anchor:"left"}))
+          } else {
+            this.flasks.push(new jaws.Sprite({x:this.posx(0),y:this.posy(f), anchor:"left"}))
+            var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_" + COLORS[(f==6) ? 7 : ((f==7) ? 6 : f)] + ".gif", frame_size: [40,40], frame_duration: 100})
+            this.flasks[f].anim_default = anim.slice(0,5)
+            this.flasks[f].setImage(this.flasks[f].anim_default.next())
+          }
         }
 
         // blocks
         for (var b = 0; b < 7; b++) {
-          this.blocks.push(new jaws.Sprite({x:this.posx(1),y:this.posy(b),image:"./static/images/" + COLORS[(b==6) ? 7: b] + ".gif",anchor:"left"}))
+          this.blocks.push(new jaws.Sprite({x:this.posx(1),y:this.posy(b),image:"./static/images/" + COLORS[(b==6) ? 7: b] + ".gif", anchor:"left"}))
+          this.blocks[b].width = ITEM_WIDTH
+          this.blocks[b].height = ITEM_WIDTH
           console.log("creating block_sprite = " + this.blocks[b])
         }
 
@@ -1591,6 +1601,9 @@ $def with (name)
               level_editor.hand.type = 2
             }
             level_editor.hand.color = color
+
+            level_editor.hand.width = ITEM_WIDTH
+            level_editor.hand.height = ITEM_WIDTH
 
             console.log("click with type = " + level_editor.hand.type + " and color = " + level_editor.hand.color)
 
@@ -2951,12 +2964,13 @@ $def with (name)
 
               // breaking animation
               if (item.type == 0) {
-                if (item.sprite.width > 1) {
-                  item.sprite.scaleWidth(.5)
-                  item.sprite.dx += item.sprite.width / 2
+                var old_width = item.sprite.width
+                if (old_width > 1) {
+                  item.sprite.width = old_width*.75
+                  item.sprite.dx += (old_width - item.sprite.width)/2
                 } else {
                   item.sprite.dx -= item.sprite.width / 2
-                  item.sprite.scaleWidth(2)
+                  item.sprite.width = old_width*2
                 }
 
               // animate breaking flasks and robots
@@ -2993,7 +3007,8 @@ $def with (name)
             }
 
             // animate robots
-            if (item.type == 2) {
+            if (item.type == 1 || item.type == 2) {
+              console.dir(item)
               item.sprite.setImage(item.sprite.anim_default.next())
             }
 
@@ -3156,7 +3171,12 @@ $def with (name)
           this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y),image:"./static/images/" + COLORS[color] + ".gif",anchor:"left"})
           board.block_count[color] += 1
         } else if (this.type == 1) {
-          this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y), image:"./static/images/POTION_" + COLORS[color] + ".gif",anchor:"left"})
+
+          this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y), anchor:"left"})
+          var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_" + COLORS[this.color] + ".gif", frame_size: [40,40], frame_duration: 100})
+          this.sprite.anim_default = anim.slice(0,5)
+          this.sprite.setImage(this.sprite.anim_default.next())
+
           board.flask_count[color] += 1
         } else if (this.type == 2) {
           // create sprite for this robot
@@ -3181,6 +3201,8 @@ $def with (name)
           else
             board.robot_count[this.color] += 1
         }
+        this.sprite.width = ITEM_WIDTH
+        this.sprite.height = ITEM_WIDTH
         this.sprite.dx = this.stack.board.posx(x)
         this.sprite.dy = this.stack.board.posy(y)
 
