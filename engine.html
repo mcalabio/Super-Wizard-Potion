@@ -5031,10 +5031,13 @@ $def with (name)
         })
 
         // add level menu items
+        console.log("ADDING LEVEL MENU ITEMS")
+        console.dir(level_data)
         var item_count = 0
-        for (var i = 0; i < level_data.levels.length; i++) {
+        for (var i = 1; i <= LEVEL_PATHS[player_path].length; i++) {
           console.log("add level menu item, i = " + i)
-          for (var j = 0; j < level_data.levels[i].length; j++) {
+          console.log("playerpath level  = " + LEVEL_PATHS[player_path])
+          for (var j = 0; j < level_data.levels[LEVEL_PATHS[player_path][i-1]].length; j++) {
             console.log("add level menu item, j = " + j)
             if (i == 1 && j+1 == 1)
               level_select_menu.index = item_count
@@ -5046,7 +5049,7 @@ $def with (name)
                 replay = null
                 jaws.start(Game)
             })
-            var this_level_star_lock = level_data.levels[i][j].split('\n')[8]
+            var this_level_star_lock = level_data.levels[LEVEL_PATHS[player_path][i-1]][j].split('\n')[8]
             this_level.star_lock = (this_level.text[0] != "1") ? ((this_level_star_lock == undefined) ? ZERO_STAR_LOCK : this_level_star_lock) : this_level_star_lock
 
             // set "l-1" to be active but locked unless star_lock met
@@ -5159,8 +5162,9 @@ $def with (name)
         level_edit_select = new MenuBox("Level",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, [],true)
         level_edit_select.back = this.back
 
-        // add level menu items
-        console.log("ADDING LEVEL MENU ITEMS")
+        // add level edit menu items
+        console.log("ADDING LEVEL EDIT MENU ITEMS")
+        console.dir(level_data)
         var item_count = 0
         for (var i = 0; i < level_data.levels.length; i++) {
           for (var j = 0; j < level_data.levels[i].length; j++) {
