@@ -63,6 +63,16 @@ $def with (name)
       WHITE : 7
     }
 
+    // LEVEL BRANCHING
+    var LEVEL_PATHS = [
+
+      [1,2,3,4,6],
+      [1,2,3,4,7],
+      [1,2,3,5,7],
+      [1,2,3,5,8]
+
+    ]
+
     // PROBABILITIES FOR
     // GENERATING RANDOM ITEMS IN MARATHON
     var ITEM_PROBS = {
@@ -100,6 +110,7 @@ $def with (name)
     var level_data
     var player_level = 1
     var player_stage = 1
+    var player_path = 0
     var player_progress = []
     var star_progress = []
     var marathon_progress = ["00:00",0]
@@ -287,7 +298,7 @@ $def with (name)
         } else {
           console.dir(level_data)
           if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
-            player.board.fillLevel(player_level,player_stage)
+            player.board.fillLevel(LEVEL_PATHS[player_path][player_level-1],player_stage)
             addStateForUndo(player.hand,player.board)
             if (player_progress[player_level][1][player_stage.toString()] != undefined || level_edit) {
               var puzzle_data_items = new Array()
@@ -1726,7 +1737,7 @@ $def with (name)
                 // matches.push(last_match)
                 // console.log("pushing onto matches: (" + last_match.type + "," + last_match.color + ")")
 
-                // // THIS WAS DONE WITH TRIAL AND ERROR. TODO: COMMENTS
+                // // THIS WAS DONE WITH TRIAL AND ERROR.
                 // for (var i=1; i < this_stack.items.length; i++) {
 
                 //   console.log("i = " + i)
@@ -3126,7 +3137,7 @@ $def with (name)
               this.items[i].draw()
             }
           } else {
-            // TODO: flash stack when full and player in danger
+            // flash stack when full and player in danger
             var this_stack_full = (this.items.length + ((this.board.player.x != this.x) ? 0 : this.board.player.hand.items.length) == BOARD_HEIGHT)
             var player_timer = this.board.player.timer
             // var danger_time = (player_timer.raise_level_timer < raise_level_time/4) ? ((player_timer.ticker%8==0) ? true : false) : false
@@ -4620,8 +4631,6 @@ $def with (name)
             this.star_sprites[i].active = true
         }
 
-        // TODO: display star lock
-
       }
 
       this.up_action = function() {
@@ -5601,6 +5610,9 @@ $def with (name)
         })
 
         jaws.on_keydown(["enter"],  function()  {
+
+          // TODO: check which path this player will be taking
+
           if (player_name.length > 0)
             jaws.switchGameState(MainMenu)
         } )
