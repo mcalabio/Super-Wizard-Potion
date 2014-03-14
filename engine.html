@@ -521,6 +521,9 @@ $def with (name)
 
           // add level menu items
           console.log("ADDING LEVEL MENU ITEMS")
+
+          // TODO: fix the initial index of this menu
+
           var item_count = 0
           for (var i = 0; i < level_data.levels.length; i++) {
             for (var j = 0; j < level_data.levels[i].length; j++) {
@@ -5072,16 +5075,26 @@ $def with (name)
             this_level.star_lock = (this_level.text[0] != "1") ? ((this_level_star_lock == undefined) ? ZERO_STAR_LOCK : this_level_star_lock) : this_level_star_lock
 
             // set "l-1" to be active but locked unless star_lock met
-            if (j == 0) {
+            if (i == 1 && j == 0) {
               this_level.active = true
               this_level.locked = (starTotal() >= this_level.star_lock) ? false : true
 
             // set other puzzles to be inactive unless previous puzzle completed
             } else {
-              if (j > player_progress[i][0])
-                this_level.active = false
-              else
-                this_level.active = true
+
+              console.log("j = " + j)
+              console.log("player_progress = ")
+              console.dir(player_progress)
+
+              this_level.active = false
+
+              if (j > 0) {
+                if (j <= player_progress[i][0])
+                  this_level.active = true
+              } else {
+                if (player_progress[i-1][0] >= 6)
+                  this_level.active = true
+              }
             }
 
             // set world 0 to be inactive
@@ -5634,7 +5647,7 @@ $def with (name)
 
         jaws.on_keydown(["enter"],  function()  {
 
-          // TODO: check which path this player will be taking
+          // check which path this player will be taking
           playerPath(player_name, function(data) {
 
             console.log("in a callback with data = " + data)
