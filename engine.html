@@ -521,9 +521,6 @@ $def with (name)
 
           // add level menu items
           console.log("ADDING LEVEL MENU ITEMS")
-
-          // TODO: fix the initial index of this menu
-
           var item_count = 0
           for (var i = 0; i < level_data.levels.length; i++) {
             for (var j = 0; j < level_data.levels[i].length; j++) {
@@ -4954,11 +4951,12 @@ $def with (name)
             level_edit = false
             marathon = false
             level_select_menu.controls(level_select_menu,level_select_ok,menus)
-            var level_count = 1
-            for (var i = 0; i < player_progress.length; i++) {
+            var level_count = 0
+            for (var i = 1; i < player_progress.length; i++) {
               console.log(player_progress[i][0])
               level_count += parseInt(player_progress[i][0])
             }
+            console.log("determining index")
             console.log("level_count = " + level_count)
             if (level_count + 1 >= level_select_menu.items.length)
               level_select_menu.index = level_select_menu.items.length - 1
