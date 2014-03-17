@@ -2381,7 +2381,13 @@ $def with (name)
               winlose_menu.items = winlose_menu_items
               winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
 
-              next_level = (level_data.levels[parseInt(player_level) + 1] != undefined) ? level_data.levels[parseInt(player_level) + 1][0] : undefined
+              console.log("TYSON = " + (parseInt(player_level)))
+              console.dir(level_data.levels[LEVEL_PATHS[player_path][parseInt(player_level)]])
+
+              next_level = (level_data.levels[LEVEL_PATHS[player_path][parseInt(player_level)]] != undefined) ?
+                level_data.levels[LEVEL_PATHS[player_path][parseInt(player_level)]][0] : undefined
+
+              // next_level = (level_data.levels[parseInt(player_level) + 1] != undefined) ? level_data.levels[parseInt(player_level) + 1][0] : undefined
               next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined      
 
               console.log("continue! ??" + next_level)
@@ -2389,6 +2395,7 @@ $def with (name)
 
               // continue
               if (next_level != undefined && !level_edit) {
+                console.log("killed my wife")
                 winlose_menu.items[0].active = true
                 if (next_star_lock == undefined || starTotal() >= next_star_lock)
                   winlose_menu.items[0].locked = false
@@ -3019,7 +3026,6 @@ $def with (name)
 
             // animate robots
             if (item.type == 1 || item.type == 2) {
-              console.dir(item)
               item.sprite.setImage(item.sprite.anim_default.next())
             }
 
