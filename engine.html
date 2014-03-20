@@ -5549,8 +5549,12 @@ $def with (name)
 
     function PlayerNameState() {
 
+      var disablekeys = false
+
       messageConsole = function() {
         console.log("player_name = " + player_name)
+        if (disablekeys)
+          player_name = player_name.substring(0,player_name.length-1)
       }
 
       var name_text = "       " + player_name
@@ -5651,6 +5655,8 @@ $def with (name)
 
         jaws.on_keydown(["enter"],  function()  {
 
+          disablekeys = true
+
           // check which path this player will be taking
           playerPath(player_name, function(data) {
 
@@ -5669,6 +5675,10 @@ $def with (name)
         } )
 
         jaws.on_keydown(["backspace"], function() {
+
+          if (disablekeys)
+            return
+
           player_name = player_name.substring(0,player_name.length-1)
           messageConsole()
         })
