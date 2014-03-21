@@ -303,7 +303,11 @@ $def with (name)
         } else {
           console.dir(level_data)
           if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
-            player.board.fillLevel(LEVEL_PATHS[player_path][player_level-1],player_stage)
+            console.log("fuckoff = " + LEVEL_PATHS[player_path])
+            if (!level_edit)
+              player.board.fillLevel(LEVEL_PATHS[player_path][player_level-1],player_stage)
+            else
+              player.board.fillLevel(player_level,player_stage)
             addStateForUndo(player.hand,player.board)
             if (player_progress[player_level][1][player_stage.toString()] != undefined || level_edit) {
               var puzzle_data_items = new Array()
@@ -1972,6 +1976,15 @@ $def with (name)
         }
 
         this.fillLevel = function(level,stage,undo) {
+
+          console.log("level_data")
+          console.dir(level_data)
+
+          console.log("level = " + level)
+          console.log("stage = " + stage)
+
+          console.log(level_data.levels[0])
+          console.log(level_data.levels[0][6])
 
           var undo_state = undo || undefined
 
@@ -5068,6 +5081,8 @@ $def with (name)
         for (var i = 1; i <= LEVEL_PATHS[player_path].length; i++) {
           console.log("add level menu item, i = " + i)
           console.log("playerpath level  = " + LEVEL_PATHS[player_path])
+          if (level_data.levels[LEVEL_PATHS[player_path][i-1]] == undefined)
+            continue
           for (var j = 0; j < level_data.levels[LEVEL_PATHS[player_path][i-1]].length; j++) {
             console.log("add level menu item, j = " + j)
             if (i == 1 && j+1 == 1)
