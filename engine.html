@@ -257,6 +257,11 @@ $def with (name)
             ),function(){return}
             ))
         if (!level_edit) {
+
+          // display level and stage number
+          screen_data_items[0].text = (player_level + "-" + player_stage)
+
+          // display timer and score
           screen_data_items.push(new MenuItem(screen_data,player.timer.clock_text,function(){return}))
           screen_data_items.push(new MenuItem(screen_data,'\u03BB'+player.score,function(){return}))
         }
