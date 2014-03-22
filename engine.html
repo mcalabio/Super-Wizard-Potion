@@ -73,6 +73,8 @@ $def with (name)
 
     ]
 
+    var thanks_for_coming = "Thanks for playing! Stay tuned for more puzzles! If you have friends that you think might also be interested in play-testing, please direct them to us."
+
     // PROBABILITIES FOR
     // GENERATING RANDOM ITEMS IN MARATHON
     var ITEM_PROBS = {
@@ -119,6 +121,9 @@ $def with (name)
     var game_record = ""
     var level_edit = false
     var level_edit_play = false
+    var level_editor_active = false
+    var change_name_active = false
+    var replay_mode_active = false
     var marathon = false
     var replay = null
     var latest_edit
@@ -303,7 +308,6 @@ $def with (name)
         } else {
           console.dir(level_data)
           if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
-            console.log("fuckoff = " + LEVEL_PATHS[player_path])
             if (!level_edit)
               player.board.fillLevel(LEVEL_PATHS[player_path][player_level-1],player_stage)
             else
@@ -2425,7 +2429,9 @@ $def with (name)
                   player_stage = 1
                   jaws.start(Game)
                 }
-              } 
+              } else if (next_level == undefined) { 
+                setTimeout(function() {window.alert(thanks_for_coming)}, 500)
+              }
 
               // default index
               if (player_progress[player_level][0] >= player_stage)
@@ -4191,7 +4197,7 @@ $def with (name)
     function updateSaveAndCookie() {
       // update player_save data
       var player_save = $("saveData")
-      player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress) + "|" + player_uid
+      player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress) + "|" + player_uid + "|" + JSON.stringify(player_path)
       // update cookie save
       setCookie("player_save",player_save.innerHTML,360000)
     }
@@ -5059,7 +5065,9 @@ $def with (name)
           }))
         var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items,false,true)
 
-        main_menu.items[3].active = true // set level editor to be active
+        main_menu.items[2].active = change_name_active // set change name to be active
+        main_menu.items[3].active = level_editor_active // set level editor to be active
+        main_menu.items[6].active = replay_mode_active // set replay mode to be active
 
         menus.push(main_menu)
         active_menu = main_menu
@@ -5076,7 +5084,7 @@ $def with (name)
 
         // add level menu items
         console.log("ADDING LEVEL MENU ITEMS")
-        console.dir(level_data)
+        console.dir(player_path)
         var item_count = 0
         for (var i = 1; i <= LEVEL_PATHS[player_path].length; i++) {
           console.log("add level menu item, i = " + i)
@@ -5321,7 +5329,7 @@ $def with (name)
         var save_menu_items = new Array()
           save_menu_items.push(new MenuItem(save_menu, "Save", function() {
             var player_save = $("saveData")
-            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress) + "|" + player_uid + "|" + JSON.stringify(player_path)
             // update cookie save
             setCookie("player_save",player_save.innerHTML,360000)
 
@@ -5958,6 +5966,7 @@ $def with (name)
             star_progress = loaded_progress[1]
             marathon_progress = JSON.parse(open_data[4])
             player_uid = open_data[5]
+            player_path = parseInt(JSON.parse(open_data[6]))
 
             name_entered = true
           }
