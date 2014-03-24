@@ -37,7 +37,7 @@ $def with (name)
     var MAX_RAISE_LEVEL_TIME = 20
     var MIN_RAISE_LEVEL_TIME = 6
     var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 20 seconds
-    var MARATHON_STAR_LOCK = 50
+    var MARATHON_STAR_LOCK = 0
     var ZERO_STAR_LOCK = 0
     var MENU_FONT = "bold 12pt Menu Text"
 
@@ -1938,7 +1938,7 @@ $def with (name)
           console.log("raising stack with raise_count = " + raise_count)
 
           if (raise_count%5 == 0) {
-            if (marathon_level < ITEM_PROBS["0|0"].length)
+            if (marathon_levelx < ITEM_PROBS["0|0"].length)
               marathon_level++
           }
 
