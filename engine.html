@@ -125,7 +125,7 @@ $def with (name)
     var change_name_active = true
     var replay_mode_active = true
     var marathon = false
-    var marathon_level = 1
+    var marathon_level_debug = 1
     var replay = null
     var latest_edit
     var pause = false
@@ -164,6 +164,8 @@ $def with (name)
       var level_select_ok
       var winlose = false
       var raise_level_time = MAX_RAISE_LEVEL_TIME
+      var marathon_level = marathon_level_debug
+      var raise_count = 0
       var continue_menu_item
       var undo_menu_item
       var back_menu_item
@@ -1930,6 +1932,16 @@ $def with (name)
           // reset timer
           player.timer.raise_level_timer = raise_level_time
 
+          // increment raise_count
+          raise_count++
+
+          console.log("raising stack with raise_count = " + raise_count)
+
+          if (raise_count%5 == 0) {
+            if (marathon_level < ITEM_PROBS["0|0"].length)
+              marathon_level++
+          }
+
           Y_SPEED = SLOW
 
         }
@@ -1973,9 +1985,7 @@ $def with (name)
 
             // check for matches
             this_stack.checkForMatches()
-
           }
-
 
         }
 
