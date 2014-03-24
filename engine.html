@@ -37,7 +37,7 @@ $def with (name)
     var MAX_RAISE_LEVEL_TIME = 20
     var MIN_RAISE_LEVEL_TIME = 6
     var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 20 seconds
-    var MARATHON_STAR_LOCK = 100
+    var MARATHON_STAR_LOCK = 50
     var ZERO_STAR_LOCK = 0
     var MENU_FONT = "bold 12pt Menu Text"
 
@@ -80,27 +80,27 @@ $def with (name)
     var ITEM_PROBS = {
 
     // BLOCKS
-      "0|0" : 8 , // RED
-      "0|1" : 8 , // GREEN
-      "0|2" : 8 , // PURPLE
-      "0|4" : 6 , // YELLOW
-      "0|7" : 16 , // WHITE
+      "0|0" : [10,8] , // RED
+      "0|1" : [10,8] , // GREEN
+      "0|2" : [0,8]  , // PURPLE
+      "0|4" : [0,6]  , // YELLOW
+      "0|7" : [0,16] , // WHITE
 
     // POTIONS
-      "1|0" : 1 , // RED
-      "1|1" : 1 , // GREEN
-      "1|2" : 1 , // PURPLE
-      "1|4" : 1 , // YELLOW
-      "1|6" : 3 , // EMPTY
-      "1|7" : 4 , // WHITE
+      "1|0" : [1,1] , // RED
+      "1|1" : [1,1] , // GREEN
+      "1|2" : [0,1] , // PURPLE
+      "1|4" : [0,1] , // YELLOW
+      "1|6" : [0,3] , // EMPTY
+      "1|7" : [3,3] , // WHITE
 
     // ROBOTS
-      "2|0" : 6 , // RED
-      "2|1" : 6 , // GREEN
-      "2|2" : 6 , // PURPLE
-      "2|3" : 1 , // RED ARMOR
-      "2|4" : 1 , // GREEN ARMOR
-      "2|5" : 1 , // PURPLE ARMOR
+      "2|0" : [6,6] , // RED
+      "2|1" : [6,6] , // GREEN
+      "2|2" : [0,6] , // PURPLE
+      "2|3" : [0,1] , // RED ARMOR
+      "2|4" : [0,1] , // GREEN ARMOR
+      "2|5" : [0,1] , // PURPLE ARMOR
     }
 
     // GLOBALS
@@ -121,10 +121,11 @@ $def with (name)
     var game_record = ""
     var level_edit = false
     var level_edit_play = false
-    var level_editor_active = false
-    var change_name_active = false
-    var replay_mode_active = false
+    var level_editor_active = true
+    var change_name_active = true
+    var replay_mode_active = true
     var marathon = false
+    var marathon_level = 1
     var replay = null
     var latest_edit
     var pause = false
@@ -1843,9 +1844,11 @@ $def with (name)
         // generate random item
         this.randomItem = function(stack,x,y) {
 
-          var type_color_string = randomization_array.pop()
-          randomization_array.push(type_color_string)
-          fisherYates(randomization_array)
+          var type_color_string = randomization_array[marathon_level-1].pop()
+          randomization_array[marathon_level-1].push(type_color_string)
+          fisherYates(randomization_array[marathon_level-1])
+          console.log("randomization array rarray = ")
+          console.dir(randomization_array[marathon_level-1])
           var type_color = type_color_string.split("|")
           var type = type_color[0]
           var color = type_color[1]
@@ -1937,21 +1940,18 @@ $def with (name)
           var value
 
           // fill up the randomization array
-          for (var key in ITEM_PROBS) {
-            if (ITEM_PROBS.hasOwnProperty(key)) {
-              value = ITEM_PROBS[key]
-
-              for (var i = 0; i < value; i++) {
-                randomization_array.push(key)
+          for (var i = 0; i < ITEM_PROBS["0|0"].length; i++) {
+            randomization_array.push([])
+            for (var key in ITEM_PROBS) {
+              if (ITEM_PROBS.hasOwnProperty(key)) {
+                value = ITEM_PROBS[key]
+                for (var j = 0; j < value[i]; j++) {
+                  randomization_array[i].push(key)
+                }
               }
-
             }
-          }
-
-          // shuffle the randomization array
-          fisherYates(randomization_array)
-          for (var i = 0; i < randomization_array.length; i++) {
-            console.log("randomization_array " + i + " = " + randomization_array[i])
+            // shuffle the randomization array
+            fisherYates(randomization_array[i])
           }
 
           // create stacks for the board
@@ -2430,7 +2430,8 @@ $def with (name)
                   jaws.start(Game)
                 }
               } else if (next_level == undefined) { 
-                setTimeout(function() {window.alert(thanks_for_coming)}, 500)
+                if (player_stage == 6)
+                  setTimeout(function() {window.alert(thanks_for_coming)}, 500)
               }
 
               // default index
@@ -5003,7 +5004,7 @@ $def with (name)
           main_menu_items[main_menu_items.length-1].description
             = "Brew potions to destroy robots. Clear\n" +
             "all robots from the board to advance to\n" +
-            "the next level."
+            "the next puzzle."
           main_menu_items.push(new MenuItem(main_menu,"Marathon",function() {
             level_edit = false
             marathon = true
@@ -5296,7 +5297,7 @@ $def with (name)
         help_menu_items[help_menu_items.length-1].description
           = "Move cursor with the arrow keys (or WASD).\n"
           + "Press SPACE (or J) to grab items.\n"
-          + "While holding, SPACE (or J) drops an item.\n"
+          + "While grabbing, SPACE (or J) drops an item.\n"
           + "Press C (or K) to grab/drop a whole stack."
         help_menu_items.push(new MenuItem(help_menu, "Mouse Control", function() {
           menus.push(mouse_menu)
@@ -5318,7 +5319,7 @@ $def with (name)
           = "Press CTRL+Z to undo your last move.\n"
           + "(no stars can be earned if you undo)\n"
           + "Press L or click outside of the board\n"
-          + "to make the stacks rise in marathon."
+          + "to make the stacks rise in Marathon."
         var help_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 200, help_menu_items)
         help_menu.back = this.back
 
@@ -5539,7 +5540,7 @@ $def with (name)
           marathon_submenu.menu_box.index = -1
           marathon_submenu.draw()
         }
-        if (active_menu.items[active_menu.index].description != "")
+        if (active_menu.items[active_menu.index].description != "" && active_menu.items[active_menu.index].active)
           description_box.draw()
 
         // draw level record
