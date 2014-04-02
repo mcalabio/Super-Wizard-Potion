@@ -7,14 +7,17 @@ $def with (name)
     <script src="./static/json/json.js"></script>
     <script src="./static/howler/howler.js"></script>
     <script src="./static/sjcl/sjcl.js"></script>
-    <script type="text/javascript" src="./static/jquery/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" 
+src="./static/jquery/jquery-1.10.2.min.js"></script>
     <link type="text/css" rel="stylesheet" href="./static/style.css" />
     <title>Super Wizard Potion</title>
   </head>
 <body>
 
-  <a id="muteButton" href="#" onClick="toggleMute()" style="visibility:hidden;float:right">Sound: On</a>  
-  <canvas id="gameScreen" width=600 height=500 style="position:fixed; top:10px; margin-top:10px"></canvas>
+  <a id="muteButton" href="#" onClick="toggleMute()" 
+style="visibility:hidden;float:right">Sound: On</a>  
+  <canvas id="gameScreen" width=600 height=500 style="position:fixed; 
+top:10px; margin-top:10px"></canvas>
   <br>
   <div id="progressButtons" margin="100">
     <div id="saveData" hidden="true">Data to save comes from here.</div>
@@ -36,13 +39,15 @@ $def with (name)
     var PURPLE_HEX = '#350028'//'#700054'
     var MAX_RAISE_LEVEL_TIME = 20
     var MIN_RAISE_LEVEL_TIME = 6
-    var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 20 seconds
-    var MARATHON_STAR_LOCK = 100
+    var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 
+20 seconds
+    var MARATHON_STAR_LOCK = 0
     var ZERO_STAR_LOCK = 0
     var MENU_FONT = "bold 12pt Menu Text"
 
 
-    var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
+    var COLORS = new 
+Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
     var TYPES = new Array("BLOCK","POTION","ROBOT")
     var RED = 0
     var GREEN = 1
@@ -63,32 +68,46 @@ $def with (name)
       WHITE : 7
     }
 
+    // LEVEL BRANCHING
+    var LEVEL_PATHS = [
+
+      [1,2,3,4,6],
+      [1,2,3,4,7],
+      [1,2,3,5,7],
+      [1,2,3,5,8]
+
+    ]
+
+    var thanks_for_coming = "Thanks for playing! Stay tuned for more 
+puzzles! If you have friends that you think might also be interested in 
+play-testing, please direct them to us."
+
     // PROBABILITIES FOR
     // GENERATING RANDOM ITEMS IN MARATHON
     var ITEM_PROBS = {
 
     // BLOCKS
-      "0|0" : 8 , // RED
-      "0|1" : 8 , // GREEN
-      "0|2" : 8 , // PURPLE
-      "0|4" : 6 , // YELLOW
-      "0|7" : 16 , // WHITE
+      "0|0" : [10,8] , // RED
+      "0|1" : [10,8] , // GREEN
+      "0|2" : [0,8]  , // PURPLE
+      "0|4" : [0,6]  , // YELLOW
+      "0|7" : [0,16] , // WHITE
 
     // POTIONS
-      "1|0" : 1 , // RED
-      "1|1" : 1 , // GREEN
-      "1|2" : 1 , // PURPLE
-      "1|4" : 1 , // YELLOW
-      "1|6" : 3 , // EMPTY
-      "1|7" : 4 , // WHITE
+      "1|0" : [1,1] , // RED
+      "1|1" : [1,1] , // GREEN
+      "1|2" : [0,1] , // PURPLE
+      "1|4" : [0,1] , // YELLOW
+      "1|6" : [0,3] , // EMPTY
+      "1|7" : [3,3] , // WHITE
 
     // ROBOTS
-      "2|0" : 6 , // RED
-      "2|1" : 6 , // GREEN
-      "2|2" : 6 , // PURPLE
-      "2|3" : 1 , // RED ARMOR
-      "2|4" : 1 , // GREEN ARMOR
-      "2|5" : 1 , // PURPLE ARMOR
+      "2|0" : [6,6] , // RED
+      "2|1" : [6,6] , // GREEN
+      "2|2" : [0,6] , // PURPLE
+      "2|3" : [0,1] , // RED ARMOR
+      "2|4" : [0,1] , // GREEN ARMOR
+      "2|5" : [0,1] , // PURPLE ARMOR
     }
 
     // GLOBALS
@@ -100,6 +119,7 @@ $def with (name)
     var level_data
     var player_level = 1
     var player_stage = 1
+    var player_path = 0
     var player_progress = []
     var star_progress = []
     var marathon_progress = ["00:00",0]
@@ -108,7 +128,11 @@ $def with (name)
     var game_record = ""
     var level_edit = false
     var level_edit_play = false
+    var level_editor_active = true
+    var change_name_active = true
+    var replay_mode_active = true
     var marathon = false
+    var marathon_level_debug = 1
     var replay = null
     var latest_edit
     var pause = false
@@ -147,10 +171,13 @@ $def with (name)
       var level_select_ok
       var winlose = false
       var raise_level_time = MAX_RAISE_LEVEL_TIME
+      var marathon_level = marathon_level_debug
+      var raise_count = 0
       var continue_menu_item
       var undo_menu_item
       var back_menu_item
-      var restart_menu_item = new MenuItem(pause_menu,"Restart",function() {
+      var restart_menu_item = new 
+MenuItem(pause_menu,"Restart",function() {
         // update marathon progress
         if (marathon) {
           if (player.timer.clock_text > marathon_progress[0])
@@ -168,8 +195,11 @@ $def with (name)
         jaws.start(Game)
       })
 
-      var save_menu_item = new MenuItem(pause_menu,"Save Level",function() {
-        saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
+      var save_menu_item = new MenuItem(pause_menu,"Save 
+Level",function() {
+        
+saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() 
+{
           loadLevels(function(data) {
             level_data = JSON.parse(data)
             latest_edit = level_data.levels[0].length + 1
@@ -187,9 +217,11 @@ $def with (name)
       var star_time
       var star_score
       var star_lock
-      var level_name = (level_data.levels[player_level][player_stage-1]==undefined)?
+      var level_name = 
+(level_data.levels[player_level][player_stage-1]==undefined)?
         "new" :
-        (level_data.levels[player_level][player_stage-1].split('\n')[9]==undefined)?
+        
+(level_data.levels[player_level][player_stage-1].split('\n')[9]==undefined)?
           (player_level.toString() + "-" + player_stage.toString()) :
           level_data.levels[player_level][player_stage-1].split('\n')[9]
       var beat_marathon_time = false
@@ -205,7 +237,8 @@ $def with (name)
       var progress_buttons = $("progressButtons")
       progress_buttons.hidden = true
 
-      /* Called once when a game state is activated. Use it for one-time setup code. */
+      /* Called once when a game state is activated. Use it for one-time 
+setup code. */
       this.setup = function() {
         // live_info = document.getElementById("live_info")
         live_info = $("live_info")
@@ -225,10 +258,12 @@ $def with (name)
           player.board.board.x + player.board.board.width + ITEM_WIDTH,
           player.board.board.y,
           160,
-          [new MenuItem(screen_data,"  x " + player.stars,function(){return})]
+          [new MenuItem(screen_data,"  x " + 
+player.stars,function(){return})]
         )
         player_data.index = -1
-        var player_stars_sprite = new jaws.Sprite({x:player_data.x+20,y:player_data.y+36,image:"./static/images/STAR.gif",anchor:"left"})   
+        var player_stars_sprite = new 
+jaws.Sprite({x:player_data.x+20,y:player_data.y+36,image:"./static/images/STAR.gif",anchor:"left"})   
         player_stars_sprite.width = 15
         player_stars_sprite.height = 15
         star_sprites.push(player_stars_sprite) 
@@ -246,14 +281,24 @@ $def with (name)
             ),function(){return}
             ))
         if (!level_edit) {
-          screen_data_items.push(new MenuItem(screen_data,player.timer.clock_text,function(){return}))
-          screen_data_items.push(new MenuItem(screen_data,'\u03BB'+player.score,function(){return}))
+
+          // display level and stage number
+          screen_data_items[0].text = (player_level + "-" + 
+player_stage)
+
+          // display timer and score
+          screen_data_items.push(new 
+MenuItem(screen_data,player.timer.clock_text,function(){return}))
+          screen_data_items.push(new 
+MenuItem(screen_data,'\u03BB'+player.score,function(){return}))
         }
         screen_data = new MenuBox(
           "Level",
           screen_data,
-          (level_edit) ? player_data.x + player_data.width + 1 : player.board.board.x + player.board.board.width + ITEM_WIDTH,
-          (level_edit) ? player_data.y : player_data.y + player_data.height + 1,
+          (level_edit) ? player_data.x + player_data.width + 1 : 
+player.board.board.x + player.board.board.width + ITEM_WIDTH,
+          (level_edit) ? player_data.y : player_data.y + 
+player_data.height + 1,
           125,
           screen_data_items
         )
@@ -273,40 +318,63 @@ $def with (name)
           player.board.marathonLevel(5)
 
           var marathon_data_items = new Array()
-          marathon_data_items.push(new MenuItem(marathon_data,"Best Time:  " + marathon_progress[0],function(){return}))
-          marathon_data_items.push(new MenuItem(marathon_data,"High Score: \u03BB" + marathon_progress[1],function(){return}))
+          marathon_data_items.push(new MenuItem(marathon_data,"Best 
+Time:  " + marathon_progress[0],function(){return}))
+          marathon_data_items.push(new MenuItem(marathon_data,"High 
+Score: \u03BB" + marathon_progress[1],function(){return}))
 
-          marathon_data = new MenuBox("",marathon_data,screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,marathon_data_items)
+          marathon_data = new 
+MenuBox("",marathon_data,screen_data.x,screen_data.y + 
+screen_data.height + 1,150 + ITEM_WIDTH*2,marathon_data_items)
           marathon_data.index = -1
 
           // start timer immediately
           game_start = true
 
-          // marathon_star_lock_menu.menu_box.setup(main_menu.x + main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 20,level_select_ok.menu_box.width)
+          // marathon_star_lock_menu.menu_box.setup(main_menu.x + 
+main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 
+20,level_select_ok.menu_box.width)
 
         } else {
           console.dir(level_data)
-          if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
-            player.board.fillLevel(player_level,player_stage)
+          if (level_data.levels[player_level][player_stage-1] != 
+undefined || level_edit) {
+            if (!level_edit)
+              
+player.board.fillLevel(LEVEL_PATHS[player_path][player_level-1],player_stage)
+            else
+              player.board.fillLevel(player_level,player_stage)
             addStateForUndo(player.hand,player.board)
-            if (player_progress[player_level][1][player_stage.toString()] != undefined || level_edit) {
+            if 
+(player_progress[player_level][1][player_stage.toString()] != undefined 
+|| level_edit) {
               var puzzle_data_items = new Array()
-              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){
-                  var result = window.prompt("enter star time",(star_time==undefined)?"MM:SS":star_time)
+              puzzle_data_items.push(new MenuItem(puzzle_data,"Star 
+Time:  " + star_time,function(){
+                  var result = window.prompt("enter star 
+time",(star_time==undefined)?"MM:SS":star_time)
                   if (result != null) star_time = result
                   puzzle_data_items[0].text = "Star Time:  " + star_time
               }))
-              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Score: \u03BB" + star_score,function(){
-                  var result = window.prompt("enter star score",(star_score)==undefined?"":star_score)
+              puzzle_data_items.push(new MenuItem(puzzle_data,"Star 
+Score: \u03BB" + star_score,function(){
+                  var result = window.prompt("enter star 
+score",(star_score)==undefined?"":star_score)
                   if (result != null) star_score = result
-                  puzzle_data_items[1].text = "Star Score: \u03BB" + star_score
+                  puzzle_data_items[1].text = "Star Score: \u03BB" + 
+star_score
               }))
-              if (level_edit) puzzle_data_items.push(new MenuItem(puzzle_data,"Star Lock:  " + star_lock,function(){
-                  var result = window.prompt("enter star lock",(star_lock)==undefined?"":star_lock)
+              if (level_edit) puzzle_data_items.push(new 
+MenuItem(puzzle_data,"Star Lock:  " + star_lock,function(){
+                  var result = window.prompt("enter star 
+lock",(star_lock)==undefined?"":star_lock)
                   if (result != null) star_lock = result
                   puzzle_data_items[2].text = "Star Lock:  " + star_lock
               }))
-              puzzle_data = new MenuBox("",puzzle_data,(level_edit)?screen_data.x - 2*ITEM_WIDTH:screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,puzzle_data_items)
+              puzzle_data = new 
+MenuBox("",puzzle_data,(level_edit)?screen_data.x - 
+2*ITEM_WIDTH:screen_data.x,screen_data.y + screen_data.height + 1,150 + 
+ITEM_WIDTH*2,puzzle_data_items)
               puzzle_data.index = -1
               puzzle_data.active = (level_edit) ? true : false
             }
@@ -316,26 +384,32 @@ $def with (name)
         // pause menu
         pause = false
 
-        var menu_x = player.board.board.x + player.board.board.width/2 - (4*ITEM_WIDTH+15)/2
-        var menu_y = player.board.board.y + player.board.board.height/2 - 3*ITEM_WIDTH
+        var menu_x = player.board.board.x + player.board.board.width/2 - 
+(4*ITEM_WIDTH+15)/2
+        var menu_y = player.board.board.y + player.board.board.height/2 
+- 3*ITEM_WIDTH
 
         var pause_menu_items = new Array()
         if (level_edit &&!level_edit_play) {
-          pause_menu_items.push(new MenuItem(pause_menu,"Play Level",function() {
+          pause_menu_items.push(new MenuItem(pause_menu,"Play 
+Level",function() {
             pause = false
             level_edit_play = true
             jaws.start(Game)
             // playPausedSounds()
           }))
         } else {
-          pause_menu_items.push(new MenuItem(pause_menu,"Resume",function() {
+          pause_menu_items.push(new 
+MenuItem(pause_menu,"Resume",function() {
             pause = false
             // playPausedSounds()
             player.controls()
           }))
         }
-        pause_menu_items.push(((level_edit) ? save_menu_item : restart_menu_item))
-        pause_menu_items.push(new MenuItem(pause_menu,"Back to Menu",function() {
+        pause_menu_items.push(((level_edit) ? save_menu_item : 
+restart_menu_item))
+        pause_menu_items.push(new MenuItem(pause_menu,"Back to 
+Menu",function() {
           if (level_edit)
             main_menu_auto = [3,player_level,player_stage]
           else if (marathon)
@@ -352,21 +426,29 @@ $def with (name)
           player.controls()
         }
 
-        pause_menu = new MenuBox("Pause!",pause_menu,menu_x, menu_y,4*ITEM_WIDTH+15,pause_menu_items)
+        pause_menu = new MenuBox("Pause!",pause_menu,menu_x, 
+menu_y,4*ITEM_WIDTH+15,pause_menu_items)
         pause_menu.back = this.pause_back
 
         // winlose data
         var winlose_data_items = new Array()
-        winlose_data_items.push(new MenuItem(winlose_data_items,"YOU WIN!",function() {return}))
-        winlose_data_items.push(new MenuItem(winlose_data_items,"Time:",function() {return}))
-        winlose_data_items.push(new MenuItem(winlose_data_items,"Score:",function() {return}))
-        winlose_data_items.push(new MenuItem(winlose_data_items,"",function() {return}))
+        winlose_data_items.push(new MenuItem(winlose_data_items,"YOU 
+WIN!",function() {return}))
+        winlose_data_items.push(new 
+MenuItem(winlose_data_items,"Time:",function() {return}))
+        winlose_data_items.push(new 
+MenuItem(winlose_data_items,"Score:",function() {return}))
+        winlose_data_items.push(new 
+MenuItem(winlose_data_items,"",function() {return}))
 
-        winlose_data = new MenuBox("",winlose_data,menu_x, menu_y, 4*ITEM_WIDTH+15, winlose_data_items)
+        winlose_data = new MenuBox("",winlose_data,menu_x, menu_y, 
+4*ITEM_WIDTH+15, winlose_data_items)
 
         // add star sprites for winlose data
         for (var s=0; s < winlose_data_items.length; s++) {
-          var this_sprite = new jaws.Sprite({x:winlose_data.x,y:winlose_data.y+36 + 20*(s-1),anchor:"left"})
+          var this_sprite = new 
+jaws.Sprite({x:winlose_data.x,y:winlose_data.y+36 + 
+20*(s-1),anchor:"left"})
           this_sprite.width = 15
           this_sprite.height = 15
           winlose_data_items[s].sprites.push(this_sprite)
@@ -376,12 +458,14 @@ $def with (name)
         }
 
         // winlose menu
-        continue_menu_item = new MenuItem(winlose_menu,"Continue",function() {
+        continue_menu_item = new 
+MenuItem(winlose_menu,"Continue",function() {
 
           // advance the player to the next level
           console.log("player_stage = " + player_stage)
           console.dir(level_data)
-          if (player_stage < level_data["levels"][player_level].length) {
+          if (player_stage < level_data["levels"][player_level].length) 
+{
             player_stage++
           } else {
             player_level++
@@ -393,12 +477,14 @@ $def with (name)
           jaws.start(Game)
         })
         continue_menu_item.active = false
-        undo_menu_item = new MenuItem(winlose_menu,"Undo (CTRL+Z)",function() {
+        undo_menu_item = new MenuItem(winlose_menu,"Undo 
+(CTRL+Z)",function() {
           winlose = false
           winlose_menu.active = false
 
           winlose_menu.y = winlose_data.y + winlose_data.height
-          winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+          
+winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
 
           // color timer to be red to indicate game end
           screen_data.index = -1
@@ -406,7 +492,8 @@ $def with (name)
           player.controls()
           undoLastMove(true)
         })
-        back_menu_item = new MenuItem(winlose_menu,"Back to Menu",function() {
+        back_menu_item = new MenuItem(winlose_menu,"Back to 
+Menu",function() {
           if (level_edit)
             main_menu_auto = [3,player_level,player_stage]
           else if (marathon)
@@ -417,20 +504,26 @@ $def with (name)
             main_menu_auto = [0,player_level,player_stage]
           jaws.start(MainMenu)
         })
-        winlose_menu = new MenuBox(" ",winlose_menu,menu_x, winlose_data.y + winlose_data.height,4*ITEM_WIDTH+15,[])
+        winlose_menu = new MenuBox(" ",winlose_menu,menu_x, 
+winlose_data.y + winlose_data.height,4*ITEM_WIDTH+15,[])
 
         // to display star lock to continue to next world
-        continue_lock_box = new OkSubMenu("",winlose_menu,function() { return })
-        continue_lock_box.menu_box.setup(winlose_menu.x + winlose_menu.width - 50, winlose_menu.y+40,continue_lock_box.menu_box.width)
+        continue_lock_box = new OkSubMenu("",winlose_menu,function() { 
+return })
+        continue_lock_box.menu_box.setup(winlose_menu.x + 
+winlose_menu.width - 50, 
+winlose_menu.y+40,continue_lock_box.menu_box.width)
         continue_lock_box.menu_box.index = -1
 
         // lock sprite
-        var lock_sprite = new jaws.Sprite({x:continue_lock_box.menu_box.x+21,y:continue_lock_box.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"})        
+        var lock_sprite = new 
+jaws.Sprite({x:continue_lock_box.menu_box.x+21,y:continue_lock_box.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"})        
         continue_lock_box.menu_box.sprites.push(lock_sprite)
         lock_sprite.active = true
 
         // star lock sprite
-        var star_lock_sprite = new jaws.Sprite({x:continue_lock_box.menu_box.x+64,y:continue_lock_box.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})        
+        var star_lock_sprite = new 
+jaws.Sprite({x:continue_lock_box.menu_box.x+64,y:continue_lock_box.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})        
         star_lock_sprite.width = 15
         star_lock_sprite.height = 15
         continue_lock_box.menu_box.sprites.push(star_lock_sprite)
@@ -438,18 +531,25 @@ $def with (name)
 
         // level record data
         var level_record_items = new Array()
-        level_record_items.push(new MenuItem(level_record,"Completed!",function() {return}))
-        level_record_items.push(new MenuItem(level_record,"Time:",function() {return}))
-        level_record_items.push(new MenuItem(level_record,"Score:",function() {return}))
-        level_record_items.push(new MenuItem(level_record,"",function() {return}))
+        level_record_items.push(new 
+MenuItem(level_record,"Completed!",function() {return}))
+        level_record_items.push(new 
+MenuItem(level_record,"Time:",function() {return}))
+        level_record_items.push(new 
+MenuItem(level_record,"Score:",function() {return}))
+        level_record_items.push(new MenuItem(level_record,"",function() 
+{return}))
 
-        level_record = new MenuBox("",level_record,winlose_menu.x + winlose_menu.width - 50, winlose_menu.y+40, 230, level_record_items)
+        level_record = new MenuBox("",level_record,winlose_menu.x + 
+winlose_menu.width - 50, winlose_menu.y+40, 230, level_record_items)
         level_record.index = -1
         level_record.active = false
 
         // add star sprites for level record data
         for (var s=0; s < level_record_items.length; s++) {
-          var this_sprite = new jaws.Sprite({x:level_record.x,y:level_record.y+36 + 20*(s-1),anchor:"left",image:"./static/images/STAR.gif"})
+          var this_sprite = new 
+jaws.Sprite({x:level_record.x,y:level_record.y+36 + 
+20*(s-1),anchor:"left",image:"./static/images/STAR.gif"})
           this_sprite.width = 15
           this_sprite.height = 15
           this_sprite.active = false
@@ -464,44 +564,57 @@ $def with (name)
 
           // level edit menu
           var level_edit_menu_items = new Array()
-          level_edit_menu_items.push(new MenuItem(level_edit_menu,"New",function() {
+          level_edit_menu_items.push(new 
+MenuItem(level_edit_menu,"New",function() {
             player.level_new()
           }))
-          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Open",function() {
+          level_edit_menu_items.push(new 
+MenuItem(level_edit_menu,"Open",function() {
             player.level_open()
           }))
-          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
+          level_edit_menu_items.push(new 
+MenuItem(level_edit_menu,"Save",function() {
             if (player_level > 0)
               return
             player.level_save()
           }))
-          level_edit_menu_items[level_edit_menu_items.length-1].locked = (player_level > 0) ? true : false
-          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save As",function() {
+          level_edit_menu_items[level_edit_menu_items.length-1].locked = 
+(player_level > 0) ? true : false
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save 
+As",function() {
             player.level_save_as()
           }))
-          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Publish",function() {
+          level_edit_menu_items.push(new 
+MenuItem(level_edit_menu,"Publish",function() {
             console.log("Publish")
             if (player_level > 0)
               player.level_save()
             else
               player.level_publish()
           }))          
-          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Delete",function() {
+          level_edit_menu_items.push(new 
+MenuItem(level_edit_menu,"Delete",function() {
             player.level_delete()
           }))
-          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Quit",function() {
+          level_edit_menu_items.push(new 
+MenuItem(level_edit_menu,"Quit",function() {
             console.log("Quit")
             jaws.start(MainMenu)
           }))
 
-          level_edit_menu = new MenuBox("",level_edit_menu,level_editor.board.x + level_editor.board.width + 10, puzzle_data.y + puzzle_data.height + 1,3*ITEM_WIDTH,level_edit_menu_items)
+          level_edit_menu = new 
+MenuBox("",level_edit_menu,level_editor.board.x + 
+level_editor.board.width + 10, puzzle_data.y + puzzle_data.height + 
+1,3*ITEM_WIDTH,level_edit_menu_items)
 
           level_edit_menu.active = true
 
           var level_select_string = player_level + "-" + player_stage
 
           // level select menu
-          level_select_menu = new MenuBox("Level",level_edit_menu,level_edit_menu.x, level_edit_menu.y + level_edit_menu.height + 1, level_edit_menu.width, [],true)
+          level_select_menu = new 
+MenuBox("Level",level_edit_menu,level_edit_menu.x, level_edit_menu.y + 
+level_edit_menu.height + 1, level_edit_menu.width, [],true)
           level_select_menu.back = function() {
             level_select_menu.active = false
             level_select_ok.menu_box.active = false
@@ -516,7 +629,8 @@ $def with (name)
               if (i == 1 && j+1 == 1)
                 level_select_menu.index = item_count
               console.log("i = " + i + ", j = " + j)
-              var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
+              var this_level = new MenuItem(level_select_menu,(i + "-" + 
+(j+1)),function() {
                   player_level = this.level
                   player_stage = this.stage
                   replay = null
@@ -525,7 +639,8 @@ $def with (name)
               })
 
               var data = level_data.levels[i][j].split('\n')
-              this_level.text = (data[9]!=undefined)?data[9]:(i+"-"+(j+1).toString())
+              this_level.text = 
+(data[9]!=undefined)?data[9]:(i+"-"+(j+1).toString())
               this_level.level = i
               this_level.stage = j+1
               level_select_menu.items.push(this_level)
@@ -541,8 +656,12 @@ $def with (name)
           level_select_menu.arrow_sprites = new jaws.SpriteSheet({
             image: "./static/images/ARROWS.gif", frame_size: [20,10]})
 
-          level_select_menu.up_arrow = new jaws.Sprite({x:level_select_menu.x + 85, y:level_select_menu.y + 20, image: level_select_menu.arrow_sprites.frames[0]})
-          level_select_menu.down_arrow = new jaws.Sprite({x:level_select_menu.x + 85, y:level_select_menu.y + 38, image: level_select_menu.arrow_sprites.frames[1]})
+          level_select_menu.up_arrow = new 
+jaws.Sprite({x:level_select_menu.x + 85, y:level_select_menu.y + 20, 
+image: level_select_menu.arrow_sprites.frames[0]})
+          level_select_menu.down_arrow = new 
+jaws.Sprite({x:level_select_menu.x + 85, y:level_select_menu.y + 38, 
+image: level_select_menu.arrow_sprites.frames[1]})
 
           level_select_menu.up_arrow.height = 15
           level_select_menu.down_arrow.height = 15
@@ -563,7 +682,8 @@ $def with (name)
 
               console.log("up_action")
 
-              if (level_select_menu.index < level_select_menu.items.length-1)
+              if (level_select_menu.index < 
+level_select_menu.items.length-1)
                 level_select_menu.index++
 
             }
@@ -627,7 +747,8 @@ $def with (name)
 
           }
 
-          level_select_ok = new OkSubMenu("",level_select_menu,function() {
+          level_select_ok = new 
+OkSubMenu("",level_select_menu,function() {
             level_select_menu.items[menu.index].action(jaws)
           })
 
@@ -637,12 +758,14 @@ $def with (name)
         console.log("player_name = " + player_name)
         console.log("live_info = " + live_info)
 
-        jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
+        jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, 
+blocky retro scaling
         jaws.preventDefaultKeys(["w", "s", "a", "d", "k"])
 
       }
 
-      /* update() will get called each game tick with your specified FPS. Put game logic here. */
+      /* update() will get called each game tick with your specified 
+FPS. Put game logic here. */
       this.update = function() {
 
         if (need_to_restart)
@@ -688,33 +811,55 @@ $def with (name)
         }
 
         if (winlose_menu.active && game_end == "W" && !level_edit) {
-          if (player_progress[player_level][0] >= level_data.levels[player_level].length){
-            if (winlose_menu.index > 0 && winlose_menu.index <= level_data.levels[player_level].length) {
+          if (player_progress[player_level][0] >= 
+level_data.levels[player_level].length){
+            if (winlose_menu.index > 0 && winlose_menu.index <= 
+level_data.levels[player_level].length) {
               level_record.active = true
               continue_lock_box.active = false
               var level_item = winlose_menu.items[winlose_menu.index]
               var level_name = level_item.text.split("-")
               var level = parseInt(level_name[0])
               var stage = level_name[1]
-              if (player_progress[level] != undefined && player_progress[level][1][stage] != undefined) {
-                level_record.items[1].text = "Best Time:  " + player_progress[level][1][stage][0]
-                level_record.items[2].text = "High Score: \u03BB" + player_progress[level][1][stage][1]
+              if (player_progress[level] != undefined && 
+player_progress[level][1][stage] != undefined) {
+                level_record.items[1].text = "Best Time:  " + 
+player_progress[level][1][stage][0]
+                level_record.items[2].text = "High Score: \u03BB" + 
+player_progress[level][1][stage][1]
                 
                 // show appropriate stars
-                level_record.sprites[0].active = (star_progress[level][stage] != undefined && star_progress[level][stage][0] > 0) ? true : false
-                level_record.sprites[1].active = (star_progress[level][stage] != undefined && star_progress[level][stage][1] > 0) ? true : false
-                level_record.sprites[2].active = (star_progress[level][stage] != undefined && star_progress[level][stage][2] > 0) ? true : false
-                level_record.sprites[3].active = (star_progress[level][stage] != undefined && star_progress[level][stage][3] > 0) ? true : false
-                level_record.items[0].text = (star_progress[level][stage] != undefined && star_progress[level][stage][0] > 0) ? "Completed!" : "Completed (undo)"
-                level_record.items[3].text = (star_progress[level][stage] != undefined && star_progress[level][stage][3] > 0) ? "Perfect" : ""
+                level_record.sprites[0].active = 
+(star_progress[level][stage] != undefined && 
+star_progress[level][stage][0] > 0) ? true : false
+                level_record.sprites[1].active = 
+(star_progress[level][stage] != undefined && 
+star_progress[level][stage][1] > 0) ? true : false
+                level_record.sprites[2].active = 
+(star_progress[level][stage] != undefined && 
+star_progress[level][stage][2] > 0) ? true : false
+                level_record.sprites[3].active = 
+(star_progress[level][stage] != undefined && 
+star_progress[level][stage][3] > 0) ? true : false
+                level_record.items[0].text = 
+(star_progress[level][stage] != undefined && 
+star_progress[level][stage][0] > 0) ? "Completed!" : "Completed (undo)"
+                level_record.items[3].text = 
+(star_progress[level][stage] != undefined && 
+star_progress[level][stage][3] > 0) ? "Perfect" : ""
               }
             } else if (winlose_menu.index == 0) {
               level_record.active = false
-              if (winlose_menu.items[0].active && winlose_menu.items[0].locked) {
+              if (winlose_menu.items[0].active && 
+winlose_menu.items[0].locked) {
                 continue_lock_box.active = true
-                var next_level = (level_data.levels[parseInt(player_level) + 1] != undefined) ? level_data.levels[parseInt(player_level) + 1][0] : undefined
-                var next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined   
-                continue_lock_box.menu_box.items[0].text = "      x " + ((next_star_lock == undefined) ? "?" : next_star_lock)
+                var next_level = 
+(level_data.levels[parseInt(player_level) + 1] != undefined) ? 
+level_data.levels[parseInt(player_level) + 1][0] : undefined
+                var next_star_lock = (next_level != undefined) ? 
+next_level.split('\n')[8] : undefined   
+                continue_lock_box.menu_box.items[0].text = "      x " + 
+((next_star_lock == undefined) ? "?" : next_star_lock)
 
               }
             } else {
@@ -724,12 +869,15 @@ $def with (name)
           }
         }
 
-        live_info.innerHTML = jaws.game_loop.fps + " fps. Player: " + parseInt(player.x) + "/" + parseInt(player.y) + ". "
-        live_info.innerHTML += "Viewport: " + parseInt(viewport.x) + "/" + parseInt(viewport.y) + "."
+        live_info.innerHTML = jaws.game_loop.fps + " fps. Player: " + 
+parseInt(player.x) + "/" + parseInt(player.y) + ". "
+        live_info.innerHTML += "Viewport: " + parseInt(viewport.x) + "/" 
++ parseInt(viewport.y) + "."
 
       }
 
-      /* Directly after each update draw() will be called. Put all your on-screen operations here. */
+      /* Directly after each update draw() will be called. Put all your 
+on-screen operations here. */
       this.draw = function() {
         jaws.clear()
 
@@ -737,7 +885,8 @@ $def with (name)
         jaws.context.fillStyle = 'Black' //PURPLE_HEX
         jaws.context.fillRect(0,0,600,500)
 
-        // the viewport magic. wrap all draw()-calls inside viewport.apply and it will draw those relative to the viewport.
+        // the viewport magic. wrap all draw()-calls inside 
+viewport.apply and it will draw those relative to the viewport.
         viewport.apply( function() {
           player.draw()
           player_data.draw()
@@ -763,14 +912,18 @@ $def with (name)
         if (!drew_puzzle_screen && level_edit) {
           var gamescreen_canvas = $("gameScreen")
           var puzzleScreen_canvas = $("puzzleScreen")
-          puzzleScreen.getContext("2d").drawImage(gamescreen_canvas,40,40,240,400,0,0,240,400)
+          
+puzzleScreen.getContext("2d").drawImage(gamescreen_canvas,40,40,240,400,0,0,240,400)
 
           // save as jpg
-          var data_url = puzzleScreen_canvas.toDataURL( "image/png" , 1 )
+          var data_url = puzzleScreen_canvas.toDataURL( "image/png" , 1 
+)
 
-          // window.prompt("encoded data",data_url.substring(data_url.indexOf(",")+1,data_url.length))
+          // window.prompt("encoded 
+data",data_url.substring(data_url.indexOf(",")+1,data_url.length))
 
-          saveImage(player_level,player_stage,level_name,data_url.substring(data_url.indexOf(",")+1,data_url.length))
+          
+saveImage(player_level,player_stage,level_name,data_url.substring(data_url.indexOf(",")+1,data_url.length))
 
           // window.open(data_url, '_blank')
 
@@ -808,8 +961,10 @@ $def with (name)
         this.sprite_sheet = new jaws.SpriteSheet({
           image: "./static/images/CURSOR.gif", frame_size: [40,20]})
 
-        this.cursor_top = new jaws.Sprite({x:this.board.posx(x), y:this.board.posy(y), image: this.sprite_sheet.frames[0]})
-        this.cursor_bottom = new jaws.Sprite({x:this.board.posx(x), y:(this.board.posy(y)+20), image: this.sprite_sheet.frames[1]})
+        this.cursor_top = new jaws.Sprite({x:this.board.posx(x), 
+y:this.board.posy(y), image: this.sprite_sheet.frames[0]})
+        this.cursor_bottom = new jaws.Sprite({x:this.board.posx(x), 
+y:(this.board.posy(y)+20), image: this.sprite_sheet.frames[1]})
 
         // player timer
         this.timer = new Timer(this)
@@ -834,12 +989,14 @@ $def with (name)
           jaws.on_keydown(["enter","esc","p"], function() {
 
             if (game_end == "")
-              pauseGame(pause_menu,player,restart_menu_item,save_menu_item)
+              
+pauseGame(pause_menu,player,restart_menu_item,save_menu_item)
 
           })
 
           jaws.on_keydown(["l"], function() {
-            if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
+            if (marathon && !player.board.stacksBreaking() && 
+!player.board.stacksFull()) {
               player.board.raiseStacks()
               player.addScore(1)
               // record this action
@@ -867,9 +1024,12 @@ $def with (name)
             if(player.x > 0) {
               if (player.canMoveX(-1)) player.moveX(-1)
               else {
-                // drop minimum amount of items on hand so hand can move left
-                var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x - 1].items.length)
-                if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x - 1].items.length > 0) {
+                // drop minimum amount of items on hand so hand can move 
+left
+                var drop_amount = player.hand.items.length - 
+(BOARD_HEIGHT - player.board.stacks[player.x - 1].items.length)
+                if (drop_amount > 0 && BOARD_HEIGHT - 
+player.board.stacks[player.x - 1].items.length > 0) {
                   player.drop(player.board.stacks[player.x],drop_amount)
                   player.moveX(-1)
                 }
@@ -884,9 +1044,12 @@ $def with (name)
             if(player.x < BOARD_WIDTH - 1) {
               if (player.canMoveX(1)) player.moveX(1)
               else {
-                // drop minimum amount of items on hand so hand can move right
-                var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length)
-                if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length > 0) {
+                // drop minimum amount of items on hand so hand can move 
+right
+                var drop_amount = player.hand.items.length - 
+(BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length)
+                if (drop_amount > 0 && BOARD_HEIGHT - 
+player.board.stacks[player.x + 1].items.length > 0) {
                   player.drop(player.board.stacks[player.x],drop_amount)
                   player.moveX(1)
                 }
@@ -918,7 +1081,8 @@ $def with (name)
 
             player.control_scheme = 0
             if(player.hand.items.length>0) {
-              player.drop(player.board.stacks[player.x],player.hand.items.length)
+              
+player.drop(player.board.stacks[player.x],player.hand.items.length)
             } else if(player.y > 0) player.y -= 1
 
 
@@ -927,9 +1091,11 @@ $def with (name)
           jaws.on_keydown(["k","c"], function() {
             if (pause || game_end != "") return
             if(player.hand.items.length == 0) {
-              player.grab(player.board.stacks[player.x],player.board.stacks[player.x].items.length)
+              
+player.grab(player.board.stacks[player.x],player.board.stacks[player.x].items.length)
             } else {
-              player.drop(player.board.stacks[player.x],player.hand.items.length)
+              
+player.drop(player.board.stacks[player.x],player.hand.items.length)
             }
             player.control_scheme = 0
             player.keyboard_actions++
@@ -938,7 +1104,8 @@ $def with (name)
             if (pause || game_end != "") return
             if(player.hand.items.length == 0) {
               //grab depth determined by cursor y-position
-              var depth = player.board.stacks[player.x].items.length - player.y
+              var depth = player.board.stacks[player.x].items.length - 
+player.y
               player.grab(player.board.stacks[player.x],depth)
             } else {
               //drop
@@ -1006,16 +1173,20 @@ $def with (name)
           jaws.on_keydown(["left_mouse_button"], function() {
             if (pause || game_end != "") return
             var click_coordinates = new Array()
-            click_coordinates = player.board.boardCoordinates(jaws.mouse_x,jaws.mouse_y)
-            console.log("click coordinates on board: (" + click_coordinates[0] + "," + click_coordinates[1] + ")")
+            click_coordinates = 
+player.board.boardCoordinates(jaws.mouse_x,jaws.mouse_y)
+            console.log("click coordinates on board: (" + 
+click_coordinates[0] + "," + click_coordinates[1] + ")")
             player.clickAction(click_coordinates)
           })
 
           jaws.on_keydown(["right_mouse_button"], function() {
             if (pause || game_end != "") return
             var click_coordinates = new Array()
-            click_coordinates = player.board.boardCoordinates(jaws.mouse_x,jaws.mouse_y)
-            console.log("right click coordinates on board: (" + click_coordinates[0] + "," + click_coordinates[1] + ")")
+            click_coordinates = 
+player.board.boardCoordinates(jaws.mouse_x,jaws.mouse_y)
+            console.log("right click coordinates on board: (" + 
+click_coordinates[0] + "," + click_coordinates[1] + ")")
             player.clickAction(click_coordinates,true)
           })
 
@@ -1036,7 +1207,8 @@ $def with (name)
           level_select_menu.active = true
           level_select_menu.controls(level_select_menu,level_select_ok)
           level_select_ok.menu_box.active = true
-          level_select_menu.index = (player_level==0)?(player_stage-1):((player_level-1)*6+parseInt(player_stage)-1+level_data.levels[0].length)
+          level_select_menu.index = 
+(player_level==0)?(player_stage-1):((player_level-1)*6+parseInt(player_stage)-1+level_data.levels[0].length)
         }
 
         this.level_save = function() {
@@ -1047,8 +1219,11 @@ $def with (name)
           if (result == null)
             return
           else
-            level_name = (player_level==0)?result:(player_level+"-"+player_stage)
-            saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
+            level_name = 
+(player_level==0)?result:(player_level+"-"+player_stage)
+            
+saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() 
+{
                 loadLevels(function(data) {
                   level_data = JSON.parse(data)
                   latest_edit = level_data.levels[0].length + 1
@@ -1067,7 +1242,9 @@ $def with (name)
           else {
             level_name = result
             player_level = 0
-            saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
+            
+saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() 
+{
                 loadLevels(function(data) {
                   level_data = JSON.parse(data)
                   latest_edit = level_data.levels[0].length
@@ -1077,8 +1254,10 @@ $def with (name)
                   player_level = 0
                   player_stage = 1
                   // find stage number of level_name
-                  for (var i = 0; i < level_data.levels[0].length; i++) {
-                    if (level_data.levels[0][i].split('\n')[9]==level_name) {
+                  for (var i = 0; i < level_data.levels[0].length; i++) 
+{
+                    if 
+(level_data.levels[0][i].split('\n')[9]==level_name) {
                       player_stage = i + 1
                       break
                     }
@@ -1105,8 +1284,11 @@ $def with (name)
             player_stage = latest_stage + 1
           }
 
-          var level_name = player_level.toString() + "-" + player_stage.toString()
-          saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() {
+          var level_name = player_level.toString() + "-" + 
+player_stage.toString()
+          
+saveLevel(player_level,player_stage,player.board,star_time,star_score,star_lock,level_name,function() 
+{
               loadLevels(function(data) {
                 level_data = JSON.parse(data)
                 latest_edit = level_data.levels[0].length + 1
@@ -1114,7 +1296,8 @@ $def with (name)
                 // load save file
                 var open_data = cookie_save.split("|")
                 if (open_data[0] == "SuperWizardPotionSave") {
-                  var loaded_progress = loadProgress(level_data,open_data)
+                  var loaded_progress = 
+loadProgress(level_data,open_data)
                   player_progress = loaded_progress[0]
                   star_progress = loaded_progress[1]
                 }
@@ -1193,7 +1376,8 @@ $def with (name)
         this.canMoveX = function(x) {
 
           // check if stacks overlap
-          if (this.board.stacks[this.x + x].items.length + this.hand.items.length > BOARD_HEIGHT)
+          if (this.board.stacks[this.x + x].items.length + 
+this.hand.items.length > BOARD_HEIGHT)
             return false
 
           return true
@@ -1222,10 +1406,13 @@ $def with (name)
           for (var i=0; i < Math.abs(x); i++) {
             if (this.canMoveX(sign)) player.moveX(sign)
             else {
-              // drop minimum amount of items on hand so hand can move left
-              var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x + sign].items.length)
+              // drop minimum amount of items on hand so hand can move 
+left
+              var drop_amount = player.hand.items.length - (BOARD_HEIGHT 
+- player.board.stacks[player.x + sign].items.length)
               hit_wall = true
-              if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x + sign].items.length > 0) {
+              if (drop_amount > 0 && BOARD_HEIGHT - 
+player.board.stacks[player.x + sign].items.length > 0) {
                 player.drop(player.board.stacks[player.x],drop_amount)
                 player.moveX(sign)
               }
@@ -1254,7 +1441,8 @@ $def with (name)
           Y_SPEED = FAST
           this.cursor_speed = Y_SPEED
 
-          // loop through the items of the stack according to depth passed in
+          // loop through the items of the stack according to depth 
+passed in
           // pop items and push to the player hand, one by one
           for(var i=0; i<depth; i++) {
 
@@ -1333,7 +1521,8 @@ $def with (name)
 
           // reposition player's y position if hand is now empty
           if (hand_items.length == 0)
-            this.y = stack_items.length - depth // at item at bottom of hand stack
+            this.y = stack_items.length - depth // at item at bottom of 
+hand stack
 
           // add current state of board and hand to undo arrays
           addStateForUndo(this.hand,this.board)
@@ -1352,7 +1541,8 @@ $def with (name)
 
           var click_x = click_coordinates[0]
           var click_y = click_coordinates[1]
-          right_click = typeof right_click !== 'undefined' ? right_click : false;
+          right_click = typeof right_click !== 'undefined' ? right_click 
+: false;
 
           var click_outside_board = false
 
@@ -1365,7 +1555,8 @@ $def with (name)
               click_outside_board = true
 
             if (click_outside_board && marathon) {
-              if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
+              if (marathon && !player.board.stacksBreaking() && 
+!player.board.stacksFull()) {
                 player.board.raiseStacks()
                 player.addScore(1)
                 // record this action
@@ -1394,7 +1585,8 @@ $def with (name)
               if (right_click)
                 depth = this_stack.items.length
               else if (this_stack.items.length >= click_y) {
-                depth = this_stack.items.length - click_y // how many items to grab
+                depth = this_stack.items.length - click_y // how many 
+items to grab
               }
 
               this.grab(this_stack,depth)
@@ -1448,17 +1640,20 @@ $def with (name)
 
           if (this.hand.items.length == 0) {
             cursor_top.dy = this.board.posy(this.y)
-            cursor_bottom.dy = this.board.posy(this.y) + cursor_bottom.height
+            cursor_bottom.dy = this.board.posy(this.y) + 
+cursor_bottom.height
           } else {
             cursor_top.dy = this.board.posy(BOARD_HEIGHT-1)
-            cursor_bottom.dy = this.board.posy(BOARD_HEIGHT - this.hand.items.length) + cursor_bottom.height
+            cursor_bottom.dy = this.board.posy(BOARD_HEIGHT - 
+this.hand.items.length) + cursor_bottom.height
           }
 
           spriteMove(cursor_top,X_SPEED,this.cursor_speed)
           spriteMove(cursor_bottom,X_SPEED,this.cursor_speed)
 
           // reset cursor speed when it reaches dy
-          if (this.hand.items.length == 0 && cursor_top.dy == cursor_top.y) this.cursor_speed = X_SPEED
+          if (this.hand.items.length == 0 && cursor_top.dy == 
+cursor_top.y) this.cursor_speed = X_SPEED
 
 
         }
@@ -1479,7 +1674,8 @@ $def with (name)
           // cursor.dy = this.board.posy(this.y)
           // spriteMove(cursor,X_SPEED,X_SPEED)
 
-          this.updatePlayerSprites(this.board.posx(this.x),this.board.posy(this.y))
+          
+this.updatePlayerSprites(this.board.posx(this.x),this.board.posy(this.y))
 
           this.board.update() // updates sprites for each stack
           this.hand.update()  // updates sprites for items in hand
@@ -1497,15 +1693,21 @@ $def with (name)
           if (marathon) {
             // draw hand, flash if stack is full
             var this_stack = this.board.stacks[this.x]
-            var this_stack_full = (this_stack.items.length + this.hand.items.length == BOARD_HEIGHT)
-            // var danger_time = (player_timer.raise_level_timer < raise_level_time/4) ? ((player_timer.ticker%8==0) ? true : false) : false
+            var this_stack_full = (this_stack.items.length + 
+this.hand.items.length == BOARD_HEIGHT)
+            // var danger_time = (player_timer.raise_level_timer < 
+raise_level_time/4) ? ((player_timer.ticker%8==0) ? true : false) : 
+false
             var danger_time = (this.timer.ticker%8==0) ? true : false
-            if (!this_stack_full || !danger_time || this_stack.itemsBreaking()) {
+            if (!this_stack_full || !danger_time || 
+this_stack.itemsBreaking()) {
               this.hand.draw()
             }
           } else
             this.hand.draw()
-          // jaws.context.drawImage(jaws.assets.get("images/CURSOR.gif"), this.cursor.x, this.cursor.y)
+          // 
+jaws.context.drawImage(jaws.assets.get("images/CURSOR.gif"), 
+this.cursor.x, this.cursor.y)
 
           if (control_scheme == 2 && this.hand.items.length == 0)
             return
@@ -1522,7 +1724,8 @@ $def with (name)
 
         this.x = board.board.x + ITEM_WIDTH * (BOARD_WIDTH + 1)
         this.y = board.board.y + ITEM_WIDTH * 2
-        this.board = new jaws.Sprite({x:this.x,y:this.y,image:"./static/images/BOARD.gif",anchor:"left"})
+        this.board = new 
+jaws.Sprite({x:this.x,y:this.y,image:"./static/images/BOARD.gif",anchor:"left"})
         this.board.width = ITEM_WIDTH * 3
         this.board.height = ITEM_WIDTH * 8
 
@@ -1532,16 +1735,22 @@ $def with (name)
 
         // provide position with respect to this Board
         this.posx = function(x) { return this.x + x * ITEM_WIDTH }
-        this.posy = function(y) { return this.y + (8 - 1 - y)*ITEM_WIDTH }
+        this.posy = function(y) { return this.y + (8 - 1 - y)*ITEM_WIDTH 
+}
 
         // flasks
         for (var f = 0; f < 8; f++) {
 
           if (f == 3 || f == 4 || f == 5) {
-            this.flasks.push(new jaws.Sprite({x:this.posx(0),y:this.posy(f),image:"./static/images/POTION_" + COLORS[(f==6) ? 7 : ((f==7) ? 6 : f)] + ".gif",anchor:"left"}))
+            this.flasks.push(new 
+jaws.Sprite({x:this.posx(0),y:this.posy(f),image:"./static/images/POTION_" 
++ COLORS[(f==6) ? 7 : ((f==7) ? 6 : f)] + ".gif",anchor:"left"}))
           } else {
-            this.flasks.push(new jaws.Sprite({x:this.posx(0),y:this.posy(f), anchor:"left"}))
-            var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_" + COLORS[(f==6) ? 7 : ((f==7) ? 6 : f)] + ".gif", frame_size: [40,40], frame_duration: 100})
+            this.flasks.push(new 
+jaws.Sprite({x:this.posx(0),y:this.posy(f), anchor:"left"}))
+            var anim = new jaws.Animation({sprite_sheet: 
+"./static/images/POTION_" + COLORS[(f==6) ? 7 : ((f==7) ? 6 : f)] + 
+".gif", frame_size: [40,40], frame_duration: 100})
             this.flasks[f].anim_default = anim.slice(0,5)
             this.flasks[f].setImage(this.flasks[f].anim_default.next())
           }
@@ -1549,7 +1758,9 @@ $def with (name)
 
         // blocks
         for (var b = 0; b < 7; b++) {
-          this.blocks.push(new jaws.Sprite({x:this.posx(1),y:this.posy(b),image:"./static/images/" + COLORS[(b==6) ? 7: b] + ".gif", anchor:"left"}))
+          this.blocks.push(new 
+jaws.Sprite({x:this.posx(1),y:this.posy(b),image:"./static/images/" + 
+COLORS[(b==6) ? 7: b] + ".gif", anchor:"left"}))
           this.blocks[b].width = ITEM_WIDTH
           this.blocks[b].height = ITEM_WIDTH
           console.log("creating block_sprite = " + this.blocks[b])
@@ -1557,8 +1768,11 @@ $def with (name)
 
         for (var r = 0; r < 6; r++) {
           // create sprite for this robot
-          this.robots.push(new jaws.Sprite({x:this.posx(2),y:this.posy(r), anchor: "left"}))
-          var anim = new jaws.Animation({sprite_sheet: "./static/images/ROBOT_" + COLORS[r] + ".gif", frame_size: [40,40], frame_duration: 100})
+          this.robots.push(new 
+jaws.Sprite({x:this.posx(2),y:this.posy(r), anchor: "left"}))
+          var anim = new jaws.Animation({sprite_sheet: 
+"./static/images/ROBOT_" + COLORS[r] + ".gif", frame_size: [40,40], 
+frame_duration: 100})
           this.robots[r].anim_default = anim.slice(0,5)
           this.robots[r].setImage(this.robots[r].anim_default.next())
           console.log("creating robot_sprite = " + this.robots[r])
@@ -1585,19 +1799,22 @@ $def with (name)
             }
 
             if (click_x == 7) {
-              level_editor.hand = new jaws.Sprite(level_editor.flasks[click_y])
+              level_editor.hand = new 
+jaws.Sprite(level_editor.flasks[click_y])
               level_editor.hand.type = 1
             }
             else if (click_x == 8) {
               if (click_y > 6)
                 return
-              level_editor.hand = new jaws.Sprite(level_editor.blocks[click_y])
+              level_editor.hand = new 
+jaws.Sprite(level_editor.blocks[click_y])
               level_editor.hand.type = 0
             }
             else if (click_x == 9) {
               if (click_y > 5)
                 return
-              level_editor.hand = new jaws.Sprite(level_editor.robots[click_y])
+              level_editor.hand = new 
+jaws.Sprite(level_editor.robots[click_y])
               level_editor.hand.type = 2
             }
             level_editor.hand.color = color
@@ -1605,7 +1822,8 @@ $def with (name)
             level_editor.hand.width = ITEM_WIDTH
             level_editor.hand.height = ITEM_WIDTH
 
-            console.log("click with type = " + level_editor.hand.type + " and color = " + level_editor.hand.color)
+            console.log("click with type = " + level_editor.hand.type + 
+" and color = " + level_editor.hand.color)
 
           // catch clicks made on board
           } else if (click_x >=0 && click_x <= 5) {
@@ -1622,10 +1840,12 @@ $def with (name)
               if (right_click) {
 
                 while (this_stack.items.length < BOARD_HEIGHT) {
-                  this_stack.items.push(new Item(this_stack,level_editor.hand.type,level_editor.hand.color,click_x,this_stack.items.length))
+                  this_stack.items.push(new 
+Item(this_stack,level_editor.hand.type,level_editor.hand.color,click_x,this_stack.items.length))
 
                   // items fall after spawn
-                  var this_item = this_stack.items[this_stack.items.length-1]
+                  var this_item = 
+this_stack.items[this_stack.items.length-1]
                   console.log("this_item = " + this_item)
                   this_item.sprite.x = player.board.posx(click_x)
                   this_item.sprite.y = player.board.posy(click_y)
@@ -1636,10 +1856,12 @@ $def with (name)
               } else {
 
                 if (this_stack.items.length < BOARD_HEIGHT) {
-                  this_stack.items.push(new Item(this_stack,level_editor.hand.type,level_editor.hand.color,click_x,this_stack.items.length))
+                  this_stack.items.push(new 
+Item(this_stack,level_editor.hand.type,level_editor.hand.color,click_x,this_stack.items.length))
 
                   // items fall after spawn
-                  var this_item = this_stack.items[this_stack.items.length-1]
+                  var this_item = 
+this_stack.items[this_stack.items.length-1]
                   console.log("this_item = " + this_item)
                   this_item.sprite.x = player.board.posx(click_x)
                   this_item.sprite.y = player.board.posy(click_y)
@@ -1658,7 +1880,8 @@ $def with (name)
                 // remove clicked item
                 this_stack.removeItem(this_item)
 
-                var sprite_stack = (this_item.type == 0) ? this.blocks : (
+                var sprite_stack = (this_item.type == 0) ? this.blocks : 
+(
                   (this_item.type == 1) ? this.flasks : this.robots
                   )
 
@@ -1689,7 +1912,8 @@ $def with (name)
                 }
 
                 // first add item from hand
-                this_stack.items.push(new Item(this_stack,level_editor.hand.type,level_editor.hand.color,click_x,this_stack.items.length))
+                this_stack.items.push(new 
+Item(this_stack,level_editor.hand.type,level_editor.hand.color,click_x,this_stack.items.length))
                 this_item = this_stack.items[this_stack.items.length-1]
                 this_item.sprite.x = player.board.posx(click_x)
                 this_item.sprite.y = player.board.posy(click_y)
@@ -1698,7 +1922,8 @@ $def with (name)
                 var i = 1
                 while (stack_above.length>0) {
                   this_stack.items.push(stack_above.pop())
-                  this_item = this_stack.items[this_stack.items.length-1]
+                  this_item = 
+this_stack.items[this_stack.items.length-1]
                   this_item.y = this_stack.items.length - 1
                   i++
                 }
@@ -1724,18 +1949,21 @@ $def with (name)
                 // var touched_this_item = false
 
                 // matches.push(last_match)
-                // console.log("pushing onto matches: (" + last_match.type + "," + last_match.color + ")")
+                // console.log("pushing onto matches: (" + 
+last_match.type + "," + last_match.color + ")")
 
-                // // THIS WAS DONE WITH TRIAL AND ERROR. TODO: COMMENTS
+                // // THIS WAS DONE WITH TRIAL AND ERROR.
                 // for (var i=1; i < this_stack.items.length; i++) {
 
                 //   console.log("i = " + i)
 
                 //   this_match = this_stack.items[i]
 
-                //   if (this_match.type==last_match.type && this_match.color==last_match.color) {
+                //   if (this_match.type==last_match.type && 
+this_match.color==last_match.color) {
                 //     matches.push(this_match)
-                //     console.log("pushing onto matches: (" + this_match.type + "," + this_match.color + ")")
+                //     console.log("pushing onto matches: (" + 
+this_match.type + "," + this_match.color + ")")
                 //     last_match = this_match
                 //   } else {
 
@@ -1745,7 +1973,8 @@ $def with (name)
                 //     if (!touched_this_item) {
                 //       matches = new Array()
                 //       matches.push(this_match)
-                //       console.log("pushing onto matches: (" + this_match.type + "," + this_match.color + ")")
+                //       console.log("pushing onto matches: (" + 
+this_match.type + "," + this_match.color + ")")
                 //       last_match = this_match
                 //     } else {
                 //       break
@@ -1792,7 +2021,8 @@ $def with (name)
       function Board(player) {
         this.player = player
         this.stacks = new Array()
-        this.board = new jaws.Sprite({x:ITEM_WIDTH,y:ITEM_WIDTH,image:"./static/images/BOARD.gif",anchor:"left"})
+        this.board = new 
+jaws.Sprite({x:ITEM_WIDTH,y:ITEM_WIDTH,image:"./static/images/BOARD.gif",anchor:"left"})
 
         this.block_count = [0,0,0,0,0,0,0,0]
         this.flask_count = [0,0,0,0,0,0,0,0,0]
@@ -1805,7 +2035,8 @@ $def with (name)
 
         // provide position with respect to this Board
         this.posx = function(x) { return this.board.x + x * ITEM_WIDTH }
-        this.posy = function(y) { return this.board.y + (BOARD_HEIGHT - 1 - y)*ITEM_WIDTH }
+        this.posy = function(y) { return this.board.y + (BOARD_HEIGHT - 
+1 - y)*ITEM_WIDTH }
 
         this.clearBoard = function() {
 
@@ -1819,9 +2050,12 @@ $def with (name)
         // generate random item
         this.randomItem = function(stack,x,y) {
 
-          var type_color_string = randomization_array.pop()
-          randomization_array.push(type_color_string)
-          fisherYates(randomization_array)
+          var type_color_string = 
+randomization_array[marathon_level-1].pop()
+          randomization_array[marathon_level-1].push(type_color_string)
+          fisherYates(randomization_array[marathon_level-1])
+          console.log("randomization array rarray = ")
+          console.dir(randomization_array[marathon_level-1])
           var type_color = type_color_string.split("|")
           var type = type_color[0]
           var color = type_color[1]
@@ -1847,7 +2081,8 @@ $def with (name)
           var this_stack
           for (var s=0; s < this.stacks.length; s++) {
             this_stack = this.stacks[s]
-            if (this_stack.items.length + ((this_stack.x == player.x)?(player.hand.items.length):0) >= BOARD_HEIGHT)
+            if (this_stack.items.length + ((this_stack.x == 
+player.x)?(player.hand.items.length):0) >= BOARD_HEIGHT)
               return true
           }
 
@@ -1874,7 +2109,8 @@ $def with (name)
               temp_stack.push(this_stack.items.pop())
             }
 
-            // push next random item onto this stack and update it's location and sprite
+            // push next random item onto this stack and update it's 
+location and sprite
             this_stack.items.push(this_stack.next_random_item)
             this_stack.next_random_item.y = 0
             this_stack.next_random_item.sprite.dy = this.posy(0)
@@ -1893,7 +2129,8 @@ $def with (name)
             this_stack.checkForMatches()
 
             // randomize next random item
-            this_stack.next_random_item = this.randomItem(this_stack,s,-1)
+            this_stack.next_random_item = 
+this.randomItem(this_stack,s,-1)
 
           }
 
@@ -1902,6 +2139,16 @@ $def with (name)
 
           // reset timer
           player.timer.raise_level_timer = raise_level_time
+
+          // increment raise_count
+          raise_count++
+
+          console.log("raising stack with raise_count = " + raise_count)
+
+          if (raise_count%5 == 0) {
+            if (marathon_level < ITEM_PROBS["0|0"].length)
+              marathon_level++
+          }
 
           Y_SPEED = SLOW
 
@@ -1913,21 +2160,18 @@ $def with (name)
           var value
 
           // fill up the randomization array
-          for (var key in ITEM_PROBS) {
-            if (ITEM_PROBS.hasOwnProperty(key)) {
-              value = ITEM_PROBS[key]
-
-              for (var i = 0; i < value; i++) {
-                randomization_array.push(key)
+          for (var i = 0; i < ITEM_PROBS["0|0"].length; i++) {
+            randomization_array.push([])
+            for (var key in ITEM_PROBS) {
+              if (ITEM_PROBS.hasOwnProperty(key)) {
+                value = ITEM_PROBS[key]
+                for (var j = 0; j < value[i]; j++) {
+                  randomization_array[i].push(key)
+                }
               }
-
             }
-          }
-
-          // shuffle the randomization array
-          fisherYates(randomization_array)
-          for (var i = 0; i < randomization_array.length; i++) {
-            console.log("randomization_array " + i + " = " + randomization_array[i])
+            // shuffle the randomization array
+            fisherYates(randomization_array[i])
           }
 
           // create stacks for the board
@@ -1943,29 +2187,39 @@ $def with (name)
 
             }
 
-            this_stack.next_random_item = this.randomItem(this_stack,s,-1)
+            this_stack.next_random_item = 
+this.randomItem(this_stack,s,-1)
             console.log("this stack's next random item:")
             console.dir(this_stack.next_random_item)
 
             // check for matches
             this_stack.checkForMatches()
-
           }
-
 
         }
 
         this.fillLevel = function(level,stage,undo) {
 
+          console.log("level_data")
+          console.dir(level_data)
+
+          console.log("level = " + level)
+          console.log("stage = " + stage)
+
+          console.log(level_data.levels[0])
+          console.log(level_data.levels[0][6])
+
           var undo_state = undo || undefined
 
-          var data = (undo_state != undefined) ? undo_state : level_data.levels[level][stage-1]
+          var data = (undo_state != undefined) ? undo_state : 
+level_data.levels[level][stage-1]
 
           console.log("level_data")
           console.dir(level_data)
 
           // SANITY CHECK
-          if (data == "" || data == "\n\n\n\n\n\n" || data == undefined) {
+          if (data == "" || data == "\n\n\n\n\n\n" || data == undefined) 
+{
             if (level_edit) {
               for (var s=0; s < BOARD_WIDTH; s++)
                 this.stacks.push(new Stack(this,level,s))
@@ -2007,7 +2261,8 @@ $def with (name)
               var type = item_string[0]
               var color = item_string[1]
 
-              console.log("stack(" + s + ") looking though item of type = " + type + ", color = " + color)
+              console.log("stack(" + s + ") looking though item of type 
+= " + type + ", color = " + color)
 
               this_stack.items.push(new Item(this_stack,type,color,s,i))
 
@@ -2028,7 +2283,8 @@ $def with (name)
 
           console.log("Setting up level " + level + "-" + stage + ".")
 
-          // determine what needs to be placed on the board for this level-stage
+          // determine what needs to be placed on the board for this 
+level-stage
           var total_flasks = level + 1 // except for 1-1, 1-2
           if (level == 1 && (stage == 1 || stage == 2))
             total_flasks = 1
@@ -2040,7 +2296,8 @@ $def with (name)
           }
           console.log("total_robots = " + total_robots)
 
-          var total_blocks = 6 * (level + 1) + stage // except for 1-1,1-2,1-3,1-4,1-5
+          var total_blocks = 6 * (level + 1) + stage // except for 
+1-1,1-2,1-3,1-4,1-5
           if (level == 1) {
             if (stage == 1) total_blocks = 5
             else if (stage == 2) total_blocks = 6
@@ -2057,7 +2314,8 @@ $def with (name)
           console.log("total_colors = " + total_colors)
 
           // put everything that's needed into an Array then randomize
-          var items_array = new Array() // will contain tuple = [type,color]
+          var items_array = new Array() // will contain tuple = 
+[type,color]
 
           // put items in array for each color
           for (var c=0; c < total_colors; c++) {
@@ -2069,7 +2327,8 @@ $def with (name)
               if (items_array.length >= total_robots) break
             }
 
-            // put at least one flask for each color, fill up flasks with white for mode: 1
+            // put at least one flask for each color, fill up flasks 
+with white for mode: 1
             //items_array.push([1, (game_mode == 1) ? WHITE : EMPTY])
 
             // put at least three blocks for each color
@@ -2113,7 +2372,8 @@ $def with (name)
 
           console.log("item_count = " + items_array.length)
 
-          // fill up with random blocks and flasks until total_blocks reached
+          // fill up with random blocks and flasks until total_blocks 
+reached
           while (items_array.length < total_blocks) {
 
             var rand_color = Math.floor(Math.random()*7)
@@ -2146,7 +2406,8 @@ $def with (name)
           // shuffle the item_array
           fisherYates(items_array)
           for(var i=0; i < items_array.length; i++) {
-            console.log("[" + items_array[i][0] + "," + items_array[i][1] + "]")
+            console.log("[" + items_array[i][0] + "," + 
+items_array[i][1] + "]")
           }
 
           // push BOARD_WIDTH amount of stacks
@@ -2170,7 +2431,8 @@ $def with (name)
 
             console.log("color(" + item_top[1] + ")")
             this_stack.items.push(
-              new Item(this_stack,item_top[0],item_top[1],rand_stack,this_stack.items.length)
+              new 
+Item(this_stack,item_top[0],item_top[1],rand_stack,this_stack.items.length)
             )
 
           }
@@ -2187,7 +2449,8 @@ $def with (name)
           // check if there are 5 blocks of some color
           for(var c=0; c < COLORS.length; c++) {
             if(this.block_count[c] == 5) {
-              console.log("5 blocks of color(" + COLORS[c] + ") found. Resetting board.")
+              console.log("5 blocks of color(" + COLORS[c] + ") found. 
+Resetting board.")
               need_to_restart = true
             }
           }
@@ -2208,14 +2471,17 @@ $def with (name)
 
         // provide coordinates of clicks with respect to (stack, depth)
         this.boardCoordinates = function(x,y) {
-          console.log("converting click coordinates to board coordinates")
+          console.log("converting click coordinates to board 
+coordinates")
 
-          // find click coordinates with respect to board's top-left position in canvas
+          // find click coordinates with respect to board's top-left 
+position in canvas
           var board_x = x - this.board.x
           var board_y = y - this.board.y
 
           if (marathon) {
-            if (board_x < 0 || board_x > this.board.width || board_y < 0 || board_y > this.board.height) {
+            if (board_x < 0 || board_x > this.board.width || board_y < 0 
+|| board_y > this.board.height) {
               return [-1,-1]
             }
           }
@@ -2225,7 +2491,8 @@ $def with (name)
           board_x = (board_x / ITEM_WIDTH) | 0
 
           // figure out depth the player clicked into the stack
-          board_y = BOARD_HEIGHT + (BOARD_HEIGHT - board_y) / ITEM_WIDTH | 0
+          board_y = BOARD_HEIGHT + (BOARD_HEIGHT - board_y) / ITEM_WIDTH 
+| 0
 
           console.log([board_x, board_y])
 
@@ -2235,7 +2502,8 @@ $def with (name)
 
         }
 
-        // check if the player has reached a win/lose condition and act accordingly
+        // check if the player has reached a win/lose condition and act 
+accordingly
         this.checkWinLose = function() {
 
           if (marathon)
@@ -2245,7 +2513,8 @@ $def with (name)
 
           // win condition: robots cleared
           console.log("checking win condition")
-          if (!(this.robot_count<[0,0,0,0,0,0] || [0,0,0,0,0,0]<this.robot_count)) { // array equality
+          if (!(this.robot_count<[0,0,0,0,0,0] || 
+[0,0,0,0,0,0]<this.robot_count)) { // array equality
             game_end = "W"
             return
           }
@@ -2273,10 +2542,13 @@ $def with (name)
           if (this.flask_count[4] > 0)
             remaining_robot_colors--
 
-          var potential_white_potions = this.block_count[WHITE] / 3 + this.flask_count[WHITE]
+          var potential_white_potions = this.block_count[WHITE] / 3 + 
+this.flask_count[WHITE]
 
-          console.log("potential_white_potions = " + potential_white_potions)
-          console.log("remaining_robot_colors = " + remaining_robot_colors)
+          console.log("potential_white_potions = " + 
+potential_white_potions)
+          console.log("remaining_robot_colors = " + 
+remaining_robot_colors)
 
           for (var c=0; c < 6; c++) {
 
@@ -2284,7 +2556,8 @@ $def with (name)
               continue
 
             if (this.robot_count[c] > 0) {
-              console.log("robots of color " + COLORS[c] + " still exist!")
+              console.log("robots of color " + COLORS[c] + " still 
+exist!")
               console.log("block count = " + this.block_count[c])
               console.log("flask_count = " + this.flask_count[c])
               if (this.flask_count[c] <= 0) {
@@ -2292,8 +2565,10 @@ $def with (name)
                   console.log("lose! here for color = " + c)
                   game_end = "L"
                   return
-                } else if (potential_white_potions < remaining_robot_colors){
-                  console.log("lose! not enough white blocks, checking color = " + COLORS[c])
+                } else if (potential_white_potions < 
+remaining_robot_colors){
+                  console.log("lose! not enough white blocks, checking 
+color = " + COLORS[c])
                   game_end = "L"
                   return
                 }
@@ -2318,19 +2593,22 @@ $def with (name)
 
             // update star progress
             if (!player_undid)
-              player.new_stars = updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
+              player.new_stars = 
+updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
 
             player.stars = starTotal()
             player_data.items[0].text = "  x " + player.stars
 
             winlose_menu.title = ""
 
-            // allow player to advance to next level if they have enough stars     
+            // allow player to advance to next level if they have enough 
+stars     
             console.log("level_data")
             console.dir(level_data)
             var level_check
             var stage_check
-            if (player_stage < level_data["levels"][player_level].length) {
+            if (player_stage < 
+level_data["levels"][player_level].length) {
               level_check = player_level
               stage_check = player_stage
             } else {
@@ -2339,18 +2617,25 @@ $def with (name)
             }
             console.log("level_check = " + level_check)
             console.log("stage_check = " + stage_check)
-            var next_level = (level_data.levels[level_check] != undefined) ? level_data.levels[level_check][stage_check] : undefined
-            var next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined
+            var next_level = (level_data.levels[level_check] != 
+undefined) ? level_data.levels[level_check][stage_check] : undefined
+            var next_star_lock = (next_level != undefined) ? 
+next_level.split('\n')[8] : undefined
 
             // stage menu if beat last stage (already)
-            if (player_stage == level_data.levels[player_level].length ||
-                player_progress[player_level][0] >= level_data.levels[player_level].length) {
+            if (player_stage == level_data.levels[player_level].length 
+||
+                player_progress[player_level][0] >= 
+level_data.levels[player_level].length) {
 
               winlose_menu_items.push(continue_menu_item)              
 
               // add MenuItem for each stage of this level
-              for (var s = 0; s < level_data.levels[player_level].length; s++) {
-                var stage_menu_item = new MenuItem(winlose_menu,player_level.toString() + "-" + (s+1).toString(), function() {
+              for (var s = 0; s < 
+level_data.levels[player_level].length; s++) {
+                var stage_menu_item = new 
+MenuItem(winlose_menu,player_level.toString() + "-" + (s+1).toString(), 
+function() {
                   player_stage = parseInt(this.text[2])
                   console.dir(this)
                   jaws.start(Game)
@@ -2368,28 +2653,50 @@ $def with (name)
               // add Back to Menu item
               winlose_menu_items.push(back_menu_item)
               winlose_menu.items = winlose_menu_items
-              winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+              
+winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
 
-              next_level = (level_data.levels[parseInt(player_level) + 1] != undefined) ? level_data.levels[parseInt(player_level) + 1][0] : undefined
-              next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined      
+              console.log("TYSON = " + (parseInt(player_level)))
+              
+console.dir(level_data.levels[LEVEL_PATHS[player_path][parseInt(player_level)]])
+
+              next_level = 
+(level_data.levels[LEVEL_PATHS[player_path][parseInt(player_level)]] != 
+undefined) ?
+                
+level_data.levels[LEVEL_PATHS[player_path][parseInt(player_level)]][0] : 
+undefined
+
+              // next_level = (level_data.levels[parseInt(player_level) 
++ 1] != undefined) ? level_data.levels[parseInt(player_level) + 1][0] : 
+undefined
+              next_star_lock = (next_level != undefined) ? 
+next_level.split('\n')[8] : undefined      
 
               console.log("continue! ??" + next_level)
               console.dir(level_data)        
 
               // continue
               if (next_level != undefined && !level_edit) {
+                console.log("killed my wife")
                 winlose_menu.items[0].active = true
-                if (next_star_lock == undefined || starTotal() >= next_star_lock)
+                if (next_star_lock == undefined || starTotal() >= 
+next_star_lock)
                   winlose_menu.items[0].locked = false
                 else
                   winlose_menu.items[0].locked = true
-                winlose_menu.items[0].text = "Cont. to " + (parseInt(player_level) + 1) + "-1"
+                winlose_menu.items[0].text = "Cont. to " + 
+(parseInt(player_level) + 1) + "-1"
                 winlose_menu.items[0].action = function() {
                   player_level++
                   player_stage = 1
                   jaws.start(Game)
                 }
-              } 
+              } else if (next_level == undefined) { 
+                if (player_stage == 6)
+                  setTimeout(function() 
+{window.alert(thanks_for_coming)}, 500)
+              }
 
               // default index
               if (player_progress[player_level][0] >= player_stage)
@@ -2409,7 +2716,8 @@ $def with (name)
               }
               winlose_menu_items.push(back_menu_item)
               winlose_menu.items = winlose_menu_items
-              winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+              
+winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
 
               // continue
               if (next_level != undefined) {
@@ -2428,9 +2736,12 @@ $def with (name)
 
             // update best time and score for this level-stage
             var this_level_progress = player_progress[player_level][1]
-            var this_stage_progress = this_level_progress[player_stage.toString()]
-            if (this_stage_progress == undefined) // create new array if stage newly beaten
-              this_stage_progress = this_level_progress[player_stage.toString()] = ["99:99",0]
+            var this_stage_progress = 
+this_level_progress[player_stage.toString()]
+            if (this_stage_progress == undefined) // create new array if 
+stage newly beaten
+              this_stage_progress = 
+this_level_progress[player_stage.toString()] = ["99:99",0]
             if (player.timer.clock_text < this_stage_progress[0]) {
               this_stage_progress[0] = player.timer.clock_text
               if (puzzle_data != undefined)
@@ -2449,8 +2760,10 @@ $def with (name)
             updateSaveAndCookie()
 
             // update level data if player beat star_score
-            // if (star_score == undefined || player.score > star_score) {
-            //   updateLevel(player_level,player_stage,player.score,function() {
+            // if (star_score == undefined || player.score > star_score) 
+{
+            //   
+updateLevel(player_level,player_stage,player.score,function() {
             //     console.log("updated level with new star score")
             //     loadLevels(function(data) {
 
@@ -2467,7 +2780,8 @@ $def with (name)
           } else if (game_end == "L") {
 
             // drop player hand
-            player.drop(player.board.stacks[player.x],player.hand.items.length)
+            
+player.drop(player.board.stacks[player.x],player.hand.items.length)
 
             // but don't add this action to the undo_state
             undo_hand.pop()
@@ -2482,7 +2796,8 @@ $def with (name)
             }
             winlose_menu_items.push(back_menu_item)
             winlose_menu.items = winlose_menu_items
-            winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+            
+winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
 
             // change menu item text
             if (marathon) {
@@ -2528,7 +2843,8 @@ $def with (name)
             for (var j=0; j < this_stack.items; j++) {
               var this_item = this_stack.items[j]
               if (this_item.type == type && this_item.color == color) {
-                console.log("breaking robot of color (" + color + ") found!")
+                console.log("breaking robot of color (" + color + ") 
+found!")
                 return true
               }
             }
@@ -2559,23 +2875,29 @@ $def with (name)
           // draw pause menu
           if (pause) {
             jaws.context.fillStyle = PURPLE_HEX //"Black"
-            jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
-            jaws.context.fillStyle = "rgba(10,0,10," + this.undo_alpha + ")"
-            jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
+            
+jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
+            jaws.context.fillStyle = "rgba(10,0,10," + this.undo_alpha + 
+")"
+            
+jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
             pause_menu.draw()
             return
           }
 
           // draw background
           jaws.context.fillStyle = PURPLE_HEX //"Black"
-          jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
+          
+jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
 
           // draw undo background
           if (player_undid) {
             if (this.undo_alpha < 1)
               this.undo_alpha += .05
-            jaws.context.fillStyle = "rgba(10,0,10," + this.undo_alpha + ")"
-            jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)            
+            jaws.context.fillStyle = "rgba(10,0,10," + this.undo_alpha + 
+")"
+            
+jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)            
           }
 
           // draw all stacks in this board and containing items
@@ -2584,9 +2906,12 @@ $def with (name)
           }
 
           // hide next random items
-          var alpha = player.timer.raise_level_timer/raise_level_time/2 + .5
-          jaws.context.fillStyle =  "rgba(0,0,0," + alpha + ")"//"rgba(112,0,84," + alpha + ")"
-          jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH+this.board.height,this.board.width,ITEM_WIDTH)
+          var alpha = player.timer.raise_level_timer/raise_level_time/2 
++ .5
+          jaws.context.fillStyle =  "rgba(0,0,0," + alpha + 
+")"//"rgba(112,0,84," + alpha + ")"
+          
+jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH+this.board.height,this.board.width,ITEM_WIDTH)
 
           // draw all effects on this board
           for (var e=0; e < this.effects.length; e++) {
@@ -2610,9 +2935,11 @@ $def with (name)
         this.items = new Array()
         this.level = level
         this.x = x
-        this.next_random_item  // string of form "type|color" for use in marathon
+        this.next_random_item  // string of form "type|color" for use in 
+marathon
 
-        // check if the stack contains matches (3 or more consecutive blocks of same color)
+        // check if the stack contains matches (3 or more consecutive 
+blocks of same color)
         // return true if matches are found
         this.checkForMatches = function() {
 
@@ -2624,7 +2951,8 @@ $def with (name)
 
           console.log("checking for matches")
 
-          // loop through each item on the stack, adding them to matches[] array
+          // loop through each item on the stack, adding them to 
+matches[] array
           for (var i = 0; i < items.length; i++) {
 
             item = items[i]
@@ -2635,7 +2963,8 @@ $def with (name)
             if (!match.matchBlocks(item)) {
               matches.pop()
               if (matches.length >= 3) {
-                console.log("matches found!!! " + matches.length + " of color (" + matches[0].color + ")")
+                console.log("matches found!!! " + matches.length + " of 
+color (" + matches[0].color + ")")
                 this.matchesFound(matches)
                 match_found = true
                 // melt_audio.stop()
@@ -2650,7 +2979,8 @@ $def with (name)
 
             if (i == items.length - 1) {
               if (matches.length >= 3) {
-                console.log("matches found!!! " + matches.length + " of color (" + matches[0].color + ")")
+                console.log("matches found!!! " + matches.length + " of 
+color (" + matches[0].color + ")")
                 this.matchesFound(matches)
                 match_found = true
                 // melt_audio.stop()
@@ -2666,7 +2996,8 @@ $def with (name)
         }
 
         // break matches and update their chains
-        this.matchesFound = function(matches) { // matches, an array of blocks
+        this.matchesFound = function(matches) { // matches, an array of 
+blocks
 
           // keep track of block with largest chain
           var chain = 0
@@ -2714,7 +3045,9 @@ $def with (name)
 
         this.removeItem = function(old_item) {
 
-          console.log("removing (" + old_item.type + ") of color (" + old_item.color + ")" + " with chain = " + old_item.chain + ", y = " + old_item.y)
+          console.log("removing (" + old_item.type + ") of color (" + 
+old_item.color + ")" + " with chain = " + old_item.chain + ", y = " + 
+old_item.y)
 
           // remove old item from items array
           this.items.splice(old_item.y,1)
@@ -2734,7 +3067,8 @@ $def with (name)
             this.board.flask_count[old_item.color]--
           } else if (old_item.type == 2) {
             if (old_item.color > 2) {
-              this.board.robot_count[4]--  // all armored robots count as yellowß
+              this.board.robot_count[4]--  // all armored robots count 
+as yellowß
               console.log("decrement yellow robot count")
             }
             else
@@ -2744,20 +3078,25 @@ $def with (name)
           if (level_edit && !level_edit_play)
             return
 
-          // check for win/lose only when blocks and robots are broken since flasks break first
+          // check for win/lose only when blocks and robots are broken 
+since flasks break first
           // but only check when items aren't breaking
           if (!this.board.stacksBreaking()) {
             if (old_item.type == 0 || old_item.type == 1) {
               // if (old_item.color != WHITE)
-                this.board.checkWinLose() // check for win/lose conditions
+                this.board.checkWinLose() // check for win/lose 
+conditions
             } else if (old_item.type == 2) {
-              // make sure that there are no other robots in the process of being removed
+              // make sure that there are no other robots in the process 
+of being removed
               var below = this.items[old_item.y - 1]
               if(below == undefined) {
                 this.board.checkWinLose()
               } else {
-                // if there is an item below, check if it is a robot of the same color
-                if (!(below.type == 2 && below.color == old_item.color && below.breaking)) {
+                // if there is an item below, check if it is a robot of 
+the same color
+                if (!(below.type == 2 && below.color == old_item.color 
+&& below.breaking)) {
                   this.board.checkWinLose()
                 }
               }
@@ -2812,11 +3151,13 @@ $def with (name)
           if (old_item.type != 2)
             return
 
-          console.log("shedding (" + old_item.type + ") of color (" + old_item.color + ")")
+          console.log("shedding (" + old_item.type + ") of color (" + 
+old_item.color + ")")
 
           // remove old item from items array
           // replace robot with color of (old_item.color - 3)
-          var new_item = new Item(this,2,old_item.color-3,old_item.x,old_item.y)
+          var new_item = new 
+Item(this,2,old_item.color-3,old_item.x,old_item.y)
           new_item.active = true
           new_item.chain = old_item.chain
           this.items.splice(old_item.y,1,new_item)
@@ -2824,20 +3165,25 @@ $def with (name)
           // update yellow robot count
           this.board.robot_count[4]--
 
-          // check for win/lose only when blocks and robots are broken since flasks break first
+          // check for win/lose only when blocks and robots are broken 
+since flasks break first
           // but only check when items aren't breaking
           if (!this.board.stacksBreaking()) {
             if (old_item.type == 0 || old_item.type == 1) {
               // if (old_item.color != WHITE)
-                this.board.checkWinLose() // check for win/lose conditions
+                this.board.checkWinLose() // check for win/lose 
+conditions
             } else if (old_item.type == 2) {
-              // make sure that there are no other robots in the process of being removed
+              // make sure that there are no other robots in the process 
+of being removed
               var below = this.items[old_item.y - 1]
               if(below == undefined) {
                 this.board.checkWinLose()
               } else {
-                // if there is an item below, check if it is a robot of the same color
-                if (!(below.type == 2 && below.color == old_item.color && below.breaking)) {
+                // if there is an item below, check if it is a robot of 
+the same color
+                if (!(below.type == 2 && below.color == old_item.color 
+&& below.breaking)) {
                   this.board.checkWinLose()
                 }
               }
@@ -2874,7 +3220,8 @@ $def with (name)
         }
 
         // clear array of robots followed by array of flasks
-        this.clearRobotsFlasks = function(robots_to_clear,flasks_to_clear) {
+        this.clearRobotsFlasks = 
+function(robots_to_clear,flasks_to_clear) {
 
           for (var r = 0; r < robots_to_clear.length; r++) {
 
@@ -2883,8 +3230,10 @@ $def with (name)
             this_robot.breaking = true
 
             // put splashes here
-            var robot_delay = this_robot.deathcounter + this_robot.splash_order
-            this.board.effects.push(new Splash(this,this_robot.type,this_robot.color,this_robot.x,this_robot.y,this.board.effects.length,robot_delay))
+            var robot_delay = this_robot.deathcounter + 
+this_robot.splash_order
+            this.board.effects.push(new 
+Splash(this,this_robot.type,this_robot.color,this_robot.x,this_robot.y,this.board.effects.length,robot_delay))
 
             // determine which sprites to use
             var death_color = "RED"
@@ -2894,16 +3243,23 @@ $def with (name)
               death_color = "PURPLE"
 
             // update sprite data
-            this_robot.sprite = new jaws.Sprite({x:this_robot.stack.board.posx(this_robot.x), y:this_robot.stack.board.posy(this_robot.y), anchor: "left"})
-            var anim = new jaws.Animation({sprite_sheet: "./static/images/ROBOT_" + death_color + "_DEATH.gif", frame_size: [40,40], frame_duration: 20})
+            this_robot.sprite = new 
+jaws.Sprite({x:this_robot.stack.board.posx(this_robot.x), 
+y:this_robot.stack.board.posy(this_robot.y), anchor: "left"})
+            var anim = new jaws.Animation({sprite_sheet: 
+"./static/images/ROBOT_" + death_color + "_DEATH.gif", frame_size: 
+[40,40], frame_duration: 20})
             this_robot.sprite.anim_default = anim.slice(0,6)
 
             var rand_color = Math.floor(Math.random()*WHITE)
             for (var c=0; c < rand_color; c++)
-              this_robot.sprite.setImage(this_robot.sprite.anim_default.next())
+              
+this_robot.sprite.setImage(this_robot.sprite.anim_default.next())
 
-            this_robot.sprite.dx = this_robot.stack.board.posx(this_robot.x)
-            this_robot.sprite.dy = this_robot.stack.board.posy(this_robot.y)
+            this_robot.sprite.dx = 
+this_robot.stack.board.posx(this_robot.x)
+            this_robot.sprite.dy = 
+this_robot.stack.board.posy(this_robot.y)
 
           }
 
@@ -2914,15 +3270,22 @@ $def with (name)
             this_flask.breaking = true
 
             // put splashes here
-            this.board.effects.push(new Splash(this,this_flask.type,this_flask.color,this_flask.x,this_flask.y,this.board.effects.length,this_flask.deathcounter))
+            this.board.effects.push(new 
+Splash(this,this_flask.type,this_flask.color,this_flask.x,this_flask.y,this.board.effects.length,this_flask.deathcounter))
 
             // update sprite data
-            this_flask.sprite = new jaws.Sprite({x:this_flask.stack.board.posx(this_flask.x),y:this_flask.stack.board.posy(this_flask.y), anchor: "left"})
-            var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_SPRITES.gif", frame_size: [40,40], frame_duration: 20 + Math.floor(Math.random()*((60-20) + 1))})
+            this_flask.sprite = new 
+jaws.Sprite({x:this_flask.stack.board.posx(this_flask.x),y:this_flask.stack.board.posy(this_flask.y), 
+anchor: "left"})
+            var anim = new jaws.Animation({sprite_sheet: 
+"./static/images/POTION_SPRITES.gif", frame_size: [40,40], 
+frame_duration: 20 + Math.floor(Math.random()*((60-20) + 1))})
             this_flask.sprite.anim_default = anim.slice(0,6)
 
-            this_flask.sprite.dx = this_flask.stack.board.posx(this_flask.x)
-            this_flask.sprite.dy = this_flask.stack.board.posy(this_flask.y)
+            this_flask.sprite.dx = 
+this_flask.stack.board.posx(this_flask.x)
+            this_flask.sprite.dy = 
+this_flask.stack.board.posy(this_flask.y)
 
             // stop flask's sound effects
             // break_audio.stop()
@@ -2943,12 +3306,14 @@ $def with (name)
         // remove items if their death counters set off
         this.update = function() {
 
-          // make sure to break flask last or the game will think lose condition is met
+          // make sure to break flask last or the game will think lose 
+condition is met
           // put flasks and robots to break into respective arrays
           var flasks_to_clear = new Array()
           var robots_to_clear = new Array()
 
-          // copy stack items into new array so we can loop through all items
+          // copy stack items into new array so we can loop through all 
+items
           // even if items are removed
           var stack_items = this.items.slice()
 
@@ -2958,7 +3323,8 @@ $def with (name)
             var above = stack_items[i + 1]
 
             // for all items breaking (except UNSTABLE flasks)
-            // NOTE: eventually will make updateX for X for any type of item
+            // NOTE: eventually will make updateX for X for any type of 
+item
             // animation updates will happen there
             if (item.breaking) {
 
@@ -2984,7 +3350,9 @@ $def with (name)
               // add chain to items above
               if (above != undefined && !above.breaking) {
                 above.chain = item.chain
-                console.log("item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] passing chain (" + item.chain + ") to item [" + TYPES[above.type] + "|" + COLORS[above.color] + "] above")
+                console.log("item [" + TYPES[item.type] + "|" + 
+COLORS[item.color] + "] passing chain (" + item.chain + ") to item [" + 
+TYPES[above.type] + "|" + COLORS[above.color] + "] above")
               }
 
             }
@@ -2998,7 +3366,8 @@ $def with (name)
             if (item.deathcounter <= 0) {
 
               // do not destroy blue, yellow, orange robots
-              if(item.type == 2 && (item.color == 3 || item.color == 4 || item.color == 5)) {
+              if(item.type == 2 && (item.color == 3 || item.color == 4 
+|| item.color == 5)) {
                 this.shedRobot(item)
                 console.log("shedRobot")
               }
@@ -3008,7 +3377,6 @@ $def with (name)
 
             // animate robots
             if (item.type == 1 || item.type == 2) {
-              console.dir(item)
               item.sprite.setImage(item.sprite.anim_default.next())
             }
 
@@ -3041,7 +3409,8 @@ $def with (name)
                 if (above != undefined) {
 
                   // break robot and same-colored flask above
-                  if (above.sleepcounter == 0 && above.color == ((item.color > 2) ? 4 : item.color) && above.type == 1) {
+                  if (above.sleepcounter == 0 && above.color == 
+((item.color > 2) ? 4 : item.color) && above.type == 1) {
 
                     // item.breaking = true
                     // above.breaking = true
@@ -3053,20 +3422,27 @@ $def with (name)
                     item.chain = above.chain
                     item.splash_order = above.splash_order + 1
 
-                    console.log("(" + above.color + ") flask breaking robot of color (" + item.color + ") with chain = " + item.chain + " and splash_order = " + item.splash_order)
+                    console.log("(" + above.color + ") flask breaking 
+robot of color (" + item.color + ") with chain = " + item.chain + " and 
+splash_order = " + item.splash_order)
 
                   // break if robot above is breaking
-                  } else if (above.type == 2 && ((item.color > 2) ? (above.color > 2):(above.color == item.color)) && above.breaking) {
+                  } else if (above.type == 2 && ((item.color > 2) ? 
+(above.color > 2):(above.color == item.color)) && above.breaking) {
 
                     // item.breaking = true
 
                     robots_to_clear.push(item)
 
                     item.chain = above.chain
-                    console.log("item [" + TYPES[above.type] + "|" + COLORS[above.color] + "] passing chain (" + above.chain + ") to item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] below")
+                    console.log("item [" + TYPES[above.type] + "|" + 
+COLORS[above.color] + "] passing chain (" + above.chain + ") to item [" 
++ TYPES[item.type] + "|" + COLORS[item.color] + "] below")
                     item.splash_order = above.splash_order + 1
 
-                    console.log("robot combo of color (" + item.color + ") with chain = " + item.chain + " and splash_order = " + item.splash_order)
+                    console.log("robot combo of color (" + item.color + 
+") with chain = " + item.chain + " and splash_order = " + 
+item.splash_order)
 
                   }
                 }
@@ -3074,7 +3450,8 @@ $def with (name)
                 if (below != undefined) {
 
                   // break robot and same-colored flask below
-                  if (below.sleepcounter == 0 && below.color == ((item.color > 2) ? 4 : item.color) && below.type == 1) {
+                  if (below.sleepcounter == 0 && below.color == 
+((item.color > 2) ? 4 : item.color) && below.type == 1) {
 
                     // item.breaking = true
                     // below.breaking = true
@@ -3088,22 +3465,31 @@ $def with (name)
                     item.splash_order = below.splash_order + 1
 
                     below.chain = item.chain
-                    console.log("item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] passing chain (" + item.chain + ") to item [" + TYPES[below.type] + "|" + COLORS[below.color] + "] below")
+                    console.log("item [" + TYPES[item.type] + "|" + 
+COLORS[item.color] + "] passing chain (" + item.chain + ") to item [" + 
+TYPES[below.type] + "|" + COLORS[below.color] + "] below")
 
-                    console.log("(" + below.color + ") flask breaking robot of color (" + item.color + ") with chain = " + item.chain + " and splash_order = " + item.splash_order)
+                    console.log("(" + below.color + ") flask breaking 
+robot of color (" + item.color + ") with chain = " + item.chain + " and 
+splash_order = " + item.splash_order)
 
                   // break if robot below is breaking
-                  } else if (below.type == 2 && ((item.color > 2) ? (below.color > 2):(below.color == item.color)) && below.breaking) {
+                  } else if (below.type == 2 && ((item.color > 2) ? 
+(below.color > 2):(below.color == item.color)) && below.breaking) {
 
                     // item.breaking = true
 
                     robots_to_clear.push(item)
 
                     item.chain = below.chain
-                    console.log("item [" + TYPES[below.type] + "|" + COLORS[below.color] + "] passing chain (" + below.chain + ") to item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] above")
+                    console.log("item [" + TYPES[below.type] + "|" + 
+COLORS[below.color] + "] passing chain (" + below.chain + ") to item [" 
++ TYPES[item.type] + "|" + COLORS[item.color] + "] above")
                     item.splash_order = below.splash_order + 1
 
-                    console.log("robot combo of color (" + item.color + ") with chain = " + item.chain + " and splash_order = " + item.splash_order)
+                    console.log("robot combo of color (" + item.color + 
+") with chain = " + item.chain + " and splash_order = " + 
+item.splash_order)
 
                   }
                 }
@@ -3126,12 +3512,17 @@ $def with (name)
               this.items[i].draw()
             }
           } else {
-            // TODO: flash stack when full and player in danger
-            var this_stack_full = (this.items.length + ((this.board.player.x != this.x) ? 0 : this.board.player.hand.items.length) == BOARD_HEIGHT)
+            // flash stack when full and player in danger
+            var this_stack_full = (this.items.length + 
+((this.board.player.x != this.x) ? 0 : 
+this.board.player.hand.items.length) == BOARD_HEIGHT)
             var player_timer = this.board.player.timer
-            // var danger_time = (player_timer.raise_level_timer < raise_level_time/4) ? ((player_timer.ticker%8==0) ? true : false) : false
+            // var danger_time = (player_timer.raise_level_timer < 
+raise_level_time/4) ? ((player_timer.ticker%8==0) ? true : false) : 
+false
             var danger_time = (player_timer.ticker%8==0) ? true : false
-            if (!this_stack_full || !danger_time || this.itemsBreaking() || game_end != "") {
+            if (!this_stack_full || !danger_time || this.itemsBreaking() 
+|| game_end != "") {
               for (var i=0; i<this.items.length;i++) {
                 this.items[i].draw()
               }
@@ -3147,7 +3538,8 @@ $def with (name)
       /* Constructor for item */
       function Item(stack,type,color,x,y) {
 
-        console.log("making new item of type(" + type + "), color(" + COLORS[color] + ")")
+        console.log("making new item of type(" + type + "), color(" + 
+COLORS[color] + ")")
 
         // an item has type and color
         this.stack = stack
@@ -3159,7 +3551,8 @@ $def with (name)
         this.breaking = false
         this.deathcounter = 40
         this.sleepcounter = 0  // used for transitory animations
-                               // (eg: potion filling up, items exploding, etc.)
+                               // (eg: potion filling up, items 
+exploding, etc.)
         this.chain = 0
         this.last_in_chain = false
         this.splash_order = 0
@@ -3168,20 +3561,30 @@ $def with (name)
 
         // set appropriate sprite for this item
         if (this.type == 0) {
-          this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y),image:"./static/images/" + COLORS[color] + ".gif",anchor:"left"})
+          this.sprite = new 
+jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y),image:"./static/images/" 
++ COLORS[color] + ".gif",anchor:"left"})
           board.block_count[color] += 1
         } else if (this.type == 1) {
 
-          this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y), anchor:"left"})
-          var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_" + COLORS[this.color] + ".gif", frame_size: [40,40], frame_duration: 100})
+          this.sprite = new 
+jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y), 
+anchor:"left"})
+          var anim = new jaws.Animation({sprite_sheet: 
+"./static/images/POTION_" + COLORS[this.color] + ".gif", frame_size: 
+[40,40], frame_duration: 100})
           this.sprite.anim_default = anim.slice(0,5)
           this.sprite.setImage(this.sprite.anim_default.next())
 
           board.flask_count[color] += 1
         } else if (this.type == 2) {
           // create sprite for this robot
-          this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y), anchor: "left"})
-          var anim = new jaws.Animation({sprite_sheet: "./static/images/ROBOT_" + COLORS[this.color] + ".gif", frame_size: [40,40], frame_duration: 100})
+          this.sprite = new 
+jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y), 
+anchor: "left"})
+          var anim = new jaws.Animation({sprite_sheet: 
+"./static/images/ROBOT_" + COLORS[this.color] + ".gif", frame_size: 
+[40,40], frame_duration: 100})
           this.sprite.anim_default = anim.slice(0,5)
           this.sprite.setImage(this.sprite.anim_default.next())
 
@@ -3191,9 +3594,12 @@ $def with (name)
             death_color = "YELLOW"
           else if (this.color == 2 || this.color == 5)
             death_color = "PURPLE"
-          var dead_sprites = new jaws.Animation({sprite_sheet: "./static/images/ROBOT_" + death_color + "_DEATH.gif", frame_size: [40,40], frame_duration: 20})
+          var dead_sprites = new jaws.Animation({sprite_sheet: 
+"./static/images/ROBOT_" + death_color + "_DEATH.gif", frame_size: 
+[40,40], frame_duration: 20})
           this.sprite.setImage(dead_sprites.slice(
-            (death_color=="RED"||this.color==1)?this.color:((this.color==2)?4:3),
+            
+(death_color=="RED"||this.color==1)?this.color:((this.color==2)?4:3),
             6).next())
 
           if (this.color > 2)
@@ -3206,9 +3612,11 @@ $def with (name)
         this.sprite.dx = this.stack.board.posx(x)
         this.sprite.dy = this.stack.board.posy(y)
 
-        this.matchBlocks = function(item) { // item to check if this matches with
+        this.matchBlocks = function(item) { // item to check if this 
+matches with
 
-          if (!this.breaking && this.type == 0 && item.type == this.type && item.color == this.color)
+          if (!this.breaking && this.type == 0 && item.type == this.type 
+&& item.color == this.color)
             return true
 
           return false
@@ -3237,8 +3645,12 @@ $def with (name)
                 console.log("sleepcounter = " + this.sleepcounter)
 
                 // update sprite data
-                this.sprite = new jaws.Sprite({x:this.stack.board.posx(this.x),y:this.stack.board.posy(this.y), anchor:"left"})
-                var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_" + COLORS[this.color] + ".gif", frame_size: [40,40], frame_duration: 100})
+                this.sprite = new 
+jaws.Sprite({x:this.stack.board.posx(this.x),y:this.stack.board.posy(this.y), 
+anchor:"left"})
+                var anim = new jaws.Animation({sprite_sheet: 
+"./static/images/POTION_" + COLORS[this.color] + ".gif", frame_size: 
+[40,40], frame_duration: 100})
                 this.sprite.anim_default = anim.slice(0,5)
                 this.sprite.setImage(this.sprite.anim_default.next())
 
@@ -3274,8 +3686,12 @@ $def with (name)
                   console.log("sleepcounter = " + this.sleepcounter)
 
                   // update sprite data
-                  this.sprite = new jaws.Sprite({x:this.stack.board.posx(this.x),y:this.stack.board.posy(this.y), anchor:"left"})
-                  var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_" + COLORS[this.color] + ".gif", frame_size: [40,40], frame_duration: 100})
+                  this.sprite = new 
+jaws.Sprite({x:this.stack.board.posx(this.x),y:this.stack.board.posy(this.y), 
+anchor:"left"})
+                  var anim = new jaws.Animation({sprite_sheet: 
+"./static/images/POTION_" + COLORS[this.color] + ".gif", frame_size: 
+[40,40], frame_duration: 100})
                   this.sprite.anim_default = anim.slice(0,5)
                   this.sprite.setImage(this.sprite.anim_default.next())
 
@@ -3295,7 +3711,8 @@ $def with (name)
                   // if (!mute)
                   //   white_audio.play()
 
-                // melting colored blocks over empty flask creates an unstable reaction
+                // melting colored blocks over empty flask creates an 
+unstable reaction
                 } else {
 
                   var this_stack = this.stack.items
@@ -3309,11 +3726,16 @@ $def with (name)
                   this.breaking = true
 
                   // put splashes here
-                  this.stack.board.effects.push(new Splash(this.stack,this.type,this.color,this.x,this.y,this.stack.board.effects.length,this.deathcounter))
+                  this.stack.board.effects.push(new 
+Splash(this.stack,this.type,this.color,this.x,this.y,this.stack.board.effects.length,this.deathcounter))
 
                   // update sprite data
-                  this.sprite = new jaws.Sprite({x:this.stack.board.posx(above.x),y:this.stack.board.posy(above.y - 1), anchor: "left"})
-                  var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_SPRITES.gif", frame_size: [40,40], frame_duration: 20})
+                  this.sprite = new 
+jaws.Sprite({x:this.stack.board.posx(above.x),y:this.stack.board.posy(above.y 
+- 1), anchor: "left"})
+                  var anim = new jaws.Animation({sprite_sheet: 
+"./static/images/POTION_SPRITES.gif", frame_size: [40,40], 
+frame_duration: 20})
                   this.sprite.anim_default = anim.slice(0,6)
 
                   this.sprite.dx = this.stack.board.posx(above.x)
@@ -3371,7 +3793,8 @@ $def with (name)
           this.stack.board.effects.splice(this.index,1)
 
           // reset indices
-          for (var i = this.index; i < this.stack.board.effects.length; i++) {
+          for (var i = this.index; i < this.stack.board.effects.length; 
+i++) {
             var this_effect = this.stack.board.effects[i]
             this_effect.index = i
           }
@@ -3396,7 +3819,8 @@ $def with (name)
           jaws.context.lineWidth = 10
           jaws.context.fillStyle =  "White"
           jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-          jaws.context.fillText("x" + this.chain, this.sprite.x + 6, this.sprite.y + 15)
+          jaws.context.fillText("x" + this.chain, this.sprite.x + 6, 
+this.sprite.y + 15)
         }
 
       }
@@ -3417,23 +3841,31 @@ $def with (name)
         // set appropriate sprite for this Splash
         if (type == 1)
           this.sprite_sheet = new jaws.SpriteSheet({
-            image: "./static/images/POTION_SPLASH.gif", frame_size: [20,20]})
+            image: "./static/images/POTION_SPLASH.gif", frame_size: 
+[20,20]})
         else if (type == 2)
           this.sprite_sheet = new jaws.SpriteSheet({
-            image: "./static/images/ROBOT_" + COLORS[color] + "_SPLASH.gif", frame_size: [20,20]})
+            image: "./static/images/ROBOT_" + COLORS[color] + 
+"_SPLASH.gif", frame_size: [20,20]})
 
-        this.sprite1 = new jaws.Sprite({x:this.stack.board.posx(x), y:this.stack.board.posy(y), image: this.sprite_sheet.frames[0]})
-        this.sprite2 = new jaws.Sprite({x:this.stack.board.posx(x)+20, y:this.stack.board.posy(y), image: this.sprite_sheet.frames[1]})
-        this.sprite3 = new jaws.Sprite({x:this.stack.board.posx(x), y:this.stack.board.posy(y)+20, image: this.sprite_sheet.frames[2]})
-        this.sprite4 = new jaws.Sprite({x:this.stack.board.posx(x)+20, y:this.stack.board.posy(y)+20, image: this.sprite_sheet.frames[3]})
+        this.sprite1 = new jaws.Sprite({x:this.stack.board.posx(x), 
+y:this.stack.board.posy(y), image: this.sprite_sheet.frames[0]})
+        this.sprite2 = new jaws.Sprite({x:this.stack.board.posx(x)+20, 
+y:this.stack.board.posy(y), image: this.sprite_sheet.frames[1]})
+        this.sprite3 = new jaws.Sprite({x:this.stack.board.posx(x), 
+y:this.stack.board.posy(y)+20, image: this.sprite_sheet.frames[2]})
+        this.sprite4 = new jaws.Sprite({x:this.stack.board.posx(x)+20, 
+y:this.stack.board.posy(y)+20, image: this.sprite_sheet.frames[3]})
 
         this.initSprite = function(sprite, splash, x_offset, y_offset) {
 
           x_offset = typeof x_offset !== 'undefined' ? x_offset : 0;
           y_offset = typeof y_offset !== 'undefined' ? y_offset : 0;
 
-          sprite.x0 = sprite.dx = this.stack.board.posx(splash.x) + x_offset
-          sprite.y0 = sprite.dy = this.stack.board.posy(splash.y) + y_offset
+          sprite.x0 = sprite.dx = this.stack.board.posx(splash.x) + 
+x_offset
+          sprite.y0 = sprite.dy = this.stack.board.posy(splash.y) + 
+y_offset
           sprite.t = 0
 
         }
@@ -3447,25 +3879,29 @@ $def with (name)
 
           // console.log("spriteExplode")
           sprite.t += 3
-          sprite.dy = sprite.y0 + .1 * sprite.t * sprite.t - 4 * sprite.t
+          sprite.dy = sprite.y0 + .1 * sprite.t * sprite.t - 4 * 
+sprite.t
           sprite.dx = sprite.x0 + (direction) * sprite.t
 
         }
 
         this.spritesOffscreen = function() {
 
-          var sprites = new Array(this.sprite1, this.sprite2, this.sprite3, this.sprite4)
+          var sprites = new Array(this.sprite1, this.sprite2, 
+this.sprite3, this.sprite4)
           var offscreen = new Array(false, false, false, false)
 
           for (var s = 0; s < sprites.length; s++) {
 
             var this_sprite = sprites[s]
-            if (this_sprite.x < 0 || this_sprite.x > jaws.width || this_sprite.y > jaws.height)
+            if (this_sprite.x < 0 || this_sprite.x > jaws.width || 
+this_sprite.y > jaws.height)
               offscreen[s] = true
 
           }
 
-          if (!([true,true,true,true]<offscreen || offscreen<[true,true,true,true]))
+          if (!([true,true,true,true]<offscreen || 
+offscreen<[true,true,true,true]))
             return true
 
           return false
@@ -3477,7 +3913,8 @@ $def with (name)
           this.stack.board.effects.splice(old_splash.index,1)
 
           // reset indices
-          for (var i = old_splash.index; i < this.stack.board.effects.length; i++) {
+          for (var i = old_splash.index; i < 
+this.stack.board.effects.length; i++) {
             var this_effect = this.stack.board.effects[i]
             this_effect.index = i
           }
@@ -3547,23 +3984,32 @@ $def with (name)
                 for (var i = 0; i < dx; i++) {
                   if (player.canMoveX(-1)) player.moveX(-1)
                   else {
-                    // drop minimum amount of items on hand so hand can move left
-                    var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x -1].items.length)
-                    if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x - 1].items.length > 0) {
-                      player.drop(player.board.stacks[player.x],drop_amount)
+                    // drop minimum amount of items on hand so hand can 
+move left
+                    var drop_amount = player.hand.items.length - 
+(BOARD_HEIGHT - player.board.stacks[player.x -1].items.length)
+                    if (drop_amount > 0 && BOARD_HEIGHT - 
+player.board.stacks[player.x - 1].items.length > 0) {
+                      
+player.drop(player.board.stacks[player.x],drop_amount)
                       player.moveX(-1)
                     }
                   }
                 }
-              } else if(player.x < BOARD_WIDTH - 1 && frame[0] > player.x) {
+              } else if(player.x < BOARD_WIDTH - 1 && frame[0] > 
+player.x) {
                 var dx = Math.abs(frame[0] - player.x)
                 for (var i = 0; i < dx; i++) {
                   if (player.canMoveX(1)) player.moveX(1)
                   else {
-                    // drop minimum amount of items on hand so hand can move right
-                    var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length)
-                    if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length > 0) {
-                      player.drop(player.board.stacks[player.x],drop_amount)
+                    // drop minimum amount of items on hand so hand can 
+move right
+                    var drop_amount = player.hand.items.length - 
+(BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length)
+                    if (drop_amount > 0 && BOARD_HEIGHT - 
+player.board.stacks[player.x + 1].items.length > 0) {
+                      
+player.drop(player.board.stacks[player.x],drop_amount)
                       player.moveX(1)
                     }
                   }
@@ -3579,7 +4025,8 @@ $def with (name)
             winlose_menu.active = false
 
             winlose_menu.y = winlose_data.y + winlose_data.height
-            winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
+            
+winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
 
             // color timer to be red to indicate game end
             screen_data.index = -1
@@ -3620,14 +4067,16 @@ $def with (name)
             this.seconds++
             this.raise_level_frequency_timer++
 
-            if (this.raise_level_frequency_timer >= FREQ_RAISE_LEVEL_TIME) {
+            if (this.raise_level_frequency_timer >= 
+FREQ_RAISE_LEVEL_TIME) {
               if (raise_level_time > MIN_RAISE_LEVEL_TIME)
                 raise_level_time--
               console.log("raise_level_time = " + raise_level_time)
               this.raise_level_frequency_timer = 0
             }
 
-            if (marathon && MAX_RAISE_LEVEL_TIME > 0 && !this.player.board.stacksBreaking())
+            if (marathon && MAX_RAISE_LEVEL_TIME > 0 && 
+!this.player.board.stacksBreaking())
               this.raise_level_timer--
 
           }
@@ -3650,8 +4099,10 @@ $def with (name)
             console.log("raise_level_time = " + raise_level_time)
           }
 
-          var min_text = (this.minutes < 10) ? "0" + this.minutes : this.minutes
-          var sec_text = (this.seconds < 10) ? "0" + this.seconds : this.seconds
+          var min_text = (this.minutes < 10) ? "0" + this.minutes : 
+this.minutes
+          var sec_text = (this.seconds < 10) ? "0" + this.seconds : 
+this.seconds
 
           this.clock_text = min_text + ":" + sec_text
           if (!level_edit)
@@ -3662,11 +4113,13 @@ $def with (name)
       }
 
       function spriteMove(sprite,x_speed,y_speed) {
-        if (Math.abs(sprite.x - sprite.dx) < x_speed) sprite.x = sprite.dx
+        if (Math.abs(sprite.x - sprite.dx) < x_speed) sprite.x = 
+sprite.dx
         else if (sprite.x < sprite.dx) sprite.x += x_speed
         else sprite.x -= x_speed
 
-        if (Math.abs(sprite.y - sprite.dy) < y_speed) sprite.y = sprite.dy
+        if (Math.abs(sprite.y - sprite.dy) < y_speed) sprite.y = 
+sprite.dy
         else if(sprite.y < sprite.dy) sprite.y += y_speed
         else sprite.y -= y_speed
       }
@@ -3687,7 +4140,8 @@ $def with (name)
             // append this item string to level_string
             var this_item = this_stack.items[i]
             if (i>0) level_string = level_string + ","
-            level_string = level_string + this_item.type + "|" + this_item.color
+            level_string = level_string + this_item.type + "|" + 
+this_item.color
           }
           level_string = level_string + "\n"
         }
@@ -3702,17 +4156,20 @@ $def with (name)
           // append this item string to hand_string
           var this_item = hand.items[i]
           if (i>0) hand_string = hand_string + ","
-          hand_string = hand_string + this_item.type + "|" + this_item.color
+          hand_string = hand_string + this_item.type + "|" + 
+this_item.color
         }
         hand_string = hand_string + "\n"
 
         // update player.x of previous state
-        if (undo_hand[undo_hand.length-1] != undefined && !called_by_undo) {
+        if (undo_hand[undo_hand.length-1] != undefined && 
+!called_by_undo) {
           undo_hand[undo_hand.length-1][0] = player.x
         }
 
         // add hand string to undo state array
-        undo_hand.push([player.x,player.y,player.hand.level,hand_string,player.score])
+        
+undo_hand.push([player.x,player.y,player.hand.level,hand_string,player.score])
 
         console.log("added hand and board states!")
         console.dir(undo_hand)
@@ -3724,7 +4181,8 @@ $def with (name)
       function undoLastMove (from_menu) {
 
         // SANITY CHECK!!!
-        if (undo_hand.length <= 0 || undo_board.length <= 0 || !game_start || marathon)
+        if (undo_hand.length <= 0 || undo_board.length <= 0 || 
+!game_start || marathon)
           return
 
         var called_by_menu = from_menu || false
@@ -3827,7 +4285,8 @@ $def with (name)
 
     }
 
-    function pauseGame (pause_menu,player,restart_menu_item,save_menu_item) {
+    function pauseGame 
+(pause_menu,player,restart_menu_item,save_menu_item) {
 
       if (pause) {
         return
@@ -3843,13 +4302,15 @@ $def with (name)
       pause_menu.items = new Array()
       console.log("CREATING PAUSE MENU")
       console.log("level_edit_play = " + level_edit_play)
-      pause_menu.items.push(new MenuItem(pause_menu,"Resume",function() {
+      pause_menu.items.push(new MenuItem(pause_menu,"Resume",function() 
+{
         pause = false
         // playPausedSounds()
         player.controls()
       }))
       if (level_edit && !level_edit_play) {
-        pause_menu.items.push(new MenuItem(pause_menu,"Play Level",function() {
+        pause_menu.items.push(new MenuItem(pause_menu,"Play 
+Level",function() {
           pause = false
           level_edit_play = true
           // playPausedSounds()
@@ -3857,7 +4318,8 @@ $def with (name)
           jaws.start(Game)
         }))
       }
-      pause_menu.items.push(((level_edit && !level_edit_play) ? save_menu_item : restart_menu_item))
+      pause_menu.items.push(((level_edit && !level_edit_play) ? 
+save_menu_item : restart_menu_item))
       if (level_edit_play) {
         restart_menu_item.text = "Back to Editor"
         restart_menu_item.action = function() {
@@ -3865,7 +4327,8 @@ $def with (name)
           jaws.start(Game)
         }
       }
-      pause_menu.items.push(new MenuItem(pause_menu,"Back to Menu",function() {
+      pause_menu.items.push(new MenuItem(pause_menu,"Back to 
+Menu",function() {
         if (!level_edit) {
 
           // update marathon progress
@@ -3913,7 +4376,8 @@ $def with (name)
       sound_effects.push(drop_sound)
       // flask sound effects
       break_audio = new Howl({
-        urls: ["./static/sfx/robot_death.mp3","./static/sfx/robot_death.ogg"],
+        urls: 
+["./static/sfx/robot_death.mp3","./static/sfx/robot_death.ogg"],
         volume:.25
       })
       sound_effects.push(break_audio)
@@ -4077,13 +4541,23 @@ $def with (name)
 
       console.log("Buidling record string")
 
-      var control_text = (board.player.keyboard_actions > board.player.mouse_actions) ? "KB" : (board.player.keyboard_actions == board.player.mouse_actions) ? "KM" : "MS"
+      var control_text = (board.player.keyboard_actions > 
+board.player.mouse_actions) ? "KB" : (board.player.keyboard_actions == 
+board.player.mouse_actions) ? "KM" : "MS"
       var record = "\n\n" + new Date((+new Date())) + "\n"
 
       if (marathon)
-        record += "\"" + player_name + "\"" + " " + "[" + player_uid + "]" + " " + starTotal() + " " + control_text + " MRTHN-" + MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
+        record += "\"" + player_name + "\"" + " " + "[" + player_uid + 
+"]" + " " + starTotal() + " " + control_text + " MRTHN-" + 
+MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + 
+board.player.timer.clock_text + ")/(" + board.player.moves + ") " + 
+winloss
       else
-        record += "\"" + player_name + "\"" + " " + "[" + player_uid + "]" + " " + starTotal() + " " + control_text + " " + player_level + "-" + player_stage + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
+        record += "\"" + player_name + "\"" + " " + "[" + player_uid + 
+"]" + " " + starTotal() + " " + control_text + " " + player_level + "-" 
++ player_stage + " (" + board.player.score + ")/(" + 
+board.player.timer.clock_text + ")/(" + board.player.moves + ") " + 
+winloss
 
       // append data for replays
       var player_moves = JSON.stringify(board.player.replay_data)
@@ -4125,7 +4599,8 @@ $def with (name)
     function setCookie(c_name,value,exdays) {
       var exdate=new Date();
       exdate.setDate(exdate.getDate() + exdays);
-      var c_value=escape(value) + ((exdays==null) ? "" : "; expires="+exdate.toUTCString());
+      var c_value=escape(value) + ((exdays==null) ? "" : "; 
+expires="+exdate.toUTCString());
       document.cookie=c_name + "=" + c_value;
     }
 
@@ -4156,7 +4631,10 @@ $def with (name)
     function updateSaveAndCookie() {
       // update player_save data
       var player_save = $("saveData")
-      player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress) + "|" + player_uid
+      player_save.innerHTML = "SuperWizardPotionSave|" + player_name + 
+"|" + JSON.stringify(player_progress) + "|" + 
+JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress) 
++ "|" + player_uid + "|" + JSON.stringify(player_path)
       // update cookie save
       setCookie("player_save",player_save.innerHTML,360000)
     }
@@ -4202,23 +4680,30 @@ $def with (name)
     }
 
     // update star for a stage
-    function updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data) {
+    function 
+updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data) 
+{
 
       var level_star_progress = star_progress[player_level]
       if (level_star_progress == undefined)
         star_progress.push({})
-      var stage_star_progress = star_progress[player_level][player_stage.toString()]
+      var stage_star_progress = 
+star_progress[player_level][player_stage.toString()]
       var new_stars = 0
 
       if (stage_star_progress == undefined) {
-        star_progress[player_level][player_stage.toString()] = [1,0,0,0] // [complete,time,score,all]
-        stage_star_progress = star_progress[player_level][player_stage.toString()]
-        winlose_data.items[0].sprites[0].setImage("./static/images/STAR.gif")
+        star_progress[player_level][player_stage.toString()] = [1,0,0,0] 
+// [complete,time,score,all]
+        stage_star_progress = 
+star_progress[player_level][player_stage.toString()]
+        
+winlose_data.items[0].sprites[0].setImage("./static/images/STAR.gif")
         winlose_data.items[0].sprites[0].width = 15
         winlose_data.items[0].sprites[0].height = 15
         new_stars++
       } else {
-        winlose_data.items[0].sprites[0].setImage("./static/images/STAR_BORDER.gif")
+        
+winlose_data.items[0].sprites[0].setImage("./static/images/STAR_BORDER.gif")
         winlose_data.items[0].sprites[0].width = 15
         winlose_data.items[0].sprites[0].height = 15
       }
@@ -4232,12 +4717,14 @@ $def with (name)
         console.log("achieved star time = " + star_time)
 
         if (stage_star_progress[1] == 0) {
-          winlose_data.items[1].sprites[0].setImage("./static/images/STAR.gif")
+          
+winlose_data.items[1].sprites[0].setImage("./static/images/STAR.gif")
           winlose_data.items[1].sprites[0].width = 15
           winlose_data.items[1].sprites[0].height = 15
           new_stars++
         } else {
-          winlose_data.items[1].sprites[0].setImage("./static/images/STAR_BORDER.gif")
+          
+winlose_data.items[1].sprites[0].setImage("./static/images/STAR_BORDER.gif")
           winlose_data.items[1].sprites[0].width = 15
           winlose_data.items[1].sprites[0].height = 15
         }
@@ -4251,12 +4738,14 @@ $def with (name)
         console.log("achieved star score = " + star_score)
 
         if (stage_star_progress[2] == 0) {
-          winlose_data.items[2].sprites[0].setImage("./static/images/STAR.gif")
+          
+winlose_data.items[2].sprites[0].setImage("./static/images/STAR.gif")
           winlose_data.items[2].sprites[0].width = 15
           winlose_data.items[2].sprites[0].height = 15
           new_stars++
         } else {
-          winlose_data.items[2].sprites[0].setImage("./static/images/STAR_BORDER.gif")
+          
+winlose_data.items[2].sprites[0].setImage("./static/images/STAR_BORDER.gif")
           winlose_data.items[2].sprites[0].width = 15
           winlose_data.items[2].sprites[0].height = 15
         }
@@ -4270,12 +4759,14 @@ $def with (name)
         console.log("achieved bonus star = " + star_score)
 
         if (stage_star_progress[3] == 0) {
-          winlose_data.items[3].sprites[0].setImage("./static/images/STAR.gif")
+          
+winlose_data.items[3].sprites[0].setImage("./static/images/STAR.gif")
           winlose_data.items[3].sprites[0].width = 15
           winlose_data.items[3].sprites[0].height = 15
           new_stars++
         } else {
-          winlose_data.items[3].sprites[0].setImage("./static/images/STAR_BORDER.gif")
+          
+winlose_data.items[3].sprites[0].setImage("./static/images/STAR_BORDER.gif")
           winlose_data.items[3].sprites[0].width = 15
           winlose_data.items[3].sprites[0].height = 15
         }
@@ -4294,7 +4785,8 @@ $def with (name)
 
     function saveImage (level,stage,name,encoded_data) {
 
-      var json_data = JSON.stringify({'type': "saveImage", 'data': encoded_data, 'level': [level,stage,name]})
+      var json_data = JSON.stringify({'type': "saveImage", 'data': 
+encoded_data, 'level': [level,stage,name]})
 
       console.log("saving image with json_data = " + json_data)
       jQuery.ajax({
@@ -4312,7 +4804,8 @@ $def with (name)
       if (replay != null)
         return
 
-      var json_data = JSON.stringify({'type': "saveRecord", 'data': record})
+      var json_data = JSON.stringify({'type': "saveRecord", 'data': 
+record})
 
       console.log("savingRecord() with json_data = " + json_data)
       jQuery.ajax({
@@ -4325,7 +4818,28 @@ $def with (name)
 
     }
 
-    function saveLevel (level,stage,board,star_time,star_score,star_lock,level_name,callback) {
+    function playerPath (name,callback) {
+
+      if (replay != null)
+        return
+
+      var json_data = JSON.stringify({'type': "playerPath", 'data': 
+name})
+
+      console.log("determining player path with name = " + name)
+      jQuery.ajax({
+        type: "POST",
+        data: json_data,
+        success: function(data) {
+          console.log("the path for player " + name + " is " + data)
+          callback(data)
+          }
+      });
+
+    }
+
+    function saveLevel 
+(level,stage,board,star_time,star_score,star_lock,level_name,callback) {
 
       console.log("saving stage = " + level + "-" + stage)
 
@@ -4343,7 +4857,8 @@ $def with (name)
 
           var this_item = this_stack.items[i]
           if (i>0) level_string = level_string + ","
-          level_string = level_string + this_item.type + "|" + this_item.color
+          level_string = level_string + this_item.type + "|" + 
+this_item.color
 
           console.log ("adding item, level_string = " + level_string)
 
@@ -4360,7 +4875,8 @@ $def with (name)
 
       console.log("level_string = " + level_string)
 
-      var json_data = JSON.stringify({'type': "saveLevel", 'data': level_string, 'level': [level,stage], 'name': level_name})
+      var json_data = JSON.stringify({'type': "saveLevel", 'data': 
+level_string, 'level': [level,stage], 'name': level_name})
 
       jQuery.ajax({
         type: "POST",
@@ -4394,7 +4910,8 @@ $def with (name)
 
       console.log("level_string = " + level_string)
 
-      var json_data = JSON.stringify({'type': "saveLevel", 'data': level_string, 'level': [level,stage]})
+      var json_data = JSON.stringify({'type': "saveLevel", 'data': 
+level_string, 'level': [level,stage]})
 
       jQuery.ajax({
         type: "POST",
@@ -4409,7 +4926,8 @@ $def with (name)
 
     function loadLevel (level,stage,board,callback) {
 
-      var json_data = JSON.stringify({'type': "loadLevel", 'level': [level,stage]})
+      var json_data = JSON.stringify({'type': "loadLevel", 'level': 
+[level,stage]})
 
       console.log("loading stage = " + level)
       jQuery.ajax({
@@ -4439,14 +4957,16 @@ $def with (name)
 
     function deleteLevel (level,level_name,callback) {
 
-      var json_data = JSON.stringify({'type': "deleteLevel", 'level': [level,level_name,latest_edit]})
+      var json_data = JSON.stringify({'type': "deleteLevel", 'level': 
+[level,level_name,latest_edit]})
 
       console.log("deleting stage = " + level_name)
       jQuery.ajax({
         type: "POST",
         data: json_data,
         success: function(data) {
-          console.log("deleted level data from server. last level found = 0-" + data)
+          console.log("deleted level data from server. last level found 
+= 0-" + data)
           callback(data)
         }
       })
@@ -4487,9 +5007,11 @@ $def with (name)
 
     }
 
-    function MenuBox(title,parent,x,y,width,items,scrolling,right_for_ok) {
+    function 
+MenuBox(title,parent,x,y,width,items,scrolling,right_for_ok) {
 
-      console.log("constructing menubox with title = " + this.title + " at (" + x + "," + y + ")")
+      console.log("constructing menubox with title = " + this.title + " 
+at (" + x + "," + y + ")")
 
 
       var SPRITE_WIDTH = 10
@@ -4519,24 +5041,35 @@ $def with (name)
         if (this.scrolling)
           this.height = 70
         else
-          this.height = 20 * (this.items.length + ((this.title == "") ? 0 : 1)) + 30
+          this.height = 20 * (this.items.length + ((this.title == "") ? 
+0 : 1)) + 30
 
         this.sprites = new Array()
 
         this.sprite_sheet = new jaws.SpriteSheet({
-          image: "./static/images/MENUBOX_SPRITES.gif", frame_size: [SPRITE_WIDTH,SPRITE_WIDTH]})
+          image: "./static/images/MENUBOX_SPRITES.gif", frame_size: 
+[SPRITE_WIDTH,SPRITE_WIDTH]})
 
         var edge_width  = width - SPRITE_WIDTH*2
         var edge_height = this.height - SPRITE_WIDTH*2
 
-        this.sprite_nw = new jaws.Sprite({x:x, y:y, image: this.sprite_sheet.frames[0]})
-        this.sprite_n = new jaws.Sprite({x:x + SPRITE_WIDTH, y:y, image: this.sprite_sheet.frames[1]})
-        this.sprite_ne = new jaws.Sprite({x:x + SPRITE_WIDTH + edge_width, y:y, image: this.sprite_sheet.frames[2]})
-        this.sprite_w = new jaws.Sprite({x:x, y:y + SPRITE_WIDTH, image: this.sprite_sheet.frames[3]})
-        this.sprite_e = new jaws.Sprite({x:x + SPRITE_WIDTH + edge_width, y:y + SPRITE_WIDTH, image: this.sprite_sheet.frames[4]})
-        this.sprite_sw = new jaws.Sprite({x:x, y:y + SPRITE_WIDTH + edge_height, image: this.sprite_sheet.frames[5]})
-        this.sprite_s = new jaws.Sprite({x:x + SPRITE_WIDTH, y:y + SPRITE_WIDTH + edge_height, image: this.sprite_sheet.frames[6]})
-        this.sprite_se = new jaws.Sprite({x:x + SPRITE_WIDTH + edge_width, y:y + SPRITE_WIDTH + edge_height, image: this.sprite_sheet.frames[7]})
+        this.sprite_nw = new jaws.Sprite({x:x, y:y, image: 
+this.sprite_sheet.frames[0]})
+        this.sprite_n = new jaws.Sprite({x:x + SPRITE_WIDTH, y:y, image: 
+this.sprite_sheet.frames[1]})
+        this.sprite_ne = new jaws.Sprite({x:x + SPRITE_WIDTH + 
+edge_width, y:y, image: this.sprite_sheet.frames[2]})
+        this.sprite_w = new jaws.Sprite({x:x, y:y + SPRITE_WIDTH, image: 
+this.sprite_sheet.frames[3]})
+        this.sprite_e = new jaws.Sprite({x:x + SPRITE_WIDTH + 
+edge_width, y:y + SPRITE_WIDTH, image: this.sprite_sheet.frames[4]})
+        this.sprite_sw = new jaws.Sprite({x:x, y:y + SPRITE_WIDTH + 
+edge_height, image: this.sprite_sheet.frames[5]})
+        this.sprite_s = new jaws.Sprite({x:x + SPRITE_WIDTH, y:y + 
+SPRITE_WIDTH + edge_height, image: this.sprite_sheet.frames[6]})
+        this.sprite_se = new jaws.Sprite({x:x + SPRITE_WIDTH + 
+edge_width, y:y + SPRITE_WIDTH + edge_height, image: 
+this.sprite_sheet.frames[7]})
 
         // fix widths and heights for edges
         this.sprite_n.width = this.sprite_s.width = edge_width
@@ -4548,7 +5081,8 @@ $def with (name)
       // provide coordinates of clicks with respect to menu item index
       this.menuCoordinates = function(x,y,right_click) {
 
-        // find click coordinates with respect to board's top-left position in canvas
+        // find click coordinates with respect to board's top-left 
+position in canvas
         var menu_x = x - this.x
         var menu_y = y - this.y
 
@@ -4592,12 +5126,16 @@ $def with (name)
             break
           }
         if (this.items[level_index].locked) {
-          for (var i=0; i < this.submenus[0].menu_box.sprites.length; i++) {
+          for (var i=0; i < this.submenus[0].menu_box.sprites.length; 
+i++) {
             this.submenus[0].menu_box.sprites[i].active = true
           }
-          this.submenus[0].menu_box.items[0].text = "      x " + ((this.items[level_index].star_lock == undefined) ? "?" : this.items[level_index].star_lock)
+          this.submenus[0].menu_box.items[0].text = "      x " + 
+((this.items[level_index].star_lock == undefined) ? "?" : 
+this.items[level_index].star_lock)
         } else {
-          for (var i=0; i < this.submenus[0].menu_box.sprites.length; i++) {
+          for (var i=0; i < this.submenus[0].menu_box.sprites.length; 
+i++) {
             this.submenus[0].menu_box.sprites[i].active = false
           }
           this.submenus[0].menu_box.items[0].text = "OK"
@@ -4619,8 +5157,6 @@ $def with (name)
           if (this.star_sprites[i] != undefined)
             this.star_sprites[i].active = true
         }
-
-        // TODO: display star lock
 
       }
 
@@ -4654,7 +5190,8 @@ $def with (name)
           if (this.scrolling) {
             var old_index = this.index
             this.index++
-            while (!this.items[this.index].active && this.index < this.items.length - 1) {
+            while (!this.items[this.index].active && this.index < 
+this.items.length - 1) {
               this.index++
             }
             if (this.items[this.index].active)
@@ -4681,7 +5218,8 @@ $def with (name)
         })
 
         jaws.on_keydown(["enter","space","k"], function() {
-          if (menu.items[menu.index].active && !menu.items[menu.index].locked) {
+          if (menu.items[menu.index].active && 
+!menu.items[menu.index].locked) {
             console.log("performing action")
             menu.items[menu.index].action(jaws)
           }
@@ -4690,7 +5228,8 @@ $def with (name)
         jaws.on_keydown(["right","d"], function() {
           if (!right_for_ok)
             return
-          if (menu.items[menu.index].active && !menu.items[menu.index].locked) {
+          if (menu.items[menu.index].active && 
+!menu.items[menu.index].locked) {
             console.log("performing action")
             menu.items[menu.index].action(jaws)
           }
@@ -4727,7 +5266,8 @@ $def with (name)
 
           } else {
             if(menu.mouse_inside) {
-              if(!menu.items[menu.index].locked && menu.items[menu.index].active)
+              if(!menu.items[menu.index].locked && 
+menu.items[menu.index].active)
                 menu.items[menu.index].action()
             } else
               menu.back()
@@ -4754,16 +5294,20 @@ $def with (name)
           for (var s=0; s < 2; s++) {
             var this_sprite = this.sprites[s]
 
-            if (jaws.mouse_x > this_sprite.x && jaws.mouse_x < this_sprite.x + this_sprite.width &&
-                jaws.mouse_y > this_sprite.y && jaws.mouse_y < this_sprite.y + this_sprite.height) {
+            if (jaws.mouse_x > this_sprite.x && jaws.mouse_x < 
+this_sprite.x + this_sprite.width &&
+                jaws.mouse_y > this_sprite.y && jaws.mouse_y < 
+this_sprite.y + this_sprite.height) {
               this_sprite.mouse_over = true
             }
             else
               this_sprite.mouse_over = false
 
-            if (this_sprite.mouse_over && this_sprite.image == this.arrow_sprites.frames[s])
+            if (this_sprite.mouse_over && this_sprite.image == 
+this.arrow_sprites.frames[s])
               this_sprite.image = this.arrow_sprites.frames[s+2]
-            else if (!this_sprite.mouse_over && this_sprite.image == this.arrow_sprites.frames[s+2])
+            else if (!this_sprite.mouse_over && this_sprite.image == 
+this.arrow_sprites.frames[s+2])
               this_sprite.image = this.arrow_sprites.frames[s]
           }
         }
@@ -4778,14 +5322,16 @@ $def with (name)
       this.draw = function() {
 
         // update index according to mouse position if menu is active
-        if (this.active && !this.scrolling && this.old_mouse_x != jaws.mouse_x && this.old_mouse_x != jaws.mouse_x)
+        if (this.active && !this.scrolling && this.old_mouse_x != 
+jaws.mouse_x && this.old_mouse_x != jaws.mouse_x)
           this.index = this.menuCoordinates(jaws.mouse_x,jaws.mouse_y)
 
         this.old_mouse_x = jaws.mouse_x
         this.old_mouse_y = jaws.mouse_y
 
         jaws.context.fillStyle = "Black"
-        jaws.context.fillRect(this.x + 2,this.y + 2,this.width - 4,this.height - 4)
+        jaws.context.fillRect(this.x + 2,this.y + 2,this.width - 
+4,this.height - 4)
 
         // draw edges
         this.sprite_nw.draw()
@@ -4816,7 +5362,8 @@ $def with (name)
           jaws.context.lineWidth = 10
           jaws.context.fillStyle =  (this_item.locked) ? "Brown" : "Red"
           jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-          jaws.context.fillText(this_item.text, this.x + 20, this.y + 20 * (1 + j) + 10)
+          jaws.context.fillText(this_item.text, this.x + 20, this.y + 20 
+* (1 + j) + 10)
 
         } else {
 
@@ -4830,9 +5377,12 @@ $def with (name)
 
             jaws.context.font = MENU_FONT
             jaws.context.lineWidth = 10
-            jaws.context.fillStyle =  (this_item.color == undefined) ? ((this.index == i) ? ((this_item.locked) ? "Brown" : "Red") : ((this_item.locked) ? "Grey" : "White")) : this_item.color
+            jaws.context.fillStyle =  (this_item.color == undefined) ? 
+((this.index == i) ? ((this_item.locked) ? "Brown" : "Red") : 
+((this_item.locked) ? "Grey" : "White")) : this_item.color
             jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-            jaws.context.fillText(this_item.text, this.x + 20, this.y + 20 * (i + 1 + j) + 10)
+            jaws.context.fillText(this_item.text, this.x + 20, this.y + 
+20 * (i + 1 + j) + 10)
 
             // draw this menu item's sprites
             for (var s=0; s < this_item.sprites.length; s++) {
@@ -4862,7 +5412,8 @@ $def with (name)
     // ok sub menu class
     function OkSubMenu(title,parent,action) {
 
-      this.menu_box = new MenuBox(title,parent,parent.x, parent.y + parent.height, parent.width, [new MenuItem(parent,"OK",function() {
+      this.menu_box = new MenuBox(title,parent,parent.x, parent.y + 
+parent.height, parent.width, [new MenuItem(parent,"OK",function() {
         action()
       })])
 
@@ -4890,7 +5441,8 @@ $def with (name)
 
       var active_menu
       var menus = new Array()
-      var level_select_string = (player_progress.length-1) + "-" + player_progress[player_progress.length-1][0]
+      var level_select_string = (player_progress.length-1) + "-" + 
+player_progress[player_progress.length-1][0]
       var star_total_sprite
       var description_box
       var level_record
@@ -4905,36 +5457,43 @@ $def with (name)
 
       this.back = function() {
           var this_menu = menus.pop()
-          active_menu = this_menu.setActiveMenu(this_menu.parent,active_menu)
+          active_menu = 
+this_menu.setActiveMenu(this_menu.parent,active_menu)
       }
 
       this.setup = function() {        
 
         // main menu
         var main_menu_items = new Array()
-          main_menu_items.push(new MenuItem(main_menu,"Puzzle Mode",function() {
+          main_menu_items.push(new MenuItem(main_menu,"Puzzle 
+Mode",function() {
             menus.push(level_select_menu)
             menus.push(level_select_ok)
             level_select_menu.submenus.push(level_select_ok)
             // level_select_ok.active = true
             level_select_ok.menu_box.active = true
             if (level_select_menu)
-            active_menu = level_select_menu.parent.setActiveMenu(level_select_menu,active_menu,level_select_ok)
+            active_menu = 
+level_select_menu.parent.setActiveMenu(level_select_menu,active_menu,level_select_ok)
             level_edit = false
             marathon = false
-            level_select_menu.controls(level_select_menu,level_select_ok,menus)
-            var level_count = 1
-            for (var i = 0; i < player_progress.length; i++) {
+            
+level_select_menu.controls(level_select_menu,level_select_ok,menus)
+            var level_count = 0
+            for (var i = 1; i < player_progress.length; i++) {
               console.log(player_progress[i][0])
               level_count += parseInt(player_progress[i][0])
             }
+            console.log("determining index")
             console.log("level_count = " + level_count)
             if (level_count + 1 >= level_select_menu.items.length)
-              level_select_menu.index = level_select_menu.items.length - 1
+              level_select_menu.index = level_select_menu.items.length - 
+1
             else
               level_select_menu.index = level_count
           
-            for (var i = 0; i < level_select_menu.star_sprites.length; i++) {
+            for (var i = 0; i < level_select_menu.star_sprites.length; 
+i++) {
               level_select_menu.star_sprites[i].active = false
             }
             level_select_menu.scroll_action()
@@ -4944,8 +5503,9 @@ $def with (name)
           main_menu_items[main_menu_items.length-1].description
             = "Brew potions to destroy robots. Clear\n" +
             "all robots from the board to advance to\n" +
-            "the next level."
-          main_menu_items.push(new MenuItem(main_menu,"Marathon",function() {
+            "the next puzzle."
+          main_menu_items.push(new 
+MenuItem(main_menu,"Marathon",function() {
             level_edit = false
             marathon = true
             replay = null
@@ -4955,43 +5515,54 @@ $def with (name)
             = "Stacks rise toward the top of the board.\n" +
             "Try to survive and beat your high score!"
 
-          var marathon_menu_item = main_menu_items[main_menu_items.length-1]
+          var marathon_menu_item = 
+main_menu_items[main_menu_items.length-1]
           marathon_menu_item.star_lock = MARATHON_STAR_LOCK
-          marathon_menu_item.locked = (starTotal() >= marathon_menu_item.star_lock) ? false : true
-          main_menu_items.push(new MenuItem(main_menu,"Change Name",function() {
+          marathon_menu_item.locked = (starTotal() >= 
+marathon_menu_item.star_lock) ? false : true
+          main_menu_items.push(new MenuItem(main_menu,"Change 
+Name",function() {
             jaws.start(PlayerNameState)
           }))
           main_menu_items[main_menu_items.length-1].description
             = "Change your name."
-          main_menu_items.push(new MenuItem(main_menu,"Level Editor",function() {
+          main_menu_items.push(new MenuItem(main_menu,"Level 
+Editor",function() {
             menus.push(level_edit_select)
             menus.push(level_select_ok)
             level_edit_select.submenus.push(level_select_ok)
             // level_select_ok.active = true
             level_select_ok.menu_box.active = true
-            active_menu = level_edit_select.parent.setActiveMenu(level_edit_select,active_menu,level_select_ok)
-            level_edit_select.controls(level_edit_select,level_select_ok,menus)
+            active_menu = 
+level_edit_select.parent.setActiveMenu(level_edit_select,active_menu,level_select_ok)
+            
+level_edit_select.controls(level_edit_select,level_select_ok,menus)
             level_edit = true
             marathon = false
             replay = null
           }))
           main_menu_items[main_menu_items.length-1].description
             = "Let's make some levels, Kris."
-          main_menu_items.push(new MenuItem(main_menu,"How to Play",function() {
+          main_menu_items.push(new MenuItem(main_menu,"How to 
+Play",function() {
             menus.push(help_menu)
-            active_menu = help_menu.parent.setActiveMenu(help_menu,active_menu)
+            active_menu = 
+help_menu.parent.setActiveMenu(help_menu,active_menu)
           }))
           main_menu_items[main_menu_items.length-1].active = true
           main_menu_items[main_menu_items.length-1].description
             = "Learn about the controls and score system."
-          main_menu_items.push(new MenuItem(main_menu,"Save Progress",function() {
+          main_menu_items.push(new MenuItem(main_menu,"Save 
+Progress",function() {
             menus.push(save_menu)
-            active_menu = save_menu.parent.setActiveMenu(save_menu,active_menu)
+            active_menu = 
+save_menu.parent.setActiveMenu(save_menu,active_menu)
             console.dir(active_menu)
           }))
           main_menu_items[main_menu_items.length-1].description
             = "Save, Load, or Reset your progress.\n"
-          main_menu_items.push(new MenuItem(main_menu,"Replay Mode",function() {
+          main_menu_items.push(new MenuItem(main_menu,"Replay 
+Mode",function() {
             var input_string = window.prompt("enter replay string","")
             replay = JSON.parse(input_string)
             console.log("REPLAY DATA")
@@ -5004,9 +5575,15 @@ $def with (name)
             level_edit = false
             jaws.start(Game)
           }))
-        var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items,false,true)
+        var main_menu = new 
+MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items,false,true)
 
-        main_menu.items[3].active = true // set level editor to be active
+        main_menu.items[2].active = change_name_active // set change 
+name to be active
+        main_menu.items[3].active = level_editor_active // set level 
+editor to be active
+        main_menu.items[6].active = replay_mode_active // set replay 
+mode to be active
 
         menus.push(main_menu)
         active_menu = main_menu
@@ -5014,43 +5591,70 @@ $def with (name)
 
 
         // level select menu
-        var level_select_menu = new MenuBox("Level",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, new Array(),true,true)
+        var level_select_menu = new 
+MenuBox("Level",main_menu,main_menu.x + main_menu.width + 1, 
+main_menu.y, 150, new Array(),true,true)
         level_select_menu.back = this.back
 
-        var level_select_ok = new OkSubMenu("",level_select_menu,function() {
+        var level_select_ok = new 
+OkSubMenu("",level_select_menu,function() {
           level_select_menu.items[menu.index].action(jaws)
         })
 
         // add level menu items
+        console.log("ADDING LEVEL MENU ITEMS")
+        console.dir(player_path)
         var item_count = 0
-        for (var i = 0; i < level_data.levels.length; i++) {
+        for (var i = 1; i <= LEVEL_PATHS[player_path].length; i++) {
           console.log("add level menu item, i = " + i)
-          for (var j = 0; j < level_data.levels[i].length; j++) {
+          console.log("playerpath level  = " + LEVEL_PATHS[player_path])
+          if (level_data.levels[LEVEL_PATHS[player_path][i-1]] == 
+undefined)
+            continue
+          for (var j = 0; j < 
+level_data.levels[LEVEL_PATHS[player_path][i-1]].length; j++) {
             console.log("add level menu item, j = " + j)
             if (i == 1 && j+1 == 1)
               level_select_menu.index = item_count
-            var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
-                var level_name = level_select_menu.items[level_select_menu.index].text
+            var this_level = new MenuItem(level_select_menu,(i + "-" + 
+(j+1)),function() {
+                var level_name = 
+level_select_menu.items[level_select_menu.index].text
                 level_name = level_name.split("-")
                 player_level = level_name[0]
                 player_stage = level_name[1]
                 replay = null
                 jaws.start(Game)
             })
-            var this_level_star_lock = level_data.levels[i][j].split('\n')[8]
-            this_level.star_lock = (this_level.text[0] != "1") ? ((this_level_star_lock == undefined) ? ZERO_STAR_LOCK : this_level_star_lock) : this_level_star_lock
+            var this_level_star_lock = 
+level_data.levels[LEVEL_PATHS[player_path][i-1]][j].split('\n')[8]
+            this_level.star_lock = (this_level.text[0] != "1") ? 
+((this_level_star_lock == undefined) ? ZERO_STAR_LOCK : 
+this_level_star_lock) : this_level_star_lock
 
             // set "l-1" to be active but locked unless star_lock met
-            if (j == 0) {
+            if (i == 1 && j == 0) {
               this_level.active = true
-              this_level.locked = (starTotal() >= this_level.star_lock) ? false : true
+              this_level.locked = (starTotal() >= this_level.star_lock) 
+? false : true
 
-            // set other puzzles to be inactive unless previous puzzle completed
+            // set other puzzles to be inactive unless previous puzzle 
+completed
             } else {
-              if (j > player_progress[i][0])
-                this_level.active = false
-              else
-                this_level.active = true
+
+              console.log("j = " + j)
+              console.log("player_progress = ")
+              console.dir(player_progress)
+
+              this_level.active = false
+
+              if (j > 0) {
+                if (j <= player_progress[i][0])
+                  this_level.active = true
+              } else {
+                if (player_progress[i-1][0] >= 6)
+                  this_level.active = true
+              }
             }
 
             // set world 0 to be inactive
@@ -5068,8 +5672,12 @@ $def with (name)
         level_select_menu.arrow_sprites = new jaws.SpriteSheet({
           image: "./static/images/ARROWS.gif", frame_size: [20,10]})
 
-        level_select_menu.up_arrow = new jaws.Sprite({x:level_select_menu.x + 100, y:level_select_menu.y + 20, image: level_select_menu.arrow_sprites.frames[0]})
-        level_select_menu.down_arrow = new jaws.Sprite({x:level_select_menu.x + 100, y:level_select_menu.y + 38, image: level_select_menu.arrow_sprites.frames[1]})
+        level_select_menu.up_arrow = new 
+jaws.Sprite({x:level_select_menu.x + 100, y:level_select_menu.y + 20, 
+image: level_select_menu.arrow_sprites.frames[0]})
+        level_select_menu.down_arrow = new 
+jaws.Sprite({x:level_select_menu.x + 100, y:level_select_menu.y + 38, 
+image: level_select_menu.arrow_sprites.frames[1]})
 
         level_select_menu.up_arrow.height = 15
         level_select_menu.down_arrow.height = 15
@@ -5085,28 +5693,32 @@ $def with (name)
 
         // level select stars
         level_select_menu.star_sprites = new Array()
-        var star_sprite_1 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+36,image:"./static/images/STAR.gif",anchor:"left"})        
+        var star_sprite_1 = new 
+jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+36,image:"./static/images/STAR.gif",anchor:"left"})        
         star_sprite_1.width = 15
         star_sprite_1.height = 15
         level_select_menu.sprites.push(star_sprite_1)
         level_select_menu.star_sprites.push(star_sprite_1)
         star_sprite_1.active = false
 
-        var star_sprite_2 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+21,image:"./static/images/STAR.gif",anchor:"left"})        
+        var star_sprite_2 = new 
+jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+21,image:"./static/images/STAR.gif",anchor:"left"})        
         star_sprite_2.width = 15
         star_sprite_2.height = 15
         level_select_menu.sprites.push(star_sprite_2)
         level_select_menu.star_sprites.push(star_sprite_2)
         star_sprite_2.active = false
 
-        var star_sprite_3 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+6,image:"./static/images/STAR.gif",anchor:"left"})        
+        var star_sprite_3 = new 
+jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+6,image:"./static/images/STAR.gif",anchor:"left"})        
         star_sprite_3.width = 15
         star_sprite_3.height = 15
         level_select_menu.sprites.push(star_sprite_3)
         level_select_menu.star_sprites.push(star_sprite_3)
         star_sprite_3.active = false
 
-        var star_sprite_4 = new jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+51,image:"./static/images/STAR.gif",anchor:"left"})        
+        var star_sprite_4 = new 
+jaws.Sprite({x:level_select_menu.x,y:level_select_menu.y+51,image:"./static/images/STAR.gif",anchor:"left"})        
         star_sprite_4.width = 15
         star_sprite_4.height = 15
         level_select_menu.sprites.push(star_sprite_4)
@@ -5115,14 +5727,16 @@ $def with (name)
 
         level_select_menu.star_sprites = new Array()
 
-        star_total_sprite = new jaws.Sprite({x:ITEM_WIDTH+140,y:13,image:"./static/images/STAR.gif",anchor:"left"})        
+        star_total_sprite = new 
+jaws.Sprite({x:ITEM_WIDTH+140,y:13,image:"./static/images/STAR.gif",anchor:"left"})        
         star_total_sprite.width = 15
         star_total_sprite.height = 15
         console.log("star_total_sprite")
         console.dir(star_total_sprite)
 
         // lock sprite
-        var lock_sprite = new jaws.Sprite({x:level_select_ok.menu_box.x+21,y:level_select_ok.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"})        
+        var lock_sprite = new 
+jaws.Sprite({x:level_select_ok.menu_box.x+21,y:level_select_ok.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"})        
         console.log("lock_sprite")
         console.dir(lock_sprite)
         console.dir(level_select_ok)
@@ -5130,7 +5744,8 @@ $def with (name)
         lock_sprite.active = true
 
         // star lock sprite
-        var star_lock_sprite = new jaws.Sprite({x:level_select_ok.menu_box.x+64,y:level_select_ok.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})        
+        var star_lock_sprite = new 
+jaws.Sprite({x:level_select_ok.menu_box.x+64,y:level_select_ok.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})        
         star_lock_sprite.width = 15
         star_lock_sprite.height = 15
         console.log("star_lock_sprite")
@@ -5140,23 +5755,30 @@ $def with (name)
         star_lock_sprite.active = true
 
         // marathon star lock menu
-        var marathon_star_lock_menu = new OkSubMenu("",main_menu,function(){})
-        marathon_star_lock_menu.menu_box.items[0].text = "      x " + main_menu.items[1].star_lock
+        var marathon_star_lock_menu = new 
+OkSubMenu("",main_menu,function(){})
+        marathon_star_lock_menu.menu_box.items[0].text = "      x " + 
+main_menu.items[1].star_lock
         main_menu.submenus.push(marathon_star_lock_menu)
-        marathon_star_lock_menu.menu_box.setup(main_menu.x + main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 20,level_select_ok.menu_box.width)
+        marathon_star_lock_menu.menu_box.setup(main_menu.x + 
+main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 
+20,level_select_ok.menu_box.width)
         marathon_star_lock_menu.menu_box.index = -1
 
         // level select menu
-        level_edit_select = new MenuBox("Level",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, [],true)
+        level_edit_select = new MenuBox("Level",main_menu,main_menu.x + 
+main_menu.width + 1, main_menu.y, 150, [],true)
         level_edit_select.back = this.back
 
-        // add level menu items
-        console.log("ADDING LEVEL MENU ITEMS")
+        // add level edit menu items
+        console.log("ADDING LEVEL EDIT MENU ITEMS")
+        console.dir(level_data)
         var item_count = 0
         for (var i = 0; i < level_data.levels.length; i++) {
           for (var j = 0; j < level_data.levels[i].length; j++) {
             console.log("i = " + i + ", j = " + j)
-            var this_level = new MenuItem(level_edit_select,(i + "-" + (j+1)),function() {
+            var this_level = new MenuItem(level_edit_select,(i + "-" + 
+(j+1)),function() {
                 player_level = this.level
                 player_stage = this.stage
                 replay = null
@@ -5164,12 +5786,14 @@ $def with (name)
             })
 
             var data = level_data.levels[i][j].split('\n')
-            this_level.text = (data[9]!=undefined)?data[9]:(i+"-"+(j+1).toString())
+            this_level.text = 
+(data[9]!=undefined)?data[9]:(i+"-"+(j+1).toString())
             this_level.level = i
             this_level.stage = j+1
             level_edit_select.items.push(this_level)
             if (i == 0 && j == level_data.levels[i].length-1) {
-              var new_level = new MenuItem(level_select_menu,"[new]",function() {
+              var new_level = new 
+MenuItem(level_select_menu,"[new]",function() {
                 player_level = 0
                 player_stage = level_data.levels[0].length + 1
                 replay = null
@@ -5193,8 +5817,12 @@ $def with (name)
         level_edit_select.arrow_sprites = new jaws.SpriteSheet({
           image: "./static/images/ARROWS.gif", frame_size: [20,10]})
 
-        level_edit_select.up_arrow = new jaws.Sprite({x:level_edit_select.x + 85, y:level_edit_select.y + 20, image: level_edit_select.arrow_sprites.frames[0]})
-        level_edit_select.down_arrow = new jaws.Sprite({x:level_edit_select.x + 85, y:level_edit_select.y + 38, image: level_edit_select.arrow_sprites.frames[1]})
+        level_edit_select.up_arrow = new 
+jaws.Sprite({x:level_edit_select.x + 85, y:level_edit_select.y + 20, 
+image: level_edit_select.arrow_sprites.frames[0]})
+        level_edit_select.down_arrow = new 
+jaws.Sprite({x:level_edit_select.x + 85, y:level_edit_select.y + 38, 
+image: level_edit_select.arrow_sprites.frames[1]})
 
         level_edit_select.up_arrow.height = 15
         level_edit_select.down_arrow.height = 15
@@ -5212,37 +5840,44 @@ $def with (name)
 
         // help menu
         var help_menu_items = new Array()
-        help_menu_items.push(new MenuItem(help_menu, "Keyboard Control", function() {
+        help_menu_items.push(new MenuItem(help_menu, "Keyboard Control", 
+function() {
           menus.push(keyboard_menu)
-          active_menu = keyboard_menu.parent.setActiveMenu(keyboard_menu,active_menu)
+          active_menu = 
+keyboard_menu.parent.setActiveMenu(keyboard_menu,active_menu)
           }))
         help_menu_items[help_menu_items.length-1].description
           = "Move cursor with the arrow keys (or WASD).\n"
           + "Press SPACE (or J) to grab items.\n"
-          + "While holding, SPACE (or J) drops an item.\n"
+          + "While grabbing, SPACE (or J) drops an item.\n"
           + "Press C (or K) to grab/drop a whole stack."
-        help_menu_items.push(new MenuItem(help_menu, "Mouse Control", function() {
+        help_menu_items.push(new MenuItem(help_menu, "Mouse Control", 
+function() {
           menus.push(mouse_menu)
-          active_menu = mouse_menu.parent.setActiveMenu(mouse_menu,active_menu)
+          active_menu = 
+mouse_menu.parent.setActiveMenu(mouse_menu,active_menu)
           }))
         help_menu_items[help_menu_items.length-1].description
           = "Click items to grab them.\n"
           + "While holding, click the board to drop an\n"
           + "item or click on held items to drop them.\n"
           + "Right click to grab/drop a whole stack."
-        help_menu_items.push(new MenuItem(help_menu, "Scoring", function() {return}))
+        help_menu_items.push(new MenuItem(help_menu, "Scoring", 
+function() {return}))
         help_menu_items[help_menu_items.length-1].description
           = "Melt block    : \u03BB100\n"
           + "Brew potion   : \u03BB100\n"
           + "Destroy robot : \u03BB500\n"
           + "Perform chains to multiply your score."
-        help_menu_items.push(new MenuItem(help_menu, "Misc.", function() {return}))
+        help_menu_items.push(new MenuItem(help_menu, "Misc.", function() 
+{return}))
         help_menu_items[help_menu_items.length-1].description
           = "Press CTRL+Z to undo your last move.\n"
           + "(no stars can be earned if you undo)\n"
           + "Press L or click outside of the board\n"
-          + "to make the stacks rise in marathon."
-        var help_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 200, help_menu_items)
+          + "to make the stacks rise in Marathon."
+        var help_menu = new MenuBox("",main_menu,main_menu.x + 
+main_menu.width + 1, main_menu.y + 40, 200, help_menu_items)
         help_menu.back = this.back
 
         if (starTotal() <= 0)
@@ -5250,20 +5885,29 @@ $def with (name)
 
         // save menu
         var save_menu_items = new Array()
-          save_menu_items.push(new MenuItem(save_menu, "Save", function() {
+          save_menu_items.push(new MenuItem(save_menu, "Save", 
+function() {
             var player_save = $("saveData")
-            player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+            player_save.innerHTML = "SuperWizardPotionSave|" + 
+player_name + "|" + JSON.stringify(player_progress) + "|" + 
+JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress) 
++ "|" + player_uid + "|" + JSON.stringify(player_path)
             // update cookie save
             setCookie("player_save",player_save.innerHTML,360000)
 
             save_menu_items[0].description += "\n\nSaved."
           }))
-          save_menu_items.push(new MenuItem(save_menu, "Export Save", function() {
-            var save_string = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
+          save_menu_items.push(new MenuItem(save_menu, "Export Save", 
+function() {
+            var save_string = "SuperWizardPotionSave|" + player_name + 
+"|" + JSON.stringify(player_progress) + "|" + 
+JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress)
             save_string = sjcl.encrypt("zonky",save_string)
-            window.prompt("Copy this text and keep it somewhere safe!",save_string)
+            window.prompt("Copy this text and keep it somewhere 
+safe!",save_string)
           }))
-          save_menu_items.push(new MenuItem(save_menu, "Import Save", function() {
+          save_menu_items.push(new MenuItem(save_menu, "Import Save", 
+function() {
 
             var input_string = window.prompt("enter save string","")
 
@@ -5286,16 +5930,21 @@ $def with (name)
               jaws.start(MainMenu)
             }
           }))
-          save_menu_items.push(new MenuItem(save_menu, "Reset", function() {
+          save_menu_items.push(new MenuItem(save_menu, "Reset", 
+function() {
             menus.push(reset_menu)
             reset_menu.index = 1
-            active_menu = reset_menu.parent.setActiveMenu(reset_menu,active_menu)
+            active_menu = 
+reset_menu.parent.setActiveMenu(reset_menu,active_menu)
           }))
-        var save_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 160, save_menu_items, false, true)
+        var save_menu = new MenuBox("",main_menu,main_menu.x + 
+main_menu.width + 1, main_menu.y + 40, 160, save_menu_items, false, 
+true)
         save_menu.back = this.back
         save_menu_items[0].description = "Save your progress manually\n"
           + "(the game autosaves after each level)."
-        save_menu_items[1].description = "Back up your progress by exporting\n"
+        save_menu_items[1].description = "Back up your progress by 
+exporting\n"
           + "it as a save string."
         save_menu_items[2].description = "Load your progress with\n"
           + "a save string."
@@ -5303,7 +5952,8 @@ $def with (name)
 
         // reset sub menu
         var reset_menu_items = new Array()
-          reset_menu_items.push(new MenuItem(reset_menu, "Yes", function() {
+          reset_menu_items.push(new MenuItem(reset_menu, "Yes", 
+function() {
             player_name = ""
             var reset_progress = clearProgress(level_data)
             player_progress = reset_progress[0]
@@ -5314,14 +5964,17 @@ $def with (name)
             main_menu_auto = undefined
             jaws.start(PlayerNameState)
           }))
-          reset_menu_items.push(new MenuItem(reset_menu, "No", function() {
+          reset_menu_items.push(new MenuItem(reset_menu, "No", 
+function() {
             reset_menu.back()
           }))
-        var reset_menu = new MenuBox("Really?",save_menu,save_menu.x + save_menu.width + 1, save_menu.y, 150, reset_menu_items)
+        var reset_menu = new MenuBox("Really?",save_menu,save_menu.x + 
+save_menu.width + 1, save_menu.y, 150, reset_menu_items)
         reset_menu.index = 1
         reset_menu.back = function() {
           menus.pop()
-          active_menu = reset_menu.setActiveMenu(reset_menu.parent,active_menu)
+          active_menu = 
+reset_menu.setActiveMenu(reset_menu.parent,active_menu)
         }
         reset_menu_items[0].description = "Delete all your progress.\n"
           + "\nNo take-backsies. You might want\n"
@@ -5330,22 +5983,35 @@ $def with (name)
           + "\nNo take-backsies. You might want\n"
           + "to Export Save first."
 
-        description_box = new MenuBox("",description_box,main_menu.x,main_menu.y+main_menu.height+1+ITEM_WIDTH/2,500, [new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){}),new MenuItem(description_box,"",function(){})])
+        description_box = new 
+MenuBox("",description_box,main_menu.x,main_menu.y+main_menu.height+1+ITEM_WIDTH/2,500, 
+[new MenuItem(description_box,"",function(){}),new 
+MenuItem(description_box,"",function(){}),new 
+MenuItem(description_box,"",function(){}),new 
+MenuItem(description_box,"",function(){})])
         description_box.index = -1
 
         // level record data
         var level_record_items = new Array()
-        level_record_items.push(new MenuItem(level_record,"Completed!",function() {return}))
-        level_record_items.push(new MenuItem(level_record,"Time:",function() {return}))
-        level_record_items.push(new MenuItem(level_record,"Score:",function() {return}))
-        level_record_items.push(new MenuItem(level_record,"",function() {return}))
+        level_record_items.push(new 
+MenuItem(level_record,"Completed!",function() {return}))
+        level_record_items.push(new 
+MenuItem(level_record,"Time:",function() {return}))
+        level_record_items.push(new 
+MenuItem(level_record,"Score:",function() {return}))
+        level_record_items.push(new MenuItem(level_record,"",function() 
+{return}))
 
-        level_record = new MenuBox("",level_record,level_select_menu.x + level_select_menu.width - 30, level_select_menu.y+5, 230, level_record_items)
+        level_record = new MenuBox("",level_record,level_select_menu.x + 
+level_select_menu.width - 30, level_select_menu.y+5, 230, 
+level_record_items)
         level_record.index = -1
 
         // add star sprites for level record data
         for (var s=0; s < level_record_items.length; s++) {
-          var this_sprite = new jaws.Sprite({x:level_record.x,y:level_record.y+36 + 20*(s-1),anchor:"left",image:"./static/images/STAR.gif"})
+          var this_sprite = new 
+jaws.Sprite({x:level_record.x,y:level_record.y+36 + 
+20*(s-1),anchor:"left",image:"./static/images/STAR.gif"})
           this_sprite.width = 15
           this_sprite.height = 15
           this_sprite.active = false
@@ -5365,7 +6031,8 @@ $def with (name)
               for (var j = 0; j < level_data.levels[i].length; j++) {
                 var this_level = level_select_menu.items[item_count]
                 var level_name = this_level.text.split("-")
-                if (main_menu_auto[1]==level_name[0] && main_menu_auto[2]==level_name[1]) {
+                if (main_menu_auto[1]==level_name[0] && 
+main_menu_auto[2]==level_name[1]) {
                   level_select_menu.index = item_count
                   break
                 }
@@ -5402,10 +6069,13 @@ $def with (name)
         }
 
         // update description box
-        // var description = menus[0].items[menus[0].index].description.split("\n")
-        var description = active_menu.items[active_menu.index].description.split("\n")
+        // var description = 
+menus[0].items[menus[0].index].description.split("\n")
+        var description = 
+active_menu.items[active_menu.index].description.split("\n")
         for (var i=0; i < description_box.items.length; i++) {
-          description_box.items[i].text = (description[i] == undefined) ? "" : description[i]
+          description_box.items[i].text = (description[i] == undefined) 
+? "" : description[i]
         }
           
         for (var i = 0; i < menus.length; i++) {
@@ -5435,7 +6105,8 @@ $def with (name)
         jaws.context.lineWidth = 10
         jaws.context.fillStyle =  "White"
         jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-        jaws.context.fillText("x " + starTotal(), star_total_sprite.x + star_total_sprite.width + 10, 28)
+        jaws.context.fillText("x " + starTotal(), star_total_sprite.x + 
+star_total_sprite.width + 10, 28)
 
         for (var i = 0; i < menus.length; i++) {
           menus[i].draw()
@@ -5444,8 +6115,10 @@ $def with (name)
         // draw description box
         if (menus[0].index == 1 && menus[0].items[1].locked) {
           var marathon_submenu = menus[0].submenus[0]
-          marathon_submenu.sprites.push(new jaws.Sprite({x:marathon_submenu.menu_box.x+21,y:marathon_submenu.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"}))
-          var star_lock_sprite = new jaws.Sprite({x:marathon_submenu.menu_box.x+64,y:marathon_submenu.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})
+          marathon_submenu.sprites.push(new 
+jaws.Sprite({x:marathon_submenu.menu_box.x+21,y:marathon_submenu.menu_box.y,image:"./static/images/LOCK.gif",anchor:"left"}))
+          var star_lock_sprite = new 
+jaws.Sprite({x:marathon_submenu.menu_box.x+64,y:marathon_submenu.menu_box.y+17,image:"./static/images/STAR.gif",anchor:"left"})
           star_lock_sprite.width = 15
           star_lock_sprite.height = 15
           marathon_submenu.sprites.push(star_lock_sprite)
@@ -5453,41 +6126,62 @@ $def with (name)
         } else if (menus[0].index == 1){
           var marathon_submenu = menus[0].submenus[0]
           console.dir(marathon_submenu.menu_box)
-          marathon_submenu.menu_box.items[0].text = "Best Time:  " + marathon_progress[0]
+          marathon_submenu.menu_box.items[0].text = "Best Time:  " + 
+marathon_progress[0]
           if (marathon_submenu.menu_box.items[1] == undefined) {
-            marathon_submenu.menu_box.items.push(new MenuItem(marathon_submenu.menu_box,"High Score:",function(){return}))
-            marathon_submenu.menu_box.setup(marathon_submenu.menu_box.x,marathon_submenu.menu_box.y,marathon_submenu.menu_box.width+30)
+            marathon_submenu.menu_box.items.push(new 
+MenuItem(marathon_submenu.menu_box,"High Score:",function(){return}))
+            
+marathon_submenu.menu_box.setup(marathon_submenu.menu_box.x,marathon_submenu.menu_box.y,marathon_submenu.menu_box.width+30)
           }
-          marathon_submenu.menu_box.items[1].text = "High Score: \u03BB" + marathon_progress[1]
+          marathon_submenu.menu_box.items[1].text = "High Score: \u03BB" 
++ marathon_progress[1]
           marathon_submenu.menu_box.index = -1
           marathon_submenu.draw()
         }
-        if (active_menu.items[active_menu.index].description != "")
+        if (active_menu.items[active_menu.index].description != "" && 
+active_menu.items[active_menu.index].active)
           description_box.draw()
 
         // draw level record
-        if (menus[0].index == 0 && menus[1] != undefined && menus[1].title == "Level") {
+        if (menus[0].index == 0 && menus[1] != undefined && 
+menus[1].title == "Level") {
           var level_select_submenu = menus[1]
-          var level_menu_item = level_select_submenu.items[level_select_submenu.index]
+          var level_menu_item = 
+level_select_submenu.items[level_select_submenu.index]
           var level_name = level_menu_item.text.split("-")
           var level = parseInt(level_name[0])
           var stage = level_name[1]
           if (player_progress[level][1][stage] != undefined) {
-            level_record.items[1].text = "Best Time:  " + player_progress[level][1][stage][0]
-            level_record.items[2].text = "High Score: \u03BB" + player_progress[level][1][stage][1]
+            level_record.items[1].text = "Best Time:  " + 
+player_progress[level][1][stage][0]
+            level_record.items[2].text = "High Score: \u03BB" + 
+player_progress[level][1][stage][1]
             
             // show appropriate stars
-            level_record.sprites[0].active = (star_progress[level][stage] != undefined && star_progress[level][stage][0] > 0) ? true : false
-            level_record.sprites[1].active = (star_progress[level][stage] != undefined && star_progress[level][stage][1] > 0) ? true : false
-            level_record.sprites[2].active = (star_progress[level][stage] != undefined && star_progress[level][stage][2] > 0) ? true : false
-            level_record.sprites[3].active = (star_progress[level][stage] != undefined && star_progress[level][stage][3] > 0) ? true : false
-            level_record.items[0].text = (star_progress[level][stage] != undefined && star_progress[level][stage][0] > 0) ? "Completed!" : "Completed (undo)"
+            level_record.sprites[0].active = 
+(star_progress[level][stage] != undefined && 
+star_progress[level][stage][0] > 0) ? true : false
+            level_record.sprites[1].active = 
+(star_progress[level][stage] != undefined && 
+star_progress[level][stage][1] > 0) ? true : false
+            level_record.sprites[2].active = 
+(star_progress[level][stage] != undefined && 
+star_progress[level][stage][2] > 0) ? true : false
+            level_record.sprites[3].active = 
+(star_progress[level][stage] != undefined && 
+star_progress[level][stage][3] > 0) ? true : false
+            level_record.items[0].text = (star_progress[level][stage] != 
+undefined && star_progress[level][stage][0] > 0) ? "Completed!" : 
+"Completed (undo)"
             if (star_progress[level][stage] == undefined) {
-              level_menu_item.description = "Complete the level without\n"
+              level_menu_item.description = "Complete the level 
+without\n"
                 + "undoing to earn stars."
             } else
               level_menu_item.description = ""
-            level_record.items[3].text = (star_progress[level][stage] != undefined && star_progress[level][stage][3] > 0) ? "Perfect" : ""
+            level_record.items[3].text = (star_progress[level][stage] != 
+undefined && star_progress[level][stage][3] > 0) ? "Perfect" : ""
             if (!level_menu_item.locked) {
               level_record.draw()
             }
@@ -5500,8 +6194,12 @@ $def with (name)
 
     function PlayerNameState() {
 
+      var disablekeys = false
+
       messageConsole = function() {
         console.log("player_name = " + player_name)
+        if (disablekeys)
+          player_name = player_name.substring(0,player_name.length-1)
       }
 
       var name_text = "       " + player_name
@@ -5509,17 +6207,22 @@ $def with (name)
 
       var enter_name
       var enter_name_items = new Array()
-        enter_name_items.push(new MenuItem(enter_name,"Please enter your name: ",function(){return
+        enter_name_items.push(new MenuItem(enter_name,"Please enter your 
+name: ",function(){return
         }))
-        enter_name_items.push(new MenuItem(enter_name,name_text,function(){
+        enter_name_items.push(new 
+MenuItem(enter_name,name_text,function(){
           return
         }))
 
-      enter_name = new MenuBox("",enter_name,ITEM_WIDTH,ITEM_WIDTH,300,enter_name_items)
+      enter_name = new 
+MenuBox("",enter_name,ITEM_WIDTH,ITEM_WIDTH,300,enter_name_items)
       enter_name.index = 1
 
       // enter name OK sub menu
-      var enter_name_ok = new MenuBox("",enter_name,enter_name.x, enter_name.y + enter_name.height, 300, [new MenuItem(enter_name_ok,"          OK",function() {
+      var enter_name_ok = new MenuBox("",enter_name,enter_name.x, 
+enter_name.y + enter_name.height, 300, [new MenuItem(enter_name_ok,"          
+OK",function() {
         if (player_name.length > 0)
           jaws.switchGameState(MainMenu)
       })])
@@ -5601,11 +6304,31 @@ $def with (name)
         })
 
         jaws.on_keydown(["enter"],  function()  {
-          if (player_name.length > 0)
-            jaws.switchGameState(MainMenu)
+
+          disablekeys = true
+
+          // check which path this player will be taking
+          playerPath(player_name, function(data) {
+
+            console.log("in a callback with data = " + data)
+
+            if (data < 0)
+              jaws.start(PlayerNameState)
+
+            player_path = data
+
+            if (player_name.length > 0)
+              jaws.switchGameState(MainMenu)
+
+          })
+
         } )
 
         jaws.on_keydown(["backspace"], function() {
+
+          if (disablekeys)
+            return
+
           player_name = player_name.substring(0,player_name.length-1)
           messageConsole()
         })
@@ -5835,11 +6558,14 @@ $def with (name)
     }
 
     jaws.onload = function() {
-      console.log("Bugs: need to check if there's enough flasks for lose condition")
+      console.log("Bugs: need to check if there's enough flasks for lose 
+condition")
       jaws.unpack()
-      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif"]
+      var assets_array = 
+["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif"]
 
-      // "./static/sfx/grab.wav","./static/sfx/drop.wav","./static/sfx/robot_death.wav","./static/sfx/brew.wav","./static/sfx/break.wav","./static/sfx/melt1.wav","./static/sfx/white3.wav"
+      // 
+"./static/sfx/grab.wav","./static/sfx/drop.wav","./static/sfx/robot_death.wav","./static/sfx/brew.wav","./static/sfx/break.wav","./static/sfx/melt1.wav","./static/sfx/white3.wav"
 
       jaws.assets.add(assets_array)
 
@@ -5865,6 +6591,7 @@ $def with (name)
             star_progress = loaded_progress[1]
             marathon_progress = JSON.parse(open_data[4])
             player_uid = open_data[5]
+            player_path = parseInt(JSON.parse(open_data[6]))
 
             name_entered = true
           }
@@ -5877,8 +6604,10 @@ $def with (name)
           star_progress = cleared_progress[1]
 
           // generate unique id for this player
-          player_uid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-              var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+          player_uid = 
+'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+              var r = Math.random()*16|0, v = c == 'x' ? r : 
+(r&0x3|0x8);
               return v.toString(16);
           });
           console.log(player_uid)
@@ -5889,7 +6618,8 @@ $def with (name)
         console.dir(player_progress)
 
         if (name_entered)
-          jaws.start(MainMenu)  // Our convenience function jaws.start() will load assets, call setup and loop update/draw in 60 FPS
+          jaws.start(MainMenu)  // Our convenience function jaws.start() 
+will load assets, call setup and loop update/draw in 60 FPS
         else
           jaws.start(PlayerNameState)
       })
