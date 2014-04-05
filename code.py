@@ -10,6 +10,8 @@ urls = (
 	'/', 'engine'
 	)
 
+paths_players = [ ["0501zonk1","0501zonk2","0501zonk3"],["0502zonk1","0502zonk2","0502zonk3"],["0503zonk1","0503zonk2","0503zonk3"],["0504zonk1","0504zonk2","0504zonk3"] ]
+
 class engine:
 	def GET(self):
 		name = 'Brendon'
@@ -29,6 +31,20 @@ class engine:
 			f.close()
 
 			return record
+
+		# playerPath()
+		elif (data["type"] == "playerPath"):
+			name = data["data"]
+
+			for i in xrange(0,len(paths_players)):
+				for j in paths_players[i]:
+					web.debug("checking if " + j + " equals " + name)
+					if (j == name):
+						web.debug("player \""+ name + "\" is designated path = " + str(i))
+						return i
+
+			web.debug("player \"" + name + "\" does not have a designated path = -1")
+			return -1
 
 		# findEditLevels()
 		elif (data["type"] == "findEditLevels"):
@@ -175,4 +191,3 @@ class engine:
 if __name__ == "__main__":
 	app = web.application(urls, globals())
 	app.run()
-
