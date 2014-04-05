@@ -23,6 +23,8 @@ class engine:
 
 		data = json.loads(json_data)
 
+		web.debug("running function = " + data["type"])
+
 		# saveRecord()
 		if (data["type"] == "saveRecord"):
 			record = data["data"]
@@ -31,6 +33,16 @@ class engine:
 			f.close()
 
 			return record
+
+		# getRecords()
+		elif (data["type"] == "getRecords"):
+			try:
+				f = open('records/records.json')
+				records_data = f.read()
+				f.close()
+				return records_data
+			except:
+				return ""
 
 		# playerPath()
 		elif (data["type"] == "playerPath"):
