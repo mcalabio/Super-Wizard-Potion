@@ -4347,6 +4347,11 @@ $def with (name)
 
     function replayMode (menus,replay_select_menu,level_select_ok,active_menu) {
 
+      var input_string = window.prompt("enter player name","0501zonk1")
+
+      if (input_string == null)
+        return
+
       getRecords(function(data) {
 
         // TODO
@@ -4356,13 +4361,19 @@ $def with (name)
         var records_data = JSON.parse(data)
         for (var i = 0; i < records_data.length; i++) {
           var record_data = records_data[i]
-          replay_records.push({"name":record_data["name"],"puzzle":record_data["puzzle"],"replay":record_data["replay"],"result":record_data["result"]})
+          if (record_data["name"] == input_string)
+            replay_records.push({"name":record_data["name"],"puzzle":record_data["puzzle"],"replay":record_data["replay"],"result":record_data["result"]})
         }
 
         // construct replay mode menu
         for (var i =0; i < replay_records.length; i++) {
           var this_replay = replay_records[i]
           var this_item = new MenuItem(replay_select_menu,this_replay["name"] + ":" + this_replay["puzzle"],function() {
+            var level_name = replay_records[this.index]["puzzle"].split("-")
+            player_level = level_name[0]
+            player_stage = level_name[1]
+            replay = replay_records[this.index]["replay"]
+            jaws.start(Game)
 
           })
           this_item.index = i
@@ -4381,25 +4392,8 @@ $def with (name)
         marathon = false
         replay_select_menu.controls(replay_select_menu,level_select_ok,menus)
 
-        // var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
-        //     var level_name = level_select_menu.items[level_select_menu.index].text
-        //     level_name = level_name.split("-")
-        //     player_level = level_name[0]
-        //     player_stage = level_name[1]
-        //     replay = null
-        //     jaws.start(Game)
-        // })
-
-
-        console.log("replay_records = ")
-        console.dir(replay_records)
-        console.log("active menu = ")
-        console.dir(active_menu)
-        window.alert("ya")
-
       })
 
-      // var input_string = window.prompt("enter replay string","")
       // replay = JSON.parse(input_string)
       // console.log("REPLAY DATA")
       // console.dir(replay)
@@ -4967,14 +4961,18 @@ $def with (name)
         jaws.context.fillRect(this.x + 2,this.y + 2,this.width - 4,this.height - 4)
 
         // draw edges
-        // this.sprite_nw.draw()
-        // this.sprite_n.draw()
-        // this.sprite_ne.draw()
-        // this.sprite_w.draw()
-        // this.sprite_e.draw()
-        // this.sprite_sw.draw()
-        // this.sprite_s.draw()
-        // this.sprite_se.draw()
+        // draw sprites
+        for (var s=0; s < this.sprites.length; s++) {
+
+          var this_sprite = this.sprites[s]
+
+          if (s > 7 && !this_sprite.active) {
+            this_sprite.mouse_over = false
+            continue
+          }
+
+          this_sprite.draw()
+        }
 
         // draw title
         var j = 0
@@ -5024,19 +5022,6 @@ $def with (name)
             }
 
           }
-        }
-
-        // draw sprites
-        for (var s=0; s < this.sprites.length; s++) {
-
-          var this_sprite = this.sprites[s]
-
-          if (s > 7 && !this_sprite.active) {
-            this_sprite.mouse_over = false
-            continue
-          }
-
-          this_sprite.draw()
         }
 
       }
