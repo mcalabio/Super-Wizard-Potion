@@ -145,6 +145,7 @@ $def with (name)
     // setupSounds()
 
     var cookie_save = getCookie("player_save")
+    var replay_records = []
 
     function Game() {
       var player
@@ -4344,12 +4345,56 @@ $def with (name)
 
     }
 
-    function replayMode () {
+    function replayMode (menus,replay_select_menu,level_select_ok,active_menu) {
 
       getRecords(function(data) {
 
-        console.log("calling back with data = ")
-        console.dir(JSON.parse(data))
+        // TODO
+
+        // get replay data
+        replay_records = []
+        var records_data = JSON.parse(data)
+        for (var i = 0; i < records_data.length; i++) {
+          var record_data = records_data[i]
+          replay_records.push({"name":record_data["name"],"puzzle":record_data["puzzle"],"replay":record_data["replay"],"result":record_data["result"]})
+        }
+
+        // construct replay mode menu
+        for (var i =0; i < replay_records.length; i++) {
+          var this_replay = replay_records[i]
+          var this_item = new MenuItem(replay_select_menu,this_replay["name"] + ":" + this_replay["puzzle"],function() {
+
+          })
+          this_item.index = i
+          console.log("adding item to relpay menu")
+          replay_select_menu.items.push(this_item)
+        }
+
+        menus.push(replay_select_menu)
+        menus.push(level_select_ok)
+        replay_select_menu.submenus.push(level_select_ok)
+        // level_select_ok.active = true
+        level_select_ok.menu_box.active = true
+
+        active_menu = replay_select_menu.parent.setActiveMenu(replay_select_menu,active_menu,level_select_ok)
+        level_edit = false
+        marathon = false
+        replay_select_menu.controls(replay_select_menu,level_select_ok,menus)
+
+        // var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
+        //     var level_name = level_select_menu.items[level_select_menu.index].text
+        //     level_name = level_name.split("-")
+        //     player_level = level_name[0]
+        //     player_stage = level_name[1]
+        //     replay = null
+        //     jaws.start(Game)
+        // })
+
+
+        console.log("replay_records = ")
+        console.dir(replay_records)
+        console.log("active menu = ")
+        console.dir(active_menu)
         window.alert("ya")
 
       })
@@ -4587,6 +4632,7 @@ $def with (name)
       this.text = text
       this.action = action
       this.active = true
+      this.index
 
       this.locked = false
       this.star_lock = 100
@@ -5132,7 +5178,7 @@ $def with (name)
             = "Save, Load, or Reset your progress.\n"
           main_menu_items.push(new MenuItem(main_menu,"Replay Mode",function() {
 
-            replayMode()
+            replayMode(menus,replay_select_menu,level_select_ok,active_menu)
 
           }))
         var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items,false,true)
@@ -5316,6 +5362,10 @@ $def with (name)
 
         console.log("level_edit_select")
         console.dir(level_edit_select)
+
+        // replay menu
+        var replay_select_menu = new MenuBox("Replay",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, new Array(),true,true)
+        replay_select_menu.back = this.back
 
         // help menu
         var help_menu_items = new Array()
