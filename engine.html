@@ -242,7 +242,7 @@ $def with (name)
 
         // setup player data in a menu box
         player_data = new MenuBox(
-          player_name,
+          (replay == null) ? player_name : replay_records[replay_index]["name"], // title
           screen_data,
           player.board.board.x + player.board.board.width + ITEM_WIDTH,
           player.board.board.y,
