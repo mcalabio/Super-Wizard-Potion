@@ -2580,13 +2580,11 @@ $def with (name)
           } else {
 
             replay_menu.active = true
-            replay_menu.index = replay_index
+            replay_menu.index = (replay_index < replay_records.length - 1) ? (replay_index + 1) : replay_index
             replay_menu.controls(replay_menu)
             jaws.on_keydown(["esc"], function() {
               jaws.start(MainMenu)
             })
-            console.log("replay_menu = ")
-            console.dir(replay_menu)
 
           }
 
