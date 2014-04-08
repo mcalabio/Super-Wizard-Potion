@@ -271,7 +271,7 @@ $def with (name)
         if (!level_edit) {
 
           // display level and stage number
-          screen_data_items[0].text = (player_level + "-" + player_stage)
+          screen_data_items[0].text = (!marathon)?(player_level + "-" + player_stage):(marathon_level)
 
           // display timer and score
           screen_data_items.push(new MenuItem(screen_data,player.timer.clock_text,function(){return}))
@@ -1965,9 +1965,11 @@ $def with (name)
           console.log("raising stack with raise_count = " + raise_count)
 
           if (!marathon_debug) {
-            if (raise_count%12 == 0) {
+            if (raise_count%5 == 0) {
               if (marathon_level < ITEM_PROBS["0|0"].length)
                 marathon_level++
+                // update screen data
+                screen_data.items[0].text = marathon_level
             }
           }
 
