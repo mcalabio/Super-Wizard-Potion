@@ -80,27 +80,27 @@ $def with (name)
     var ITEM_PROBS = {
 
     // BLOCKS
-      "0|0" : [10,8] , // RED
-      "0|1" : [10,8] , // GREEN
-      "0|2" : [0,8]  , // PURPLE
-      "0|4" : [0,6]  , // YELLOW
-      "0|7" : [0,16] , // WHITE
+      "0|0" : [4,7,10,7,8] , // RED
+      "0|1" : [0,7,10,7,8] , // GREEN
+      "0|2" : [0,0,00,0,8]  , // PURPLE
+      "0|4" : [0,0,00,0,6]  , // YELLOW
+      "0|7" : [0,0,00,7,16] , // WHITE
 
     // POTIONS
-      "1|0" : [1,1] , // RED
-      "1|1" : [1,1] , // GREEN
-      "1|2" : [0,1] , // PURPLE
-      "1|4" : [0,1] , // YELLOW
-      "1|6" : [0,3] , // EMPTY
-      "1|7" : [3,3] , // WHITE
+      "1|0" : [0,1,1,1,1] , // RED
+      "1|1" : [0,1,1,1,1] , // GREEN
+      "1|2" : [0,0,0,0,1] , // PURPLE
+      "1|4" : [0,0,0,0,1] , // YELLOW
+      "1|6" : [0,0,0,2,3] , // EMPTY
+      "1|7" : [1,3,3,1,3] , // WHITE
 
     // ROBOTS
-      "2|0" : [6,6] , // RED
-      "2|1" : [6,6] , // GREEN
-      "2|2" : [0,6] , // PURPLE
-      "2|3" : [0,1] , // RED ARMOR
-      "2|4" : [0,1] , // GREEN ARMOR
-      "2|5" : [0,1] , // PURPLE ARMOR
+      "2|0" : [4,6,6,6,6] , // RED
+      "2|1" : [0,6,6,6,6] , // GREEN
+      "2|2" : [0,0,0,0,6] , // PURPLE
+      "2|3" : [0,0,0,0,1] , // RED ARMOR
+      "2|4" : [0,0,0,0,1] , // GREEN ARMOR
+      "2|5" : [0,0,0,0,1] , // PURPLE ARMOR
     }
 
     // GLOBALS
@@ -125,6 +125,7 @@ $def with (name)
     var change_name_active = true
     var replay_mode_active = true
     var marathon = false
+    var marathon_debug = false
     var marathon_level_debug = 1
     var replay = null
     var replay_index = -1
@@ -1963,9 +1964,11 @@ $def with (name)
 
           console.log("raising stack with raise_count = " + raise_count)
 
-          if (raise_count%5 == 0) {
-            if (marathon_level < ITEM_PROBS["0|0"].length)
-              marathon_level++
+          if (!marathon_debug) {
+            if (raise_count%12 == 0) {
+              if (marathon_level < ITEM_PROBS["0|0"].length)
+                marathon_level++
+            }
           }
 
           Y_SPEED = SLOW
