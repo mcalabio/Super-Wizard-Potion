@@ -3020,6 +3020,12 @@ $def with (name)
 
           player.addScore(500*new_item.chain)
 
+          if (old_item.type == 2) {
+            if (old_item.action_combo) {
+              this.board.effects.push(new ChainEffect(this,old_item))
+            }
+          }
+
         }
 
         // check if there are items breaking on this stack
