@@ -48,6 +48,7 @@ $def with (name)
     var GREEN = 1
     var PURPLE = 2
     var BLUE = 3
+    var GOLD = 4
     var UNSTABLE = COLORS.length - 1
     var WHITE = COLORS.length - 2
     var EMPTY = COLORS.length - 3
@@ -2702,6 +2703,64 @@ $def with (name)
         this.x = x
         this.next_random_item  // string of form "type|color" for use in marathon
 
+        // check for flasks touching robots
+        this.breakRobots = function(item) {
+
+          var flasks_to_clear = new Array()
+          var robots_to_clear = new Array()
+          var clear_flask = false
+          
+          var above = this.items[item.y + 1]
+          var below = this.items[item.y - 1]
+
+          item.combo = 0
+
+          if (item.color == WHITE || item.color == EMPTY)
+            return
+
+          // check for robots above
+          while (above != undefined && above.type == 2 && ((item.color == GOLD)?(above.color > 2):(above.color == item.color))) {
+
+            above.combo = item.combo = item.combo + 1
+            robots_to_clear.push(above)
+
+            if (!clear_flask) {
+              clear_flask = true
+              item.chain++
+            }
+            above.chain = item.chain
+            above = this.items[above.y + 1]
+
+          }
+
+          // check for robots below
+          while (below != undefined && below.type == 2 && ((item.color == GOLD)?(below.color > 2):(below.color == item.color))) {
+
+            console.log("checking below")
+            console.log("below = ")
+            console.dir(below)
+
+            below.combo = item.combo = item.combo + 1
+            robots_to_clear.push(below)
+            
+            if (!clear_flask) {
+              clear_flask = true
+              item.chain++
+            }
+            below.chain = item.chain
+            below = this.items[below.y - 1]
+
+          }
+
+          if (clear_flask) {
+            flasks_to_clear.push(item)
+            this.clearRobotsFlasks(robots_to_clear,flasks_to_clear)
+          }
+
+
+
+        }
+
         // check if the stack contains matches (3 or more consecutive blocks of same color)
         // return true if matches are found
         this.checkForMatches = function() {
@@ -2718,6 +2777,12 @@ $def with (name)
           for (var i = 0; i < items.length; i++) {
 
             item = items[i]
+
+            if (item.type == 1 && !item.breaking) {
+              console.log ("castlevnai item")
+              console.dir (item)
+              this.breakRobots(item)
+            }
 
             matches.push(item)
             match = matches[0]
@@ -2868,20 +2933,32 @@ $def with (name)
             player.addScore(500*old_item.chain)
           }
 
-          // show chain effects if last in chain
-          if (old_item.last_in_chain && old_item.chain > 1) {
-            console.log("last in chain = " + old_item.chain)
-            this.board.effects.push(new ChainEffect(this,old_item))
-          }
+          // show combo/chain effects for blocks
+          if (old_item.type == 0) {
 
-          // stop sound effects
-          if (old_item.type == 1) {
-            console.log("stop sound effect")
-            // console.dir(old_item.break_audio)
-            // break_audio.stop()
-            // removeFromPlayingSounds(break_audio)
-            if (old_item.chain > 1)
+            // show chain effects if last in chain
+            if (old_item.last_in_chain && old_item.chain > 1) {
+              console.log("last in chain = " + old_item.chain)
               this.board.effects.push(new ChainEffect(this,old_item))
+            }
+
+            // // stop sound effects
+            // if (old_item.type == 1) {
+            //   console.log("stop sound effect")
+            //   // console.dir(old_item.break_audio)
+            //   // break_audio.stop()
+            //   // removeFromPlayingSounds(break_audio)
+            //   if (old_item.chain > 1)
+            //     this.board.effects.push(new ChainEffect(this,old_item))
+            // }
+
+          // show combo/chain effects for flasks/robots
+          } else if (old_item.type == 1) {
+            this.board.effects.push(new ChainEffect(this,old_item))
+          } else if (old_item.type == 2) {
+            if (old_item.action_combo) {
+              this.board.effects.push(new ChainEffect(this,old_item))
+            }
           }
 
         }
@@ -3181,11 +3258,11 @@ $def with (name)
 
                     console.log("(" + below.color + ") flask breaking robot of color (" + item.color + ") with chain = " + item.chain + " and splash_order = " + item.splash_order)
 
-                  // break if robot below is breaking
+                  // break if robot below is breaking (action combo)
                   } else if (below.type == 2 && ((item.color > 2) ? (below.color > 2):(below.color == item.color)) && below.breaking) {
 
-                    // item.breaking = true
-
+                    item.action_combo = true
+                    item.combo = below.combo + 1
                     robots_to_clear.push(item)
 
                     item.chain = below.chain
@@ -3249,8 +3326,10 @@ $def with (name)
         this.deathcounter = 40
         this.sleepcounter = 0  // used for transitory animations
                                // (eg: potion filling up, items exploding, etc.)
+        this.combo = 0
         this.chain = 0
         this.last_in_chain = false
+        this.action_combo = false
         this.splash_order = 0
 
         var board = stack.board
@@ -3442,6 +3521,7 @@ $def with (name)
       function ChainEffect(stack,item) {
 
         this.stack = stack
+        this.combo = item.combo
         this.chain = item.chain
         this.item = item
         this.speed = 1
@@ -3449,12 +3529,21 @@ $def with (name)
 
         this.index = stack.board.effects.length
 
-        this.sprite = new jaws.Sprite({
+        this.chain_sprite = new jaws.Sprite({
           x: item.sprite.x,
           y: item.sprite.y,
           image: "./static/images/CHAIN.gif",
           anchor: "left"
         })
+        this.combo_sprite = new jaws.Sprite({
+          x: item.sprite.x,
+          y: item.sprite.y + 21,
+          image: "./static/images/BLUE.gif",
+          anchor: "left"
+        })        
+
+        this.combo_sprite.width = 30
+        this.combo_sprite.height = 20
 
         this.removeChainEffect = function() {
           this.stack.board.effects.splice(this.index,1)
@@ -3468,7 +3557,8 @@ $def with (name)
         }
 
         this.update = function() {
-          this.sprite.y -= this.speed
+          this.chain_sprite.y -= this.speed
+          this.combo_sprite.y -= this.speed
           this.deathcounter -= 1
         }
 
@@ -3479,13 +3569,29 @@ $def with (name)
             return
           }
 
-          this.sprite.draw()
+          if (this.chain > 1) {
+  
+            this.chain_sprite.draw()
 
-          jaws.context.font = MENU_FONT
-          jaws.context.lineWidth = 10
-          jaws.context.fillStyle =  "White"
-          jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-          jaws.context.fillText("x" + this.chain, this.sprite.x + 6, this.sprite.y + 15)
+            jaws.context.font = MENU_FONT
+            jaws.context.lineWidth = 10
+            jaws.context.fillStyle =  "White"
+            jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+            jaws.context.fillText("^" + this.chain, this.chain_sprite.x + 6, this.chain_sprite.y + 16)
+
+          }
+
+          if (this.combo > 1) {
+
+            this.combo_sprite.draw()
+
+            jaws.context.font = MENU_FONT
+            jaws.context.lineWidth = 10
+            jaws.context.fillStyle =  "White"
+            jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+            jaws.context.fillText(this.combo, this.combo_sprite.x + 11, this.combo_sprite.y + 16)
+
+          }
         }
 
       }
