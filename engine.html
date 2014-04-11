@@ -898,7 +898,7 @@ $def with (name)
           jaws.on_keydown(["l"], function() {
             if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
               player.board.raiseStacks()
-              player.addScore(1)
+              // player.addScore(1)
               // record this action
               player.replay_data[player.timer.frame_ticker.toString()]
                 = [player.x,player.y,"raise",0]
@@ -1424,7 +1424,7 @@ $def with (name)
             if (click_outside_board && marathon) {
               if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
                 player.board.raiseStacks()
-                player.addScore(1)
+                // player.addScore(1)
                 // record this action
                 player.replay_data[player.timer.frame_ticker.toString()]
                   = [player.x,player.y,"raise",0]
@@ -2820,7 +2820,7 @@ $def with (name)
 
         }
 
-        // break matches and update their chains
+        // break matches and update their combos/chains
         this.matchesFound = function(matches) { // matches, an array of blocks
 
           // keep track of block with largest chain
@@ -2837,8 +2837,10 @@ $def with (name)
             if (match.chain > chain) chain = match.chain
             match.chain = chain
 
-            if (i==0)
+            if (i==0) {
               match.last_in_chain = true
+              match.combo = matches.length
+            }
 
           }
 
@@ -2926,19 +2928,19 @@ $def with (name)
 
           this.checkForMatches()
 
-          // add to player score depending on type of this item
-          if (old_item.type==0) {
-            player.addScore(100*old_item.chain)
-          } else if (old_item.type==2) {
-            player.addScore(500*old_item.chain)
-          }
+          // // add to player score depending on type of this item
+          // if (old_item.type==0) {
+          //   player.addScore(100*old_item.chain)
+          // } else if (old_item.type==2) {
+          //   player.addScore(500*old_item.chain)
+          // }
 
           // show combo/chain effects for blocks
           if (old_item.type == 0) {
 
-            // show chain effects if last in chain
-            if (old_item.last_in_chain && old_item.chain > 1) {
-              console.log("last in chain = " + old_item.chain)
+            // show chain effects and calculate score if last in chain
+            if (old_item.last_in_chain) {
+              player.addScore(Math.pow(old_item.combo,old_item.chain))
               this.board.effects.push(new ChainEffect(this,old_item))
             }
 
@@ -2954,9 +2956,11 @@ $def with (name)
 
           // show combo/chain effects for flasks/robots
           } else if (old_item.type == 1) {
+            player.addScore(Math.pow(old_item.combo,old_item.chain))
             this.board.effects.push(new ChainEffect(this,old_item))
           } else if (old_item.type == 2) {
             if (old_item.action_combo) {
+              player.addScore(Math.pow(old_item.combo,old_item.chain))
               this.board.effects.push(new ChainEffect(this,old_item))
             }
           }
@@ -3018,10 +3022,11 @@ $def with (name)
 
           this.checkForMatches()
 
-          player.addScore(500*new_item.chain)
+          // player.addScore(500*new_item.chain)
 
           if (old_item.type == 2) {
             if (old_item.action_combo) {
+              player.addScore(Math.pow(old_item.combo,old_item.chain))
               this.board.effects.push(new ChainEffect(this,old_item))
             }
           }
@@ -3406,8 +3411,8 @@ $def with (name)
               if (this.color == WHITE && above.color != WHITE) {
                 this.color = above.color
                 this.chain = above.chain
+                above.combo++
                 this.sleepcounter = 40
-                player.addScore(100)
                 console.log("sleepcounter = " + this.sleepcounter)
 
                 // update sprite data
@@ -3443,8 +3448,9 @@ $def with (name)
                 if (above.color == WHITE) {
 
                   this.color = above.color
+                  this.chain = above.chain
+                  above.combo++
                   this.sleepcounter = 40
-                  player.addScore(100)
                   console.log("sleepcounter = " + this.sleepcounter)
 
                   // update sprite data
