@@ -40,6 +40,7 @@ $def with (name)
     var MARATHON_STAR_LOCK = 30
     var ZERO_STAR_LOCK = 0
     var MENU_FONT = "bold 12pt Menu Text"
+    var ROB_SCORE = 2
 
 
     var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
@@ -2956,11 +2957,12 @@ $def with (name)
 
           // show combo/chain effects for flasks/robots
           } else if (old_item.type == 1) {
-            player.addScore(Math.pow(old_item.combo,old_item.chain))
+            player.addScore(Math.pow(RobotCombo(old_item.combo),old_item.chain))
             this.board.effects.push(new ChainEffect(this,old_item))
           } else if (old_item.type == 2) {
             if (old_item.action_combo) {
-              player.addScore(Math.pow(old_item.combo,old_item.chain))
+              player.addScore(Math.pow((-1)*RobotCombo(old_item.combo-1),old_item.chain))
+              player.addScore(Math.pow(RobotCombo(old_item.combo),old_item.chain))
               this.board.effects.push(new ChainEffect(this,old_item))
             }
           }
@@ -3026,7 +3028,8 @@ $def with (name)
 
           if (old_item.type == 2) {
             if (old_item.action_combo) {
-              player.addScore(Math.pow(old_item.combo,old_item.chain))
+              player.addScore(Math.pow((-1)*ROB_SCORE*(old_item.combo-1),old_item.chain))
+              player.addScore(Math.pow(ROB_SCORE*old_item.combo,old_item.chain))
               this.board.effects.push(new ChainEffect(this,old_item))
             }
           }
@@ -3530,10 +3533,19 @@ $def with (name)
         }
       }
 
+      function RobotCombo(combo) {
+
+        if (combo == 1)
+          return ROB_SCORE
+        else
+          return (RobotCombo(combo - 1) + (combo*ROB_SCORE))
+
+      }
+
       function ChainEffect(stack,item) {
 
         this.stack = stack
-        this.combo = item.combo
+        this.combo = (item.type == 0)?item.combo:(RobotCombo(item.combo))
         this.chain = item.chain
         this.item = item
         this.speed = 1
@@ -3593,7 +3605,7 @@ $def with (name)
 
           }
 
-          if (this.combo > 1) {
+          if (this.combo > 0) {
 
             this.combo_sprite.draw()
 
