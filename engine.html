@@ -41,6 +41,7 @@ $def with (name)
     var ZERO_STAR_LOCK = 0
     var MENU_FONT = "bold 12pt Menu Text"
     var ROB_SCORE = 2
+    var WINLOSE_DELAY = 60
 
 
     var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
@@ -165,6 +166,7 @@ $def with (name)
       var pause_menu
       var winlose_data
       var winlose_menu
+      var winlose_delay = WINLOSE_DELAY
       var replay_menu
       var continue_lock_box
       var level_record
@@ -720,7 +722,10 @@ $def with (name)
           jaws.start(Game)
 
         if ((game_end == "W" || game_end == "L") && !winlose) {
-          player.board.winLose()
+          if (winlose_delay > 0) {
+            winlose_delay--
+          } else
+            player.board.winLose()
         }
 
         if (pause) {
@@ -2697,11 +2702,13 @@ $def with (name)
 
           // draw winlose menu
           if (game_end != "" && game_end != "R") {
-            winlose_data.draw()
-            if (replay == null)
-              winlose_menu.draw()
-            else
-              replay_menu.draw()
+            if (winlose_delay <= 0) {
+              winlose_data.draw()
+              if (replay == null)
+                winlose_menu.draw()
+              else
+                replay_menu.draw()
+            }
           } else if (replay_menu != undefined && replay_menu.active) {
             replay_menu.draw()
           }
@@ -3816,6 +3823,7 @@ $def with (name)
           } else if (frame[2] == "undo_menu") {
             winlose = false
             winlose_menu.active = false
+            replay_menu.active = false
 
             winlose_menu.y = winlose_data.y + winlose_data.height
             winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
