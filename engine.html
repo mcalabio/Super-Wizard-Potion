@@ -132,6 +132,7 @@ $def with (name)
     var marathon_debug = false
     var marathon_level_debug = 1
     var replay = null
+    var replay_actions = 0
     var replay_index = -1
     var latest_edit
     var pause = false
@@ -231,6 +232,8 @@ $def with (name)
       // hide progress buttons
       var progress_buttons = $("progressButtons")
       progress_buttons.hidden = true
+
+      var replay_length = 0
 
       /* Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
@@ -670,6 +673,16 @@ $def with (name)
 
         // replay mode
         if (replay != null) {
+
+
+          var key = 0;
+          for(key in replay) {
+            if(replay.hasOwnProperty(key)) {
+              replay_length++;
+            }
+          }
+
+          replay_actions = 0
           
           replay_menu = new MenuBox("Replay",replay_menu,menu_x, winlose_data.y + winlose_data.height,4*ITEM_WIDTH+15,[],true)
           
@@ -2689,6 +2702,8 @@ $def with (name)
               winlose_menu.draw()
             else
               replay_menu.draw()
+          } else if (replay_menu.active) {
+            replay_menu.draw()
           }
 
         }
@@ -3807,7 +3822,20 @@ $def with (name)
             undoLastMove(true)
           }
 
+          // check if this is the last replay action on the replay array
+          replay_actions++
 
+          console.log("replay_actions = " + replay_actions)
+          console.log("replay_length = " + replay_length)
+
+          if (replay_actions >= replay_length) {
+            replay_menu.active = true
+            replay_menu.index = (replay_index < replay_records.length - 1) ? (replay_index + 1) : replay_index
+            replay_menu.controls(replay_menu)
+            jaws.on_keydown(["esc"], function() {
+              jaws.start(MainMenu)
+            })
+          }
         }
       }
 
