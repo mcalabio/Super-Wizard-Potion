@@ -2702,7 +2702,7 @@ $def with (name)
               winlose_menu.draw()
             else
               replay_menu.draw()
-          } else if (replay_menu.active) {
+          } else if (replay_menu != undefined && replay_menu.active) {
             replay_menu.draw()
           }
 
@@ -3549,6 +3549,11 @@ $def with (name)
       }
 
       function RobotCombo(combo) {
+
+        // sanity check
+        if (combo < 1) {
+          return 0
+        }
 
         if (combo == 1)
           return ROB_SCORE
@@ -5694,7 +5699,7 @@ $def with (name)
         console.log("MAINMENUAUTO")
         console.dir(main_menu_auto)
         if (main_menu_auto != undefined) {
-          if (main_menu_auto[0] == 0 || main_menu_auto[0] == 3) {
+          if (main_menu_auto[0] == 0) {
             main_menu.items[main_menu_auto[0]].action()
             main_menu.index = main_menu_auto[0]
             var item_count = 0
