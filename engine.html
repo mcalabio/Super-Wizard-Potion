@@ -721,10 +721,14 @@ $def with (name)
         if (need_to_restart)
           jaws.start(Game)
 
-        if ((game_end == "W" || game_end == "L") && !winlose) {
+        if (game_end == "W" || game_end == "L") {
           if (winlose_delay > 0) {
             winlose_delay--
-          } else
+          } else if (winlose_delay == 0) {
+            winlose_menu.controls(winlose_menu)
+            winlose_delay--
+          }
+          if (!winlose)
             player.board.winLose()
         }
 
@@ -856,7 +860,7 @@ $def with (name)
         if (continue_lock_box.active)
           continue_lock_box.draw()
 
-        if (level_record.active)
+        if (level_record.active && winlose_delay <= 0)
           level_record.draw()
 
       }
@@ -2410,7 +2414,7 @@ $def with (name)
           if (replay == null) {
 
             winlose_menu.active = true
-            winlose_menu.controls(winlose_menu)   
+            // winlose_menu.controls(winlose_menu)   
             var winlose_menu_items = new Array()       
 
             if (game_end == "W") {
