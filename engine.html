@@ -83,27 +83,27 @@ $def with (name)
     var ITEM_PROBS = {
 
     // BLOCKS
-      "0|0" : [4,7,10,7,10,8] , // RED
-      "0|1" : [0,7,10,7,10,8] , // GREEN
-      "0|2" : [0,0,00,0,0,8]  , // PURPLE
-      "0|4" : [0,0,00,0,0,6]  , // YELLOW
-      "0|7" : [0,0,00,7,10,16] , // WHITE
+      "0|0" : [4,7,10,7,10,7,10,8] , // RED
+      "0|1" : [0,7,10,7,10,7,10,8] , // GREEN
+      "0|2" : [0,0,00,0,00,7,10,8]  , // PURPLE
+      "0|4" : [0,0,00,0,00,0,00,6]  , // YELLOW
+      "0|7" : [0,0,00,7,10,7,10,16] , // WHITE
 
     // POTIONS
-      "1|0" : [0,1,1,1,1,1] , // RED
-      "1|1" : [0,1,1,1,1,1] , // GREEN
-      "1|2" : [0,0,0,0,0,1] , // PURPLE
-      "1|4" : [0,0,0,0,0,1] , // YELLOW
-      "1|6" : [0,0,0,2,4,3] , // EMPTY
-      "1|7" : [1,3,3,1,1,3] , // WHITE
+      "1|0" : [0,1,1,1,1,1,1,1] , // RED
+      "1|1" : [0,1,1,1,1,1,1,1] , // GREEN
+      "1|2" : [0,0,0,0,0,1,1,1] , // PURPLE
+      "1|4" : [0,0,0,0,0,0,0,1] , // YELLOW
+      "1|6" : [0,0,0,2,4,3,4,3] , // EMPTY
+      "1|7" : [1,3,3,1,1,2,2,3] , // WHITE
 
     // ROBOTS
-      "2|0" : [4,6,6,6,6,6] , // RED
-      "2|1" : [0,6,6,6,6,6] , // GREEN
-      "2|2" : [0,0,0,0,6,6] , // PURPLE
-      "2|3" : [0,0,0,0,0,1] , // RED ARMOR
-      "2|4" : [0,0,0,0,0,1] , // GREEN ARMOR
-      "2|5" : [0,0,0,0,0,1] , // PURPLE ARMOR
+      "2|0" : [4,6,6,6,6,6,6,6] , // RED
+      "2|1" : [0,6,6,6,6,6,6,6] , // GREEN
+      "2|2" : [0,0,0,0,0,6,6,6] , // PURPLE
+      "2|3" : [0,0,0,0,0,0,0,1] , // RED ARMOR
+      "2|4" : [0,0,0,0,0,0,0,1] , // GREEN ARMOR
+      "2|5" : [0,0,0,0,0,0,0,1] , // PURPLE ARMOR
     }
 
     var raise_count_level = [1,8,8,8,8]
@@ -2373,7 +2373,7 @@ $def with (name)
 
           if (remaining_armor_robots > 0)
             remaining_robot_colors++
-          if (this.flask_count[4] > 0)
+          if (this.flask_count[GOLD] > 0)
             remaining_robot_colors--
 
           var potential_white_potions = this.block_count[WHITE] / 3 + this.flask_count[WHITE]
