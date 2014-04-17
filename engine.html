@@ -4036,6 +4036,7 @@ $def with (name)
         if (called_by_menu) {
           player.replay_data[player.timer.frame_ticker.toString()]
             = [player.x,player.y,"undo_menu",0]
+          winlose_delay = WINLOSE_DELAY
         } else {
           player.replay_data[player.timer.frame_ticker.toString()]
             = [player.x,player.y,"undo",0]
