@@ -2346,64 +2346,101 @@ $def with (name)
 
           console.log("CHECKING")
 
-          // win condition: robots cleared
+          // WIN CONDITION: robots cleared
           console.log("checking win condition")
           if (!(this.robot_count<[0,0,0,0,0,0] || [0,0,0,0,0,0]<this.robot_count)) { // array equality
             game_end = "W"
             return
           }
 
-          // lose condition: no more blocks/flasks to clear robots
-          console.log("checking lose conditions")
-          var remaining_robot_colors = 0
-          var remaining_armor_robots = 0
-          for (var c=0; c < 6; c++) {
+          // LOSE CONDITION: no more blocks/flasks to clear robots
 
-            // catch all armored robots
-            if (c > 2 && this.robot_count[c] > 0) {
-              remaining_armor_robots++
-              continue
-            }
-
-            if (this.robot_count[c] > 0)
-              remaining_robot_colors++
-            if (this.flask_count[c] > 0)
-              remaining_robot_colors --
+          // calculate how many potions can be brewed for each color
+          var potential_color_potions = [0,0,0,0,0,0,0,0]
+          for (var c=0; c < COLORS.length; c++) {
+            potential_color_potions[c] = this.block_count[c]/3 + this.flask_count[c]
           }
 
-          if (remaining_armor_robots > 0)
-            remaining_robot_colors++
-          if (this.flask_count[GOLD] > 0)
-            remaining_robot_colors--
-
-          var potential_white_potions = this.block_count[WHITE] / 3 + this.flask_count[WHITE]
-
-          console.log("potential_white_potions = " + potential_white_potions)
-          console.log("remaining_robot_colors = " + remaining_robot_colors)
-
+          // calculate how many potions are needed for each color
+          var needed_color_potions    = [0,0,0,0,0,0,0,0]
           for (var c=0; c < 6; c++) {
 
             if (c == 3 || c > 5)
               continue
 
-            if (this.robot_count[c] > 0) {
-              console.log("robots of color " + COLORS[c] + " still exist!")
-              console.log("block count = " + this.block_count[c])
-              console.log("flask_count = " + this.flask_count[c])
-              if (this.flask_count[c] <= 0) {
-                if (this.block_count[c] < 3) {
-                  console.log("lose! here for color = " + c)
-                  game_end = "L"
-                  return
-                } else if (potential_white_potions < remaining_robot_colors){
-                  console.log("lose! not enough white blocks, checking color = " + COLORS[c])
-                  game_end = "L"
-                  return
-                }
-              }
+            // need 1 potion of color = c for 9 robots
+            needed_color_potions[c] = Math.ceil(this.robot_count[c] / 9)
 
+            // need 1 white potion for each unbrewed color potion
+            needed_color_potions[WHITE] += potential_color_potions[c] - this.flask_count[c]
+
+            console.log("potential [" + c + "] = " + potential_color_potions[c])
+            console.log("needed [" + c + "] = " + needed_color_potions[c])
+
+            // player loses if not enough potions to clear all robots
+            if (potential_color_potions[c] < needed_color_potions[c]) {
+              game_end = "L"
+              return
             }
+
           }
+
+          // check if there are enough white potions to brew necessary color potions
+          if (potential_color_potions[WHITE] < needed_color_potions[WHITE]) {
+            game_end = "L"
+            return
+          }
+
+          // console.log("checking lose conditions")
+          // var remaining_robot_colors = 0
+          // var remaining_armor_robots = 0
+          // for (var c=0; c < 6; c++) {
+
+          //   // catch all armored robots
+          //   if (c > 2 && this.robot_count[c] > 0) {
+          //     remaining_armor_robots++
+          //     continue
+          //   }
+
+          //   if (this.robot_count[c] > 0)
+          //     remaining_robot_colors++
+          //   if (this.flask_count[c] > 0)
+          //     remaining_robot_colors --
+          // }
+
+          // if (remaining_armor_robots > 0)
+          //   remaining_robot_colors++
+          // if (this.flask_count[GOLD] > 0)
+          //   remaining_robot_colors--
+
+          // var potential_white_potions = this.block_count[WHITE] / 3 + this.flask_count[WHITE]
+
+          // console.log("potential_white_potions = " + potential_white_potions)
+          // console.log("remaining_robot_colors = " + remaining_robot_colors)
+
+          // for (var c=0; c < 6; c++) {
+
+          //   if (c == 3 || c > 5)
+          //     continue
+
+          //   if (this.robot_count[c] > 0) {
+          //     console.log("robots of color " + COLORS[c] + " still exist!")
+          //     console.log("block count = " + this.block_count[c])
+          //     console.log("flask_count = " + this.flask_count[c])
+          //     if (this.flask_count[c] <= 0) {
+          //       if (this.block_count[c] < 3) {
+          //         console.log("lose! here for color = " + c)
+          //         game_end = "L"
+          //         return
+          //       } else if (potential_white_potions < remaining_robot_colors){
+          //         console.log("lose! not enough white blocks, checking color = " + COLORS[c])
+          //         game_end = "L"
+          //         return
+          //       }
+          //     }
+
+          //   }
+          // }
 
         }
 
