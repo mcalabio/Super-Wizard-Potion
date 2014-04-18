@@ -1971,8 +1971,15 @@ $def with (name)
               this_item.sprite.dy = this.posy(this_stack.items.length-1)
             }
 
-            // check for matches
-            this_stack.checkForMatches()
+            // drop player hand if stack exceeds the top, end game if nothing breaks
+            if (this_stack.items.length > (BOARD_HEIGHT - ((this_stack.x==player.x)?(player.hand.items.length):0) )) {
+              player.drop(player.board.stacks[player.x],player.hand.items.length)
+              if (!this_stack.itemsBreaking())
+                game_end = "L"
+            } else {
+              // check for matches
+              this_stack.checkForMatches()
+            }
 
             // randomize next random item
             this_stack.next_random_item = this.randomItem(this_stack,s,-1)
@@ -2631,6 +2638,7 @@ $def with (name)
               winlose_menu.title = (marathon) ? "GAME OVER!" : "YOU LOSE!"
 
               winlose_menu.index = 1
+
             }
 
             if (marathon) {
@@ -3944,7 +3952,11 @@ $def with (name)
               this.player.board.raiseStacks()
               var record = buildRecordString(this,"W")
               saveRecord(record)
-              game_end = "L"
+
+              // // drop player hand, end game if nothing breaks
+              // this.player.drop(player.board.stacks[player.x],player.hand.items.length)
+              // if (!this.player.board.stacksBreaking())
+              //   game_end = "L"
             }
 
             this.raise_level_timer = raise_level_time
