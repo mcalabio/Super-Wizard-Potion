@@ -2803,9 +2803,15 @@ $def with (name)
 
             if (!clear_flask) {
               clear_flask = true
-              item.chain++
+              if (item.chain <= 0)
+                item.chain++
             }
-            above.chain = item.chain
+
+            if (above.chain > item.chain)
+              item.chain = above.chain
+            else
+              above.chain = item.chain
+
             above = this.items[above.y + 1]
 
           }
@@ -2822,7 +2828,8 @@ $def with (name)
             
             if (!clear_flask) {
               clear_flask = true
-              item.chain++
+              if (item.chain <= 0)
+                item.chain++
             }
             below.chain = item.chain
             below = this.items[below.y - 1]
@@ -3240,8 +3247,8 @@ $def with (name)
 
               // add chain to items above
               if (above != undefined && !above.breaking) {
-                above.chain = item.chain
-                console.log("item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] passing chain (" + item.chain + ") to item [" + TYPES[above.type] + "|" + COLORS[above.color] + "] above")
+                above.chain = item.chain + ((above.type!=item.type||above.color!=item.color)?1:0)
+                console.log("item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] passing chain (" + above.chain + ") to item [" + TYPES[above.type] + "|" + COLORS[above.color] + "] above")
               }
 
             }
