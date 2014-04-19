@@ -1974,6 +1974,8 @@ $def with (name)
             // drop player hand if stack exceeds the top, end game if nothing breaks
             if (this_stack.items.length > (BOARD_HEIGHT - ((this_stack.x==player.x)?(player.hand.items.length):0) )) {
               player.drop(player.board.stacks[player.x],player.hand.items.length)
+              if (this_stack.x!=player.x)
+                this_stack.checkForMatches()
               if (!this_stack.itemsBreaking())
                 game_end = "L"
             } else {
@@ -1988,6 +1990,9 @@ $def with (name)
 
           // move player cursor up
           player.y++
+
+          if (player.y >= BOARD_HEIGHT)
+            player.y = BOARD_HEIGHT - 1
 
           // reset timer
           player.timer.raise_level_timer = raise_level_time
