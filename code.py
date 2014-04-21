@@ -10,7 +10,7 @@ urls = (
 	'/', 'engine'
 	)
 
-paths_players = [ ["0501zonk1","0501zonk2","0501zonk3"],["0502zonk1","0502zonk2","0502zonk3"],["0503zonk1","0503zonk2","0503zonk3"],["0504zonk1","0504zonk2","0504zonk3"] ]
+paths_players = [ ["0501zonk1","0501zonk2","0501zonk3","cassidy","mikey","mika"],["0502zonk1","0502zonk2","0502zonk3"],["0503zonk1","0503zonk2","0503zonk3"],["0504zonk1","0504zonk2","0504zonk3"] ]
 
 class engine:
 	def GET(self):

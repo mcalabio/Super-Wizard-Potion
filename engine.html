@@ -35,13 +35,14 @@ $def with (name)
     var ITEM_WIDTH = 40
     var PURPLE_HEX = '#350028'//'#700054'
     var MAX_RAISE_LEVEL_TIME = 20
-    var MIN_RAISE_LEVEL_TIME = 6
+    var MIN_RAISE_LEVEL_TIME = 8
     var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 20 seconds
     var MARATHON_STAR_LOCK = 30
     var ZERO_STAR_LOCK = 0
     var MENU_FONT = "bold 12pt Menu Text"
     var ROB_SCORE = 2
     var WINLOSE_DELAY = 60
+    var DEATH_COUNTER_START = 40
 
 
     var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
@@ -2790,7 +2791,10 @@ $def with (name)
           var above = this.items[item.y + 1]
           var below = this.items[item.y - 1]
 
+          var splash_order = 0
+
           item.combo = 0
+          item.deathcounter = DEATH_COUNTER_START
 
           if (item.color == WHITE || item.color == EMPTY)
             return
@@ -2799,6 +2803,7 @@ $def with (name)
           while (above != undefined && above.type == 2 && ((item.color == GOLD)?(above.color > 2):(above.color == item.color))) {
 
             above.combo = item.combo = item.combo + 1
+            above.deathcounter = DEATH_COUNTER_START
             robots_to_clear.push(above)
 
             if (!clear_flask) {
@@ -2807,41 +2812,96 @@ $def with (name)
                 item.chain++
             }
 
-            if (above.chain > item.chain)
-              item.chain = above.chain
-            else
-              above.chain = item.chain
+            above.chain = item.chain
+            above.splash_order = splash_order = splash_order + 1
 
             above = this.items[above.y + 1]
 
+            // window.alert("breaking robots above with combo = " + item.combo + ", chain = " + item.chain)
+
           }
+
+          splash_order = 0
 
           // check for robots below
           while (below != undefined && below.type == 2 && ((item.color == GOLD)?(below.color > 2):(below.color == item.color))) {
 
-            console.log("checking below")
-            console.log("below = ")
-            console.dir(below)
-
             below.combo = item.combo = item.combo + 1
+            below.deathcounter = DEATH_COUNTER_START
             robots_to_clear.push(below)
             
             if (!clear_flask) {
               clear_flask = true
+              item.sandwich = true
               if (item.chain <= 0)
                 item.chain++
             }
+
             below.chain = item.chain
+            below.splash_order = splash_order = splash_order + 1
+
             below = this.items[below.y - 1]
 
           }
 
           if (clear_flask) {
+            // window.alert("clearking flask with chain = " + item.chain)
             flasks_to_clear.push(item)
             this.clearRobotsFlasks(robots_to_clear,flasks_to_clear)
           }
 
 
+
+        }
+
+        // find flask and breakRobots()
+        this.actionCombo = function(robot) {
+
+          var below = this.items[robot.y - 1]
+
+          // check for robots below
+          while (below != undefined) {
+
+            // return the flask to breakRobots()
+            if (below.type == 1)
+              return below
+
+            below = this.items[below.y - 1]
+          }
+
+        }
+
+        // check for matching robots above
+        // robot = bottom of the top "bun"
+        this.robotSandwich = function(robot,flask) {
+
+          var robots_to_clear = [robot]
+          
+          var above = this.items[robot.y + 1]
+
+          robot.sandwich = true
+          robot.combo = 1
+          robot.chain = flask.chain
+          robot.deathcounter = flask.deathcounter // sync all death
+
+          // check for robots above
+          while (above != undefined && above.type == 2 && ((robot.color == GOLD)?(above.color > 2):(above.color == robot.color))) {
+
+            above.combo = flask.combo = flask.combo + 1
+            above.deathcounter = flask.deathcounter // sync all death
+            robots_to_clear.push(above)
+
+            if (above.chain > robot.chain)
+              robot.chain = above.chain
+            else
+              above.chain = robot.chain
+
+            above = this.items[above.y + 1]
+
+            // window.alert("breaking sandwich robots above with combo = " + robot.combo + ", chain = " + robot.chain)
+          }       
+
+          this.clearRobotsFlasks(robots_to_clear,[])   
 
         }
 
@@ -3047,6 +3107,9 @@ $def with (name)
               player.addScore(Math.pow((-1)*RobotCombo(old_item.combo-1),old_item.chain))
               player.addScore(Math.pow(RobotCombo(old_item.combo),old_item.chain))
               this.board.effects.push(new ChainEffect(this,old_item))
+            } else if (old_item.sandwich) {
+              player.addScore(Math.pow(RobotCombo(old_item.combo),old_item.chain))
+              this.board.effects.push(new ChainEffect(this,old_item))
             }
           }
 
@@ -3148,7 +3211,10 @@ $def with (name)
 
             // put splashes here
             var robot_delay = this_robot.deathcounter + this_robot.splash_order
-            this.board.effects.push(new Splash(this,this_robot.type,this_robot.color,this_robot.x,this_robot.y,this.board.effects.length,robot_delay))
+            if (this_robot.splash == undefined)
+              this.board.effects.push(new Splash(this,this_robot.type,this_robot.color,this_robot.x,this_robot.y,this.board.effects.length,robot_delay))
+            else
+              this_robot.splash.delay = robot_delay
 
             // determine which sprites to use
             var death_color = "RED"
@@ -3178,7 +3244,10 @@ $def with (name)
             this_flask.breaking = true
 
             // put splashes here
-            this.board.effects.push(new Splash(this,this_flask.type,this_flask.color,this_flask.x,this_flask.y,this.board.effects.length,this_flask.deathcounter))
+            if (this_flask.splash == undefined)
+              this.board.effects.push(new Splash(this,this_flask.type,this_flask.color,this_flask.x,this_flask.y,this.board.effects.length,this_flask.deathcounter))
+            else
+              this_flask.splash.delay = this_flask.deathcounter
 
             // update sprite data
             this_flask.sprite = new jaws.Sprite({x:this_flask.stack.board.posx(this_flask.x),y:this_flask.stack.board.posy(this_flask.y), anchor: "left"})
@@ -3304,22 +3373,23 @@ $def with (name)
                 if (above != undefined) {
 
                   // break robot and same-colored flask above
-                  if (above.sleepcounter == 0 && above.color == ((item.color > 2) ? 4 : item.color) && above.type == 1) {
+                  // if (above.sleepcounter == 0 && above.color == ((item.color > 2) ? 4 : item.color) && above.type == 1) {
 
-                    // item.breaking = true
-                    // above.breaking = true
+                  //   // item.breaking = true
+                  //   // above.breaking = true
 
-                    robots_to_clear.push(item)
-                    flasks_to_clear.push(above)
+                  //   robots_to_clear.push(item)
+                  //   flasks_to_clear.push(above)
 
-                    above.chain += 1
-                    item.chain = above.chain
-                    item.splash_order = above.splash_order + 1
+                  //   above.chain += 1
+                  //   item.chain = above.chain
+                  //   item.splash_order = above.splash_order + 1
 
-                    console.log("(" + above.color + ") flask breaking robot of color (" + item.color + ") with chain = " + item.chain + " and splash_order = " + item.splash_order)
+                  //   console.log("(" + above.color + ") flask breaking robot of color (" + item.color + ") with chain = " + item.chain + " and splash_order = " + item.splash_order)
 
-                  // break if robot above is breaking
-                  } else if (above.type == 2 && ((item.color > 2) ? (above.color > 2):(above.color == item.color)) && above.breaking) {
+                  // // break if robot above is breaking
+                  // } else 
+                  if (above.type == 2 && ((item.color > 2) ? (above.color > 2):(above.color == item.color)) && above.breaking) {
 
                     // item.breaking = true
 
@@ -3339,14 +3409,17 @@ $def with (name)
                   // break robot and same-colored flask below
                   if (below.sleepcounter == 0 && below.color == ((item.color > 2) ? 4 : item.color) && below.type == 1) {
 
-                    // item.breaking = true
-                    // below.breaking = true
+                    if (below.sandwich)
+                      // this.robotSandwich(item,below)
+                      this.breakRobots(below)
 
-                    robots_to_clear.push(item)
+                    // robots_to_clear.push(item)
                     flasks_to_clear.push(below)
 
-                    item.chain += 1
-                    below.chain = item.chain
+                    // item.combo = below.combo + 1
+
+                    // item.chain += 1
+                    // below.chain = item.chain
 
                     item.splash_order = below.splash_order + 1
 
@@ -3358,11 +3431,15 @@ $def with (name)
                   // break if robot below is breaking (action combo)
                   } else if (below.type == 2 && ((item.color > 2) ? (below.color > 2):(below.color == item.color)) && below.breaking) {
 
-                    item.action_combo = true
-                    item.combo = below.combo + 1
-                    robots_to_clear.push(item)
+                    var flask = this.actionCombo(item)
 
-                    item.chain = below.chain
+                    this.breakRobots(flask)
+
+                    // item.action_combo = (below.action_combo)?false:true
+                    // item.combo = below.combo + 1
+                    // robots_to_clear.push(item)
+
+                    // item.chain = below.chain
                     console.log("item [" + TYPES[below.type] + "|" + COLORS[below.color] + "] passing chain (" + below.chain + ") to item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] above")
                     item.splash_order = below.splash_order + 1
 
@@ -3420,7 +3497,7 @@ $def with (name)
         this.y = y             // y position on the board
         this.active = false
         this.breaking = false
-        this.deathcounter = 40
+        this.deathcounter = DEATH_COUNTER_START
         this.sleepcounter = 0  // used for transitory animations
                                // (eg: potion filling up, items exploding, etc.)
         this.combo = 0
@@ -3428,6 +3505,9 @@ $def with (name)
         this.last_in_chain = false
         this.action_combo = false
         this.splash_order = 0
+        this.sandwich = false
+
+        this.splash = undefined
 
         var board = stack.board
 
@@ -3496,7 +3576,7 @@ $def with (name)
               // only if the flask is not empty
               if (this.color == WHITE && above.color != WHITE) {
                 this.color = above.color
-                this.chain = above.chain
+                this.chain = above.chain + 1
                 above.combo++
                 this.sleepcounter = 40
                 console.log("sleepcounter = " + this.sleepcounter)
@@ -3639,17 +3719,19 @@ $def with (name)
         this.speed = 1
         this.deathcounter = 60
 
+        var action_offset = (item.action_combo || (item.type==2 && item.sandwich)) ? -80 : 0
+
         this.index = stack.board.effects.length
 
         this.chain_sprite = new jaws.Sprite({
           x: item.sprite.x,
-          y: item.sprite.y,
+          y: item.sprite.y + action_offset,
           image: "./static/images/CHAIN.gif",
           anchor: "left"
         })
         this.combo_sprite = new jaws.Sprite({
           x: item.sprite.x,
-          y: item.sprite.y + 21,
+          y: item.sprite.y + 21 + action_offset,
           image: "./static/images/BLUE.gif",
           anchor: "left"
         })        
@@ -3693,7 +3775,7 @@ $def with (name)
 
           }
 
-          if (this.combo > 0) {
+          if (this.combo >= 0) {
 
             this.combo_sprite.draw()
 
@@ -3733,6 +3815,9 @@ $def with (name)
         this.sprite2 = new jaws.Sprite({x:this.stack.board.posx(x)+20, y:this.stack.board.posy(y), image: this.sprite_sheet.frames[1]})
         this.sprite3 = new jaws.Sprite({x:this.stack.board.posx(x), y:this.stack.board.posy(y)+20, image: this.sprite_sheet.frames[2]})
         this.sprite4 = new jaws.Sprite({x:this.stack.board.posx(x)+20, y:this.stack.board.posy(y)+20, image: this.sprite_sheet.frames[3]})
+
+        // determine item this splash belongs to
+        this.stack.items[y].splash = this
 
         this.initSprite = function(sprite, splash, x_offset, y_offset) {
 
@@ -3944,6 +4029,9 @@ $def with (name)
             if (this.raise_level_frequency_timer >= FREQ_RAISE_LEVEL_TIME) {
               if (raise_level_time > MIN_RAISE_LEVEL_TIME)
                 raise_level_time--
+              else
+                raise_level_time = MAX_RAISE_LEVEL_TIME
+
               console.log("raise_level_time = " + raise_level_time)
               this.raise_level_frequency_timer = 0
             }
