@@ -903,12 +903,44 @@ $def with (name)
         // record player actions
         this.replay_data = {}
 
-        this.addScore = function(points) {
+        // record player score
+        this.score_sheet = {"blocks":0,"potions":0,"robots":0,
+
+          "combos":{},  // key for each combo c
+          "chains":{},  // key for each chain c
+          "power_ups":{}
+
+        }
+
+        this.addScore = function(type,combo,chain) {
+
+          // add to player's score
+          points = Math.pow( (type==0)?combo:RobotCombo(combo),chain )
           this.score += points
+
+          // update screen data
           if (!level_edit)
             screen_data.items[2].text = '\u03BB' + this.score
           else
             console.log("SCORE = " + this.score)
+
+          // update player's score sheet
+          if (combo > 0) {
+            if (this.score_sheet.combos[combo.toString()] == undefined) {
+              this.score_sheet.combos[combo.toString()] = 1
+            } else
+              this.score_sheet.combos[combo.toString()] += 1
+          }
+          if (chain > 0) {
+            if (this.score_sheet.chains[chain.toString()] == undefined) {
+              this.score_sheet.chains[chain.toString()] = 1
+            } else
+              this.score_sheet.chains[chain.toString()] += 1
+          }
+
+          console.log("updating score sheet!")
+          console.dir(this.score_sheet)
+
         }
 
         // player controls
@@ -924,7 +956,6 @@ $def with (name)
           jaws.on_keydown(["l"], function() {
             if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
               player.board.raiseStacks()
-              // player.addScore(1)
               // record this action
               player.replay_data[player.timer.frame_ticker.toString()]
                 = [player.x,player.y,"raise",0]
@@ -1450,7 +1481,6 @@ $def with (name)
             if (click_outside_board && marathon) {
               if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
                 player.board.raiseStacks()
-                // player.addScore(1)
                 // record this action
                 player.replay_data[player.timer.frame_ticker.toString()]
                   = [player.x,player.y,"raise",0]
@@ -3074,21 +3104,17 @@ $def with (name)
 
           this.checkForMatches()
 
-          // // add to player score depending on type of this item
-          // if (old_item.type==0) {
-          //   player.addScore(100*old_item.chain)
-          // } else if (old_item.type==2) {
-          //   player.addScore(500*old_item.chain)
-          // }
-
           // show combo/chain effects for blocks
           if (old_item.type == 0) {
 
             // show chain effects and calculate score if last in chain
             if (old_item.last_in_chain) {
-              player.addScore(Math.pow(old_item.combo,old_item.chain))
+              player.addScore(old_item.type,old_item.combo,old_item.chain)
               this.board.effects.push(new ChainEffect(this,old_item))
             }
+
+            // update player's score sheet
+            player.score_sheet["blocks"]++
 
             // // stop sound effects
             // if (old_item.type == 1) {
@@ -3100,20 +3126,14 @@ $def with (name)
             //     this.board.effects.push(new ChainEffect(this,old_item))
             // }
 
-          // show combo/chain effects for flasks/robots
+          // show combo/chain effects for potions
           } else if (old_item.type == 1) {
-            player.addScore(Math.pow(RobotCombo(old_item.combo),old_item.chain))
+            player.addScore(old_item.type,old_item.combo,old_item.chain)
             this.board.effects.push(new ChainEffect(this,old_item))
-          } else if (old_item.type == 2) {
-            if (old_item.action_combo) {
-              player.addScore(Math.pow((-1)*RobotCombo(old_item.combo-1),old_item.chain))
-              player.addScore(Math.pow(RobotCombo(old_item.combo),old_item.chain))
-              this.board.effects.push(new ChainEffect(this,old_item))
-            } else if (old_item.sandwich) {
-              player.addScore(Math.pow(RobotCombo(old_item.combo),old_item.chain))
-              this.board.effects.push(new ChainEffect(this,old_item))
-            }
-          }
+
+            // update player's score sheet (robots)
+            player.score_sheet["robots"] += old_item.combo
+          } 
 
         }
 
@@ -3171,16 +3191,6 @@ $def with (name)
           console.log("robot_count = " + this.board.robot_count)
 
           this.checkForMatches()
-
-          // player.addScore(500*new_item.chain)
-
-          if (old_item.type == 2) {
-            if (old_item.action_combo) {
-              player.addScore(Math.pow((-1)*ROB_SCORE*(old_item.combo-1),old_item.chain))
-              player.addScore(Math.pow(ROB_SCORE*old_item.combo,old_item.chain))
-              this.board.effects.push(new ChainEffect(this,old_item))
-            }
-          }
 
         }
 
@@ -3583,6 +3593,9 @@ $def with (name)
                 this.sleepcounter = 40
                 console.log("sleepcounter = " + this.sleepcounter)
 
+                // update player's score sheet
+                player.score_sheet["potions"]++
+
                 // update sprite data
                 this.sprite = new jaws.Sprite({x:this.stack.board.posx(this.x),y:this.stack.board.posy(this.y), anchor:"left"})
                 var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_" + COLORS[this.color] + ".gif", frame_size: [40,40], frame_duration: 100})
@@ -3620,6 +3633,9 @@ $def with (name)
                   above.combo++
                   this.sleepcounter = 40
                   console.log("sleepcounter = " + this.sleepcounter)
+
+                  // update player's score sheet
+                  player.score_sheet["potions"]++
 
                   // update sprite data
                   this.sprite = new jaws.Sprite({x:this.stack.board.posx(this.x),y:this.stack.board.posy(this.y), anchor:"left"})
