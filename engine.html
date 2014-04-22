@@ -133,6 +133,7 @@ $def with (name)
     var marathon = false
     var marathon_debug = false
     var marathon_level_debug = 1
+    var marathon_level = marathon_level_debug
     var replay = null
     var replay_actions = 0
     var replay_index = -1
@@ -176,7 +177,6 @@ $def with (name)
       var level_select_ok
       var winlose = false
       var raise_level_time = MAX_RAISE_LEVEL_TIME
-      var marathon_level = marathon_level_debug
       var raise_count = 0
       var continue_menu_item
       var undo_menu_item
@@ -237,6 +237,8 @@ $def with (name)
       progress_buttons.hidden = true
 
       var replay_length = 0
+
+      marathon_level = marathon_level_debug
 
       /* Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
@@ -4492,31 +4494,26 @@ $def with (name)
       console.log("Buidling record string")
 
       var control_text = (board.player.keyboard_actions > board.player.mouse_actions) ? "KB" : (board.player.keyboard_actions == board.player.mouse_actions) ? "KM" : "MS"
-      var record = "\n\n" + new Date((+new Date())) + "\n"
 
-      if (marathon)
-        record += "\"" + player_name + "\"" + " " + "[" + player_uid + "]" + " " + starTotal() + " " + control_text + " MRTHN-" + MAX_RAISE_LEVEL_TIME + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
-      else
-        record += "\"" + player_name + "\"" + " " + "[" + player_uid + "]" + " " + starTotal() + " " + control_text + " " + player_level + "-" + player_stage + " (" + board.player.score + ")/(" + board.player.timer.clock_text + ")/(" + board.player.moves + ") " + winloss
+      var record_object = {}
 
-      // append data for replays
-      var player_moves = JSON.stringify(board.player.replay_data)
-      record += "\n" + player_moves
+      record_object["name"] = player_name
+      record_object["puzzle"] = (marathon) ? ("MRTHN-" + marathon_level) : (player_level + "-" + player_stage)
+      record_object["result"] = winloss
+      record_object["score"] = board.player.score
+      record_object["time"] = board.player.timer.clock_text
+      record_object["moves"] = board.player.moves
+      record_object["stars"] = starTotal()
+      record_object["controls"] = control_text
+      record_object["progress"] = star_progress
+      record_object["time_end"] = new Date((+new Date()))
+      record_object["replay"] = board.player.replay_data
+      record_object["uid"] = player_uid
 
-      console.log("new_stars = " + board.player.new_stars)
-      if (board.player.new_stars > 0) {
-        record += "\n"
-        for (var i = 0; i < star_progress.length; i++) {
-          var level_progress = JSON.stringify(star_progress[i])
-          record += "world " + i + " - " + level_progress + "\n"
-        }
-      }
+      var record = "\n\n" + JSON.stringify(record_object) + "\n"
 
       console.log(record)
-
       game_record = record
-
-      console.log("game_record = " + game_record)
 
       return record
 
