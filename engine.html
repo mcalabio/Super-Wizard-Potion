@@ -169,6 +169,7 @@ $def with (name)
       var winlose_data
       var winlose_menu
       var winlose_delay = WINLOSE_DELAY
+      var score_sheet_data
       var replay_menu
       var continue_lock_box
       var level_record
@@ -406,6 +407,11 @@ $def with (name)
         winlose_data_items.push(new MenuItem(winlose_data_items,"",function() {return}))
 
         winlose_data = new MenuBox("",winlose_data,menu_x, menu_y, 4*ITEM_WIDTH+15, winlose_data_items)
+
+        // score sheet data
+        if (marathon) {
+          score_sheet_data = new MenuBox("",score_sheet_data,menu_x, menu_y-ITEM_WIDTH, 5*ITEM_WIDTH+15, [])
+        }
 
         // add star sprites for winlose data
         for (var s=0; s < winlose_data_items.length; s++) {
@@ -2687,6 +2693,41 @@ $def with (name)
               if (player.score > marathon_progress[1])
                 marathon_progress[1] = player.score
 
+              // display score sheet
+              var score_sheet_items = new Array()
+              score_sheet_data.active = true
+
+              // sheet item for each n-chain
+              var n_chains = []
+              for (var key in player.score_sheet["chains"]) {
+                n_chains.push(parseInt(key))
+              }
+              n_chains.sort(function(a,b){return b-a})
+              for (var c=0; c<n_chains.length; c++) {
+                score_sheet_items.push(new MenuItem(score_sheet_data,n_chains[c].toString()+"-Chains:       "+ player.score_sheet["chains"][n_chains[c].toString()],function() {return}))                
+              }
+
+              // sheet item for each n-combo
+              var n_combos = []
+              for (var key in player.score_sheet["combos"]) {
+                n_combos.push(parseInt(key))
+              }
+              n_combos.sort(function(a,b){return b-a})
+              for (var c=0; c<n_combos.length; c++) {
+                score_sheet_items.push(new MenuItem(score_sheet_data,n_combos[c].toString()+"-Combos:       "+ player.score_sheet["combos"][n_combos[c].toString()],function() {return}))                
+              }
+
+
+              score_sheet_items.push(new MenuItem(score_sheet_data,"Robots cleared: " + player.score_sheet["robots"],function() {return}))
+              score_sheet_items.push(new MenuItem(score_sheet_data,"Potions brewed: " + player.score_sheet["potions"],function() {return}))
+              score_sheet_items.push(new MenuItem(score_sheet_data,"Blocks melted:  " + player.score_sheet["blocks"],function() {return}))
+              score_sheet_items.push(new MenuItem(score_sheet_data,"Zonks zonked:   0",function() {return}))
+
+              score_sheet_data.items = score_sheet_items
+
+              score_sheet_data.setup(score_sheet_data.x,score_sheet_data.y,score_sheet_data.width)
+              winlose_menu.setup(winlose_menu.x,score_sheet_data.y + score_sheet_data.height + 1,winlose_menu.width)
+
               // update player_save data and cookie data
               updateSaveAndCookie()
             }
@@ -2790,7 +2831,10 @@ $def with (name)
           // draw winlose menu
           if (game_end != "" && game_end != "R") {
             if (winlose_delay <= 0) {
-              winlose_data.draw()
+              if (marathon) {
+                score_sheet_data.draw()
+              } else
+                winlose_data.draw()
               if (replay == null)
                 winlose_menu.draw()
               else
@@ -2849,8 +2893,6 @@ $def with (name)
 
             above = this.items[above.y + 1]
 
-            // window.alert("breaking robots above with combo = " + item.combo + ", chain = " + item.chain)
-
           }
 
           splash_order = 0
@@ -2877,7 +2919,6 @@ $def with (name)
           }
 
           if (clear_flask) {
-            // window.alert("clearking flask with chain = " + item.chain)
             flasks_to_clear.push(item)
             this.clearRobotsFlasks(robots_to_clear,flasks_to_clear)
           }
@@ -2930,7 +2971,6 @@ $def with (name)
 
             above = this.items[above.y + 1]
 
-            // window.alert("breaking sandwich robots above with combo = " + robot.combo + ", chain = " + robot.chain)
           }       
 
           this.clearRobotsFlasks(robots_to_clear,[])   
@@ -2955,8 +2995,6 @@ $def with (name)
             item = items[i]
 
             if (item.type == 1 && !item.breaking) {
-              console.log ("castlevnai item")
-              console.dir (item)
               this.breakRobots(item)
             }
 
@@ -3347,8 +3385,10 @@ $def with (name)
                 this.shedRobot(item)
                 console.log("shedRobot")
               }
-              else
+              else {
                 this.removeItem(item)
+              }
+
             }
 
             // animate robots
@@ -3421,9 +3461,10 @@ $def with (name)
                   // break robot and same-colored flask below
                   if (below.sleepcounter == 0 && below.color == ((item.color > 2) ? 4 : item.color) && below.type == 1) {
 
-                    if (below.sandwich)
+                    if (below.sandwich) {
                       // this.robotSandwich(item,below)
                       this.breakRobots(below)
+                    }
 
                     // robots_to_clear.push(item)
                     flasks_to_clear.push(below)
@@ -5792,7 +5833,6 @@ $def with (name)
 
               console.log("open_data = ")
               console.dir(open_data)
-              // window.alert("OPEN DATA")
 
               player_name = open_data[1]
               player_progress = JSON.parse(open_data[2])
@@ -5906,7 +5946,6 @@ $def with (name)
 
           console.log("MAIN MENU open_data = ")
           console.dir(open_data)
-          // window.alert("OPEN DATA")
 
           player_name = open_data[1]
           // player_progress = JSON.parse(open_data[2])
@@ -6396,7 +6435,6 @@ $def with (name)
 
             console.log("open_data = ")
             console.dir(open_data)
-            // window.alert("OPEN DATA")
 
             player_name = open_data[1]
             // player_progress = JSON.parse(open_data[2])
