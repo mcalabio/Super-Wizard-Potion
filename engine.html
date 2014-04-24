@@ -2875,6 +2875,10 @@ $def with (name)
           if (item.color == WHITE || item.color == EMPTY)
             return
 
+          // don't break robots if they're already breaking from another potion
+          if (above != undefined && above.kill_potion != undefined && above.kill_potion != item)
+            return
+
           // check for robots above
           while (above != undefined && above.type == 2 && ((item.color == GOLD)?(above.color > 2):(above.color == item.color))) {
 
@@ -3253,11 +3257,15 @@ $def with (name)
         // clear array of robots followed by array of flasks
         this.clearRobotsFlasks = function(robots_to_clear,flasks_to_clear) {
 
+          var kill_potion = flasks_to_clear[0]
+
           for (var r = 0; r < robots_to_clear.length; r++) {
 
             var this_robot = robots_to_clear[r]
 
             this_robot.breaking = true
+
+            this_robot.kill_potion = kill_potion
 
             // put splashes here
             var robot_delay = this_robot.deathcounter + this_robot.splash_order
@@ -3366,7 +3374,10 @@ $def with (name)
 
               // add chain to items above
               if (above != undefined && !above.breaking) {
-                above.chain = item.chain + ((above.type!=item.type||above.color!=item.color)?1:0)
+                if (item.type == 0 && above.type == 0) {
+                  above.chain = item.chain
+                } else
+                  above.chain = item.chain + ((above.type!=item.type||above.color!=item.color)?1:0)
                 console.log("item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] passing chain (" + above.chain + ") to item [" + TYPES[above.type] + "|" + COLORS[above.color] + "] above")
               }
 
