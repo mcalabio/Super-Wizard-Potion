@@ -2423,13 +2423,15 @@ $def with (name)
             needed_color_potions[c] = Math.ceil(this.robot_count[c] / 9)
 
             // need 1 white potion for each unbrewed color potion
-            needed_color_potions[WHITE] += potential_color_potions[c] - this.flask_count[c]
+            if (needed_color_potions[c] - this.flask_count[c] > 0)
+              needed_color_potions[WHITE] += needed_color_potions[c] - this.flask_count[c]
 
             console.log("potential [" + c + "] = " + potential_color_potions[c])
             console.log("needed [" + c + "] = " + needed_color_potions[c])
 
             // player loses if not enough potions to clear all robots
             if (potential_color_potions[c] < needed_color_potions[c]) {
+              // window.alert("Lose! not enough potinos to clear all robots")
               game_end = "L"
               return
             }
@@ -2437,7 +2439,10 @@ $def with (name)
           }
 
           // check if there are enough white potions to brew necessary color potions
+          console.log("potential [WHITE] = " + potential_color_potions[WHITE])
+          console.log("needed [WHITE] = " + needed_color_potions[WHITE])
           if (potential_color_potions[WHITE] < needed_color_potions[WHITE]) {
+            // window.alert("Lose! not enough white potinos to brew color potions")
             game_end = "L"
             return
           }
@@ -2892,7 +2897,11 @@ $def with (name)
                 item.chain++
             }
 
-            above.chain = item.chain
+            if (item.chain > above.chain)
+              above.chain = item.chain
+            else
+              item.chain = above.chain
+            
             above.splash_order = splash_order = splash_order + 1
 
             above = this.items[above.y + 1]
@@ -5741,7 +5750,7 @@ $def with (name)
         var item_count = 0
         for (var i = 0; i < level_data.levels.length; i++) {
           for (var j = 0; j < level_data.levels[i].length; j++) {
-            console.log("i = " + i + ", j = " + j)
+            // console.log("i = " + i + ", j = " + j)
             var this_level = new MenuItem(level_edit_select,(i + "-" + (j+1)),function() {
                 player_level = this.level
                 player_stage = this.stage
