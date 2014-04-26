@@ -410,7 +410,7 @@ $def with (name)
 
         // score sheet data
         if (marathon) {
-          score_sheet_data = new MenuBox("",score_sheet_data,menu_x, menu_y-ITEM_WIDTH, 5*ITEM_WIDTH+15, [])
+          score_sheet_data = new MenuBox("",score_sheet_data,menu_x,menu_y, 5*ITEM_WIDTH+15, [])
         }
 
         // add star sprites for winlose data
@@ -2730,8 +2730,9 @@ $def with (name)
 
               score_sheet_data.items = score_sheet_items
 
-              score_sheet_data.setup(score_sheet_data.x,score_sheet_data.y,score_sheet_data.width)
-              winlose_menu.setup(winlose_menu.x,score_sheet_data.y + score_sheet_data.height + 1,winlose_menu.width)
+              winlose_menu.setup(winlose_menu.x,ITEM_WIDTH,winlose_menu.width)
+              score_sheet_data.center(player.board.board.x,player.board.board.width)
+              score_sheet_data.setup(score_sheet_data.x,winlose_menu.y + winlose_menu.height,score_sheet_data.width)
 
               // update player_save data and cookie data
               updateSaveAndCookie()
@@ -2897,10 +2898,14 @@ $def with (name)
                 item.chain++
             }
 
-            if (item.chain > above.chain)
+            // get the bigger chain if flask not in robot sandwich
+            if (!item.sandwich) {
+              if (item.chain > above.chain)
+                above.chain = item.chain
+              else
+                item.chain = above.chain
+            } else
               above.chain = item.chain
-            else
-              item.chain = above.chain
             
             above.splash_order = splash_order = splash_order + 1
 
@@ -3383,10 +3388,12 @@ $def with (name)
 
               // add chain to items above
               if (above != undefined && !above.breaking) {
-                if (item.type == 0 && above.type == 0) {
-                  above.chain = item.chain
-                } else
-                  above.chain = item.chain + ((above.type!=item.type||above.color!=item.color)?1:0)
+                if (item.type == 0) {
+                  above.chain = item.chain + ((above.type != 0)?1:0)
+                } else {
+                  if (above.type != 0)
+                    above.chain = item.chain + 1
+                }
                 console.log("item [" + TYPES[item.type] + "|" + COLORS[item.color] + "] passing chain (" + above.chain + ") to item [" + TYPES[above.type] + "|" + COLORS[above.color] + "] above")
               }
 
@@ -3854,7 +3861,7 @@ $def with (name)
 
           }
 
-          if (this.combo >= 0) {
+          if (this.combo > 0) {
 
             this.combo_sprite.draw()
 
@@ -4586,6 +4593,7 @@ $def with (name)
       record_object["time_end"] = new Date((+new Date()))
       record_object["replay"] = board.player.replay_data
       record_object["uid"] = player_uid
+      record_object["score_sheet"] = board.player.score_sheet
 
       var record = "\n\n" + JSON.stringify(record_object) + "\n"
 
@@ -5185,6 +5193,12 @@ $def with (name)
 
         this.mouse_inside = true
         return Math.round(index)
+      }
+
+      this.center = function(container_x,container_width) {
+
+        this.x = container_x + (container_width/2) - (this.width/2)
+
       }
 
       this.scroll_action = function() {
