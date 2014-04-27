@@ -127,10 +127,10 @@ $def with (name)
     var game_record = ""
     var level_edit = false
     var level_edit_play = false
-    var puzzle_mode_active = true
-    var level_editor_active = true
-    var change_name_active = true
-    var replay_mode_active = true
+    var puzzle_mode_active = false
+    var level_editor_active = false
+    var change_name_active = false
+    var replay_mode_active = false
     var marathon = false
     var marathon_debug = false
     var marathon_level_debug = 1
@@ -5276,9 +5276,11 @@ $def with (name)
 
           } else {
             this.index--
-            while (!this.items[this.index].active) {
+            while (!this.items[this.index].active && this.index > 0) {
               this.index--
             }
+            if (!this.items[this.index].active)
+              this.index++
           }
       }
 
@@ -5299,9 +5301,11 @@ $def with (name)
 
           } else {
             this.index++
-            while (!this.items[this.index].active) {
+            while (!this.items[this.index].active && this.index < this.items.length - 1) {
               this.index++
             }
+            if (!this.items[this.index].active)
+              this.index--
           }
       }
 
@@ -5577,14 +5581,15 @@ $def with (name)
             = "Brew potions to destroy robots. Clear\n" +
             "all robots from the board to advance to\n" +
             "the next puzzle."
-          main_menu_items.push(new MenuItem(main_menu,"Marathon",function() {
+          main_menu_items.push(new MenuItem(main_menu,"Marathon Mode",function() {
             level_edit = false
             marathon = true
             replay = null
             jaws.start(Game)
           }))
           main_menu_items[main_menu_items.length-1].description
-            = "Stacks rise toward the top of the board.\n" +
+            = "Brew potions to destroy robots. Clear\n" +
+            "Stacks rise toward the top of the board.\n" +
             "Try to survive and beat your high score!"
 
           var marathon_menu_item = main_menu_items[main_menu_items.length-1]
@@ -5837,16 +5842,16 @@ $def with (name)
           + "Right click to grab/drop a whole stack."
         help_menu_items.push(new MenuItem(help_menu, "Scoring", function() {return}))
         help_menu_items[help_menu_items.length-1].description
-          = "Melt block    : \u03BB100\n"
-          + "Brew potion   : \u03BB100\n"
-          + "Destroy robot : \u03BB500\n"
-          + "Perform chains to multiply your score."
+          = "Melting blocks gives you 1 point.\n"
+          + "Brewing potions gives you 1 point.\n"
+          + "Clear stacks of robots to multiply your score.\n"
+          + "Perform chains to exponentiate your score.\n"
         help_menu_items.push(new MenuItem(help_menu, "Misc.", function() {return}))
         help_menu_items[help_menu_items.length-1].description
-          = "Press CTRL+Z to undo your last move.\n"
+          = "CTRL+Z to undo your last move in Puzzle Mode.\n"
           + "(no stars can be earned if you undo)\n"
           + "Press L or click outside of the board\n"
-          + "to make the stacks rise in Marathon."
+          + "to make the stacks rise in Marathon Mode."
         var help_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 200, help_menu_items)
         help_menu.back = this.back
 
@@ -6055,7 +6060,6 @@ $def with (name)
           menus[0].submenus[0].draw()
         } else if (menus[0].index == 1){
           var marathon_submenu = menus[0].submenus[0]
-          console.dir(marathon_submenu.menu_box)
           marathon_submenu.menu_box.items[0].text = "Best Time:  " + marathon_progress[0]
           if (marathon_submenu.menu_box.items[1] == undefined) {
             marathon_submenu.menu_box.items.push(new MenuItem(marathon_submenu.menu_box,"High Score:",function(){return}))
@@ -6227,7 +6231,8 @@ $def with (name)
 
             if (player_name.length > 0) {
               jaws.switchGameState(MainMenu)
-            }
+            } else
+              jaws.start(PlayerNameState)
 
           })
 
