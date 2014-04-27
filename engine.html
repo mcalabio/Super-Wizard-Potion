@@ -37,7 +37,7 @@ $def with (name)
     var MAX_RAISE_LEVEL_TIME = 20
     var MIN_RAISE_LEVEL_TIME = 8
     var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 20 seconds
-    var MARATHON_STAR_LOCK = 30
+    var MARATHON_STAR_LOCK = 0
     var ZERO_STAR_LOCK = 0
     var MENU_FONT = "bold 12pt Menu Text"
     var ROB_SCORE = 2
@@ -127,6 +127,7 @@ $def with (name)
     var game_record = ""
     var level_edit = false
     var level_edit_play = false
+    var puzzle_mode_active = true
     var level_editor_active = true
     var change_name_active = true
     var replay_mode_active = true
@@ -2705,28 +2706,39 @@ $def with (name)
               // sheet item for each n-chain
               var n_chains = []
               for (var key in player.score_sheet["chains"]) {
-                n_chains.push(parseInt(key))
+                if (key == 1)
+                  continue
+                else
+                  n_chains.push(parseInt(key))
               }
               n_chains.sort(function(a,b){return b-a})
               for (var c=0; c<n_chains.length; c++) {
-                score_sheet_items.push(new MenuItem(score_sheet_data,n_chains[c].toString()+"-Chains:       "+ player.score_sheet["chains"][n_chains[c].toString()],function() {return}))                
+                score_sheet_items.push(new MenuItem(score_sheet_data,n_chains[c].toString()+"-Chains:       "+ player.score_sheet["chains"][n_chains[c].toString()],function() {return}))
+                score_sheet_items[score_sheet_items.length-1].color = "Orange"            
               }
 
               // sheet item for each n-combo
               var n_combos = []
               for (var key in player.score_sheet["combos"]) {
-                n_combos.push(parseInt(key))
+                if (key == 1)
+                  continue
+                else
+                  n_combos.push(parseInt(key))
               }
               n_combos.sort(function(a,b){return b-a})
               for (var c=0; c<n_combos.length; c++) {
-                score_sheet_items.push(new MenuItem(score_sheet_data,n_combos[c].toString()+"-Combos:       "+ player.score_sheet["combos"][n_combos[c].toString()],function() {return}))                
+                score_sheet_items.push(new MenuItem(score_sheet_data,n_combos[c].toString()+"-Combos:       "+ player.score_sheet["combos"][n_combos[c].toString()],function() {return}))
+                score_sheet_items[score_sheet_items.length-1].color = "Blue"
               }
 
 
               score_sheet_items.push(new MenuItem(score_sheet_data,"Robots cleared: " + player.score_sheet["robots"],function() {return}))
+              score_sheet_items[score_sheet_items.length-1].color = "Brown"
               score_sheet_items.push(new MenuItem(score_sheet_data,"Potions brewed: " + player.score_sheet["potions"],function() {return}))
+              score_sheet_items[score_sheet_items.length-1].color = "Brown"
               score_sheet_items.push(new MenuItem(score_sheet_data,"Blocks melted:  " + player.score_sheet["blocks"],function() {return}))
-              score_sheet_items.push(new MenuItem(score_sheet_data,"Zonks zonked:   0",function() {return}))
+              score_sheet_items[score_sheet_items.length-1].color = "Brown"
+              // score_sheet_items.push(new MenuItem(score_sheet_data,"Zonks zonked:   0",function() {return}))
 
               score_sheet_data.items = score_sheet_items
 
@@ -5618,6 +5630,7 @@ $def with (name)
           }))
         var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items,false,true)
 
+        main_menu_items[0].active = puzzle_mode_active
         main_menu.items[2].active = change_name_active // set change name to be active
         main_menu.items[3].active = level_editor_active // set level editor to be active
         main_menu.items[6].active = replay_mode_active // set replay mode to be active
@@ -6203,13 +6216,18 @@ $def with (name)
 
             console.log("in a callback with data = " + data)
 
-            if (data < 0)
-              jaws.start(PlayerNameState)
+            if (data < 0) {
+              player_path = 3
+              puzzle_mode_active = false
+              // jaws.start(PlayerNameState)
+            } else {
+              player_path = data
+              puzzle_mode_active = true
+            }
 
-            player_path = data
-
-            if (player_name.length > 0)
+            if (player_name.length > 0) {
               jaws.switchGameState(MainMenu)
+            }
 
           })
 
@@ -6479,6 +6497,8 @@ $def with (name)
             marathon_progress = JSON.parse(open_data[4])
             player_uid = open_data[5]
             player_path = parseInt(JSON.parse(open_data[6]))
+            if (player_path == undefined)
+              player_path = 3 // fix old cookies
 
             name_entered = true
           }
