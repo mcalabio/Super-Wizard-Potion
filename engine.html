@@ -1089,6 +1089,16 @@ $def with (name)
           jaws.on_keydown(["z"], function() {
             if (ctrl)
               undoLastMove()
+            else {
+              if (pause || game_end != "") return
+              if(player.hand.items.length == 0) {
+                player.grab(player.board.stacks[player.x],player.board.stacks[player.x].items.length)
+              } else {
+                player.drop(player.board.stacks[player.x],player.hand.items.length)
+              }
+              player.control_scheme = 0
+              player.keyboard_actions++
+            }
           })
 
           jaws.on_keydown(["r"], function() {
@@ -6502,7 +6512,7 @@ $def with (name)
             marathon_progress = JSON.parse(open_data[4])
             player_uid = open_data[5]
             player_path = parseInt(JSON.parse(open_data[6]))
-            if (player_path == undefined)
+            if (player_path == undefined || player_path < 0)
               player_path = 3 // fix old cookies
 
             name_entered = true
