@@ -4158,13 +4158,6 @@ $def with (name)
               this.player.board.raiseStacks()
             } else {
               this.player.board.raiseStacks()
-              var record = buildRecordString(this,"W")
-              saveRecord(record)
-
-              // // drop player hand, end game if nothing breaks
-              // this.player.drop(player.board.stacks[player.x],player.hand.items.length)
-              // if (!this.player.board.stacksBreaking())
-              //   game_end = "L"
             }
 
             this.raise_level_timer = raise_level_time
@@ -4617,7 +4610,7 @@ $def with (name)
       record_object["uid"] = player_uid
       record_object["score_sheet"] = board.player.score_sheet
 
-      var record = "\n\n" + JSON.stringify(record_object) + "\n"
+      var record = ",\n" + JSON.stringify(record_object)
 
       console.log(record)
       game_record = record

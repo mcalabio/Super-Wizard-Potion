@@ -28,7 +28,7 @@ class engine:
 		# saveRecord()
 		if (data["type"] == "saveRecord"):
 			record = data["data"]
-			f = open('records/records','a')
+			f = open('records/records.json','a')
 			f.write(record)
 			f.close()
 
