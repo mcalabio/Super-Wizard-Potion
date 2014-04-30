@@ -28,7 +28,8 @@ class engine:
 		# saveRecord()
 		if (data["type"] == "saveRecord"):
 			record = data["data"]
-			f = open('records/records.json','a')
+			f = open('records/records.json','r+')
+			f.seek(-3,2)
 			f.write(record)
 			f.close()
 
@@ -38,7 +39,7 @@ class engine:
 		elif (data["type"] == "getRecords"):
 			try:
 				f = open('records/records.json')
-				records_data = f.read()
+				records_data = f.read(size)
 				f.close()
 				return records_data
 			except:

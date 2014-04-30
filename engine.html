@@ -4610,7 +4610,7 @@ $def with (name)
       record_object["uid"] = player_uid
       record_object["score_sheet"] = board.player.score_sheet
 
-      var record = ",\n" + JSON.stringify(record_object)
+      var record = ",\n" + JSON.stringify(record_object) + "\n]"
 
       console.log(record)
       game_record = record
