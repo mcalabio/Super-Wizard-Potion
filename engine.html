@@ -127,10 +127,10 @@ $def with (name)
     var game_record = ""
     var level_edit = false
     var level_edit_play = false
-    var puzzle_mode_active = false
-    var level_editor_active = false
-    var change_name_active = false
-    var replay_mode_active = false
+    var puzzle_mode_active = true
+    var level_editor_active = true
+    var change_name_active = true
+    var replay_mode_active = true
     var marathon = false
     var marathon_debug = false
     var marathon_level_debug = 1
@@ -4610,7 +4610,7 @@ $def with (name)
       record_object["uid"] = player_uid
       record_object["score_sheet"] = board.player.score_sheet
 
-      var record = ",\n" + JSON.stringify(record_object) + "\n]"
+      var record = "," + JSON.stringify(record_object) + "]"
 
       console.log(record)
       game_record = record
@@ -4876,7 +4876,8 @@ $def with (name)
         data: json_data,
         success: function(data) {
           console.log("records data retrieved! = ")
-          console.dir(JSON.parse(data))
+          console.dir(data)
+          console.dir(JSON.stringify(JSON.parse(data)))
           callback(data)
           }
       });

@@ -29,7 +29,7 @@ class engine:
 		if (data["type"] == "saveRecord"):
 			record = data["data"]
 			f = open('records/records.json','r+')
-			f.seek(-3,2)
+			f.seek(-1,2)
 			f.write(record)
 			f.close()
 
@@ -38,11 +38,13 @@ class engine:
 		# getRecords()
 		elif (data["type"] == "getRecords"):
 			try:
-				f = open('records/records.json')
-				records_data = f.read(size)
+				f = open('records/records.json','r')
+				records_data = f.read()
 				f.close()
+				web.debug("records_data = " + records_data)
 				return records_data
 			except:
+				web.debug("error opening json file")
 				return ""
 
 		# playerPath()
