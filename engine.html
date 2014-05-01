@@ -697,14 +697,29 @@ $def with (name)
           replay_actions = 0
           
           replay_menu = new MenuBox("Replay",replay_menu,menu_x, winlose_data.y + winlose_data.height,4*ITEM_WIDTH+15,[],true)
+
+          console.log("replay_records = ")
+          console.dir(replay_records)
           
           // construct replay mode menu
           for (var i =0; i < replay_records.length; i++) {
             var this_replay = replay_records[i]
             var this_item = new MenuItem(replay_menu,this_replay["name"] + ":" + this_replay["puzzle"],function() {
               var level_name = replay_records[this.index]["puzzle"].split("-")
-              player_level = level_name[0]
-              player_stage = level_name[1]
+              
+              // marathon mode
+              if (level_name[0] == "MRTHN") {
+                player_level = 1
+                player_stage = 1
+                marathon = true
+
+              // puzzle mode
+              } else {
+                player_level = level_name[0]
+                player_stage = level_name[1]
+                marathon = false
+              }
+
               replay = replay_records[this.index]["replay"]
               replay_index = this.index
               jaws.start(Game)
@@ -735,7 +750,8 @@ $def with (name)
           if (winlose_delay > 0) {
             winlose_delay--
           } else if (winlose_delay == 0) {
-            winlose_menu.controls(winlose_menu)
+            if (replay == null)
+              winlose_menu.controls(winlose_menu)
             winlose_delay--
           }
           if (!winlose)
@@ -908,7 +924,7 @@ $def with (name)
         this.moves = 0
 
         // record player actions
-        this.replay_data = {}
+        this.replay_data = {"stack_queue":[[],[],[],[],[],[]]}        
 
         // record player score
         this.score_sheet = {"blocks":0,"potions":0,"robots":0,
@@ -1949,14 +1965,31 @@ $def with (name)
         // generate random item
         this.randomItem = function(stack,x,y) {
 
-          var type_color_string = randomization_array[marathon_level-1].pop()
-          randomization_array[marathon_level-1].push(type_color_string)
-          fisherYates(randomization_array[marathon_level-1])
-          console.log("randomization array rarray = ")
-          console.dir(randomization_array[marathon_level-1])
-          var type_color = type_color_string.split("|")
-          var type = type_color[0]
-          var color = type_color[1]
+
+          if (replay == null) {
+            var type_color_string = randomization_array[marathon_level-1].pop()
+            randomization_array[marathon_level-1].push(type_color_string)
+            fisherYates(randomization_array[marathon_level-1])
+            console.log("randomization array rarray = ")
+            console.dir(randomization_array[marathon_level-1])
+            var type_color = type_color_string.split("|")
+            var type = type_color[0]
+            var color = type_color[1]
+
+            // add this item to replay data
+            this.player.replay_data["stack_queue"][x].push(type_color_string)
+
+          // for replays, get recorded item in stack queue
+          } else {
+
+            console.log("RANDOME")
+            console.dir(replay)
+            var type_color_string = replay["stack_queue"][x].shift()
+            var type_color = type_color_string.split("|")
+            var type = type_color[0]
+            var color = type_color[1]
+
+          }
 
           return new Item(stack,type,color,x,y)
 
@@ -2580,17 +2613,11 @@ $def with (name)
                 winlose_menu.items = winlose_menu_items
                 winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
 
-                console.log("TYSON = " + (parseInt(player_level)))
-                console.dir(level_data.levels[LEVEL_PATHS[player_path][parseInt(player_level)]])
-
                 next_level = (level_data.levels[LEVEL_PATHS[player_path][parseInt(player_level)]] != undefined) ?
                   level_data.levels[LEVEL_PATHS[player_path][parseInt(player_level)]][0] : undefined
 
                 // next_level = (level_data.levels[parseInt(player_level) + 1] != undefined) ? level_data.levels[parseInt(player_level) + 1][0] : undefined
-                next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined      
-
-                console.log("continue! ??" + next_level)
-                console.dir(level_data)        
+                next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined       
 
                 // continue
                 if (next_level != undefined && !level_edit) {
@@ -4828,15 +4855,27 @@ $def with (name)
           var this_replay = replay_records[i]
           var this_item = new MenuItem(replay_select_menu,this_replay["name"] + ":" + this_replay["puzzle"],function() {
             var level_name = replay_records[this.index]["puzzle"].split("-")
-            player_level = level_name[0]
-            player_stage = level_name[1]
+
+            // marathon mode
+            if (level_name[0] == "MRTHN") {
+              player_level = 1
+              player_stage = 1
+              marathon = true
+
+            // puzzle mode
+            } else {
+              player_level = level_name[0]
+              player_stage = level_name[1]
+              marathon = false
+            }
+
             replay = replay_records[this.index]["replay"]
             replay_index = this.index
             jaws.start(Game)
 
           })
           this_item.index = i
-          console.log("adding item to relpay menu")
+          console.log("adding item to replay menu")
           replay_select_menu.items.push(this_item)
         }
 
