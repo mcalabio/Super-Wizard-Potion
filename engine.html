@@ -1966,7 +1966,7 @@ $def with (name)
         this.randomItem = function(stack,x,y) {
 
 
-          if (replay == null) {
+          if (replay == null || replay["stack_queue"][x].length == 0) {
             var type_color_string = randomization_array[marathon_level-1].pop()
             randomization_array[marathon_level-1].push(type_color_string)
             fisherYates(randomization_array[marathon_level-1])
@@ -4056,6 +4056,7 @@ $def with (name)
 
       }
 
+      // replay[frame_ticker] = [player_x,player_y,action,]
       function replayAction(frame_ticker) {
         if (replay[frame_ticker] != undefined) {
           console.log("REPLAY ACTION " + frame_ticker)
@@ -4114,6 +4115,8 @@ $def with (name)
             game_end = ""
             player.controls()
             undoLastMove(true)
+          } else if (frame[2] == "raise") {
+            player.board.raiseStacks()
           }
 
           // check if this is the last replay action on the replay array
