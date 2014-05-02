@@ -4630,7 +4630,7 @@ $def with (name)
       record_object["puzzle"] = (marathon) ? ("MRTHN-" + marathon_level) : (player_level + "-" + player_stage)
       record_object["result"] = winloss
       record_object["score"] = board.player.score
-      record_object["time"] = board.player.timer.clock_text
+      record_object["time"] = board.player.timer.frame_ticker
       record_object["moves"] = board.player.moves
       record_object["stars"] = starTotal()
       record_object["controls"] = control_text
@@ -4842,21 +4842,41 @@ $def with (name)
 
       getRecords(function(data) {
 
-        // TODO
-
-        // get replay data
         replay_records = []
         var records_data = JSON.parse(data)
-        for (var i = 0; i < records_data.length; i++) {
-          var record_data = records_data[i]
-          if (record_data["name"] == input_string)
-            replay_records.push({"name":record_data["name"],"puzzle":record_data["puzzle"],"replay":record_data["replay"],"result":record_data["result"],"time_end":record_data["time_end"]})
+
+        // cleanup script (removing duplicates where result = W)
+        if (input_string == "cleanup") {
+
+          var new_records = []
+
+          for (var i = 0; i < records_data.length; i++) {
+            var record_data = records_data[i]
+            if (record_data["result"] != "W") {
+              replay_records.push({"name":record_data["name"],"puzzle":record_data["puzzle"],"replay":record_data["replay"],"result":record_data["result"],"time_end":record_data["time_end"]})
+              new_records.push(record_data)
+            }
+          }
+
+          console.log("CLEANUP")
+          console.dir(new_records)
+          console.dir(JSON.stringify(new_records))
+
+        } else {
+
+          // get replay data
+          for (var i = 0; i < records_data.length; i++) {
+            var record_data = records_data[i]
+            if (record_data["name"] == input_string)
+              replay_records.push({"name":record_data["name"],"puzzle":record_data["puzzle"],"replay":record_data["replay"],"result":record_data["result"],"time_end":record_data["time_end"]})
+          }
+
         }
 
         // construct replay mode menu
         for (var i =0; i < replay_records.length; i++) {
           var this_replay = replay_records[i]
-          var this_item = new MenuItem(replay_select_menu,this_replay["name"] + ":" + this_replay["puzzle"],function() {
+          var this_item = new MenuItem(replay_select_menu,this_replay["name"] + ":" + this_replay["puzzle"] + "-" + this_replay["result"],function() {
             var level_name = replay_records[this.index]["puzzle"].split("-")
 
             // marathon mode
@@ -4918,8 +4938,7 @@ $def with (name)
         data: json_data,
         success: function(data) {
           console.log("records data retrieved! = ")
-          console.dir(data)
-          console.dir(JSON.stringify(JSON.parse(data)))
+          console.dir(JSON.parse(data))
           callback(data)
           }
       });
