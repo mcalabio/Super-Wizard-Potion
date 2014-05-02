@@ -4630,7 +4630,7 @@ $def with (name)
       record_object["puzzle"] = (marathon) ? ("MRTHN-" + marathon_level) : (player_level + "-" + player_stage)
       record_object["result"] = winloss
       record_object["score"] = board.player.score
-      record_object["time"] = board.player.timer.frame_ticker
+      record_object["time"] = board.player.timer.clock_text
       record_object["moves"] = board.player.moves
       record_object["stars"] = starTotal()
       record_object["controls"] = control_text
