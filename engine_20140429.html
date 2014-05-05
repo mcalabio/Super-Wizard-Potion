@@ -127,10 +127,10 @@ $def with (name)
     var game_record = ""
     var level_edit = false
     var level_edit_play = false
-    var puzzle_mode_active = false
-    var level_editor_active = false
-    var change_name_active = false
-    var replay_mode_active = false
+    var puzzle_mode_active = true
+    var level_editor_active = true
+    var change_name_active = true
+    var replay_mode_active = true
     var marathon = false
     var marathon_debug = false
     var marathon_level_debug = 1
@@ -1002,18 +1002,11 @@ $def with (name)
             X_SPEED = SLOW
             player.control_scheme = 0
             if(player.x > 0) {
-              if (player.canMoveX(-1)) {
-                // record this action
-                player.replay_data[player.timer.frame_ticker.toString()]
-                  = [player.x,player.y,"move_x",-1]   
-                player.moveX(-1)
-              } else {
+              if (player.canMoveX(-1)) player.moveX(-1)
+              else {
                 // drop minimum amount of items on hand so hand can move left
                 var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x - 1].items.length)
                 if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x - 1].items.length > 0) {
-                  // record this action
-                  player.replay_data[player.timer.frame_ticker.toString()]
-                    = [player.x-1,player.y,"drop",drop_amount]                    
                   player.drop(player.board.stacks[player.x],drop_amount)
                   player.moveX(-1)
                 }
@@ -1026,18 +1019,11 @@ $def with (name)
             X_SPEED = SLOW
             player.control_scheme = 0
             if(player.x < BOARD_WIDTH - 1) {
-              if (player.canMoveX(1)) {
-                // record this action
-                player.replay_data[player.timer.frame_ticker.toString()]
-                  = [player.x,player.y,"move_x",1]   
-                player.moveX(1)
-              } else {
+              if (player.canMoveX(1)) player.moveX(1)
+              else {
                 // drop minimum amount of items on hand so hand can move right
                 var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length)
                 if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length > 0) {
-                  // record this action
-                  player.replay_data[player.timer.frame_ticker.toString()]
-                    = [player.x+1,player.y,"drop",drop_amount]                    
                   player.drop(player.board.stacks[player.x],drop_amount)
                   player.moveX(1)
                 }
@@ -1049,12 +1035,7 @@ $def with (name)
           jaws.on_keydown(["up","w"], function() {
             if (pause || game_end != "") return
             player.control_scheme = 0
-            if(player.y < BOARD_HEIGHT-1) {
-              // record this action
-              player.replay_data[player.timer.frame_ticker.toString()]
-                = [player.x,player.y,"move_y",1]
-              player.y += 1
-            }
+            if(player.y < BOARD_HEIGHT-1)player.y += 1
             console.log("player (" + player.x + " , " + player.y + ")")
           })
           jaws.on_keydown(["down","s"], function() {
@@ -1074,16 +1055,8 @@ $def with (name)
 
             player.control_scheme = 0
             if(player.hand.items.length>0) {
-              // record this action
-              player.replay_data[player.timer.frame_ticker.toString()]
-                = [player.x,player.y,"drop",player.hand.items.length]   
               player.drop(player.board.stacks[player.x],player.hand.items.length)
-            } else if(player.y > 0) {
-              // record this action
-              player.replay_data[player.timer.frame_ticker.toString()]
-                = [player.x,player.y,"move_y",-1]
-              player.y -= 1
-            }
+            } else if(player.y > 0) player.y -= 1
 
 
             console.log("player (" + player.x + " , " + player.y + ")")
@@ -1091,14 +1064,8 @@ $def with (name)
           jaws.on_keydown(["k","c"], function() {
             if (pause || game_end != "") return
             if(player.hand.items.length == 0) {
-              // record this action
-              player.replay_data[player.timer.frame_ticker.toString()]
-                = [player.x,player.y,"grab",player.board.stacks[player.x].items.length]
               player.grab(player.board.stacks[player.x],player.board.stacks[player.x].items.length)
             } else {
-              // record this action
-              player.replay_data[player.timer.frame_ticker.toString()]
-                = [player.x,player.y,"drop",player.hand.items.length]   
               player.drop(player.board.stacks[player.x],player.hand.items.length)
             }
             player.control_scheme = 0
@@ -1109,15 +1076,9 @@ $def with (name)
             if(player.hand.items.length == 0) {
               //grab depth determined by cursor y-position
               var depth = player.board.stacks[player.x].items.length - player.y
-              // record this action
-              player.replay_data[player.timer.frame_ticker.toString()]
-                = [player.x,player.y,"grab",depth]
               player.grab(player.board.stacks[player.x],depth)
             } else {
               //drop
-              // record this action
-              player.replay_data[player.timer.frame_ticker.toString()]
-                = [player.x,player.y,"drop",1]
               player.drop(player.board.stacks[player.x],1)
             }
             player.control_scheme = 0
@@ -1147,9 +1108,6 @@ $def with (name)
             else {
               if (pause || game_end != "") return
               if(player.hand.items.length == 0) {
-                // record this action
-                player.replay_data[player.timer.frame_ticker.toString()]
-                  = [player.x,player.y,"grab",depth]
                 player.grab(player.board.stacks[player.x],player.board.stacks[player.x].items.length)
               } else {
                 player.drop(player.board.stacks[player.x],player.hand.items.length)
@@ -1428,6 +1386,10 @@ $def with (name)
         // grab depth amount of items from stack
         this.grab = function(stack,depth) {
 
+          // record this action
+          this.replay_data[this.timer.frame_ticker.toString()]
+            = [this.x,this.y,"grab",depth]
+
           // start the timer
           if (!game_start)
             game_start = true
@@ -1478,7 +1440,11 @@ $def with (name)
         }
 
         // drop depth amount of items onto stack
-        this.drop = function(stack,depth) {       
+        this.drop = function(stack,depth) {
+
+          // record this action
+          this.replay_data[this.timer.frame_ticker.toString()]
+            = [this.x,this.y,"drop",depth]          
 
           this.moves++
           console.log("player moves = " + this.moves)
@@ -4104,16 +4070,36 @@ $def with (name)
             player.grab(player.board.stacks[player.x],frame[3])
           } else if (frame[2] == "drop") {
 
-            var dx = frame[0] - player.x
+              if(player.x > 0 && frame[0] < player.x) {
+                var dx = Math.abs(frame[0] - player.x)
+                for (var i = 0; i < dx; i++) {
+                  if (player.canMoveX(-1)) player.moveX(-1)
+                  else {
+                    // drop minimum amount of items on hand so hand can move left
+                    var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x -1].items.length)
+                    if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x - 1].items.length > 0) {
+                      player.drop(player.board.stacks[player.x],drop_amount)
+                      player.moveX(-1)
+                    }
+                  }
+                }
+              } else if(player.x < BOARD_WIDTH - 1 && frame[0] > player.x) {
+                var dx = Math.abs(frame[0] - player.x)
+                for (var i = 0; i < dx; i++) {
+                  if (player.canMoveX(1)) player.moveX(1)
+                  else {
+                    // drop minimum amount of items on hand so hand can move right
+                    var drop_amount = player.hand.items.length - (BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length)
+                    if (drop_amount > 0 && BOARD_HEIGHT - player.board.stacks[player.x + 1].items.length > 0) {
+                      player.drop(player.board.stacks[player.x],drop_amount)
+                      player.moveX(1)
+                    }
+                  }
+                }                   
+              }
 
-            player.y = frame[1]
-            player.drop(player.board.stacks[player.x],frame[3])
-            player.moveX(dx)
-
-          } else if (frame[2] == "move_x") {
-            player.moveX(frame[3])
-          } else if (frame[2] == "move_y") {
-            player.y += frame[3]
+              player.y = frame[1]
+              player.drop(player.board.stacks[player.x],frame[3])
           } else if (frame[2] == "undo") {
             undoLastMove()
           } else if (frame[2] == "undo_menu") {
@@ -4644,7 +4630,7 @@ $def with (name)
       record_object["puzzle"] = (marathon) ? ("MRTHN-" + marathon_level) : (player_level + "-" + player_stage)
       record_object["result"] = winloss
       record_object["score"] = board.player.score
-      record_object["time"] = board.player.timer.clock_text
+      record_object["time"] = board.player.timer.frame_ticker
       record_object["moves"] = board.player.moves
       record_object["stars"] = starTotal()
       record_object["controls"] = control_text
