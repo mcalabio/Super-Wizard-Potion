@@ -1197,6 +1197,9 @@ $def with (name)
             var click_coordinates = new Array()
             click_coordinates = player.board.boardCoordinates(jaws.mouse_x,jaws.mouse_y)
             console.log("click coordinates on board: (" + click_coordinates[0] + "," + click_coordinates[1] + ")")
+              // record this action
+              player.replay_data[player.timer.frame_ticker.toString()]
+                = [click_coordinates[0],click_coordinates[1],"click",0]
             player.clickAction(click_coordinates)
           })
 
@@ -1205,6 +1208,9 @@ $def with (name)
             var click_coordinates = new Array()
             click_coordinates = player.board.boardCoordinates(jaws.mouse_x,jaws.mouse_y)
             console.log("right click coordinates on board: (" + click_coordinates[0] + "," + click_coordinates[1] + ")")
+              // record this action
+              player.replay_data[player.timer.frame_ticker.toString()]
+                = [click_coordinates[0],click_coordinates[1],"click",1]
             player.clickAction(click_coordinates,true)
           })
 
@@ -4114,7 +4120,10 @@ $def with (name)
             player.moveX(frame[3])
           } else if (frame[2] == "move_y") {
             player.y += frame[3]
-          } else if (frame[2] == "undo") {
+          } else if (frame[2] == "click") {
+            var click_coordinates = [frame[0],frame[1]]
+            player.clickAction(click_coordinates,frame[3])
+          }else if (frame[2] == "undo") {
             undoLastMove()
           } else if (frame[2] == "undo_menu") {
             winlose = false
