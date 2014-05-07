@@ -1661,10 +1661,6 @@ $def with (name)
           // update cursor position
           var cursor = this.cursor
 
-          // cursor.dx = this.board.posx(this.x)
-          // cursor.dy = this.board.posy(this.y)
-          // spriteMove(cursor,X_SPEED,X_SPEED)
-
           this.updatePlayerSprites(this.board.posx(this.x),this.board.posy(this.y))
 
           this.board.update() // updates sprites for each stack
@@ -4117,8 +4113,10 @@ $def with (name)
             player.moveX(dx)
 
           } else if (frame[2] == "move_x") {
+            player.control_scheme = 0
             player.moveX(frame[3])
           } else if (frame[2] == "move_y") {
+            player.control_scheme = 0
             player.y += frame[3]
           } else if (frame[2] == "click") {
             var click_coordinates = [frame[0],frame[1]]
