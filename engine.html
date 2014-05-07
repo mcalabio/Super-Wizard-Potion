@@ -4854,7 +4854,7 @@ $def with (name)
 
     }
 
-    function replayMode (menus,replay_select_menu,level_select_ok,active_menu) {
+    function replayMode (menus,replay_select_menu,level_select_ok,active_menu,level_record) {
 
       var input_string = window.prompt("enter player name","0501zonk1")
 
@@ -4889,12 +4889,13 @@ $def with (name)
           for (var i = 0; i < records_data.length; i++) {
             var record_data = records_data[i]
             if (record_data["name"] == input_string)
-              replay_records.push({"name":record_data["name"],"puzzle":record_data["puzzle"],"replay":record_data["replay"],"result":record_data["result"],"time_end":record_data["time_end"]})
+              replay_records.push({"name":record_data["name"],"puzzle":record_data["puzzle"],"replay":record_data["replay"],"result":record_data["result"],"time_end":record_data["time_end"],"time":record_data["time"],"score":record_data["score"]})
           }
 
         }
 
         // construct replay mode menu
+        replay_select_menu.items = []
         for (var i =0; i < replay_records.length; i++) {
           var this_replay = replay_records[i]
           var this_item = new MenuItem(replay_select_menu,this_replay["name"] + ":" + this_replay["puzzle"] + "-" + this_replay["result"],function() {
@@ -4935,17 +4936,6 @@ $def with (name)
         replay_select_menu.controls(replay_select_menu,level_select_ok,menus)
 
       })
-
-      // replay = JSON.parse(input_string)
-      // console.log("REPLAY DATA")
-      // console.dir(replay)
-      // var input_level = window.prompt("enter level","world-level")
-      // var level_name = input_level.split("-")
-      // player_level = parseInt(level_name[0])
-      // player_stage = level_name[1]
-      // marathon = false
-      // level_edit = false
-      // jaws.start(Game)
 
     }
 
@@ -5615,6 +5605,7 @@ $def with (name)
       var star_total_sprite
       var description_box
       var level_record
+      var replay_record_box
 
       // unhide progress buttons
       var progress_buttons = $("progressButtons")
@@ -5716,7 +5707,7 @@ $def with (name)
             = "Save, Load, or Reset your progress.\n"
           main_menu_items.push(new MenuItem(main_menu,"Replay Mode",function() {
 
-            replayMode(menus,replay_select_menu,level_select_ok,active_menu)
+            replayMode(menus,replay_select_menu,level_select_ok,active_menu,level_record)
 
           }))
         var main_menu = new MenuBox("",main_menu,ITEM_WIDTH,ITEM_WIDTH,200,main_menu_items,false,true)
@@ -6038,6 +6029,17 @@ $def with (name)
         level_record = new MenuBox("",level_record,level_select_menu.x + level_select_menu.width - 30, level_select_menu.y+5, 230, level_record_items)
         level_record.index = -1
 
+        // replay record data
+        var replay_record_items = new Array()
+        replay_record_items.push(new MenuItem(level_record,"",function() {return}))
+        replay_record_items.push(new MenuItem(level_record,"",function() {return}))
+        replay_record_items.push(new MenuItem(level_record,"",function() {return}))
+        replay_record_items.push(new MenuItem(level_record,"",function() {return}))
+
+        replay_record_box = new MenuBox("",replay_record_box,level_select_menu.x, level_select_ok.y+level_select_ok.height, 230, replay_record_items)
+        replay_record_box.index = -1
+
+
         // add star sprites for level record data
         for (var s=0; s < level_record_items.length; s++) {
           var this_sprite = new jaws.Sprite({x:level_record.x,y:level_record.y+36 + 20*(s-1),anchor:"left",image:"./static/images/STAR.gif"})
@@ -6074,6 +6076,8 @@ $def with (name)
         } else
         // controls
         active_menu.controls(active_menu)
+        console.log("menus!")
+        console.dir(menus)
       }
 
       this.update = function() {
@@ -6185,7 +6189,18 @@ $def with (name)
               level_record.draw()
             }
           }
-        }
+        } else if (menus[0].index == 6 && menus[1] != undefined) {
+
+          // replay record data
+          replay_record_box.setup(menus[1].x,menus[1].y+menus[1].height, 230)
+
+          var this_replay = replay_records[menus[1].index]
+          replay_record_box.items[0].text = this_replay["puzzle"]
+          replay_record_box.items[1].text = "Time:   " + this_replay["time"]
+          replay_record_box.items[2].text = "Score:  " + this_replay["score"]
+          replay_record_box.items[3].text = "Result: " + this_replay["result"]
+          replay_record_box.draw()
+        }        
 
       }
 
