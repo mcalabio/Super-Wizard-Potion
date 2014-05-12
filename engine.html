@@ -35,7 +35,7 @@ $def with (name)
     var ITEM_WIDTH = 40
     var PURPLE_HEX = '#350028'//'#700054'
     var MAX_RAISE_LEVEL_TIME = 20
-    var MIN_RAISE_LEVEL_TIME = 8
+    var MIN_RAISE_LEVEL_TIME = 20
     var FREQ_RAISE_LEVEL_TIME = 20  // decrease raise_level_time every 20 seconds
     var MARATHON_STAR_LOCK = 0
     var ZERO_STAR_LOCK = 0
@@ -127,10 +127,10 @@ $def with (name)
     var game_record = ""
     var level_edit = false
     var level_edit_play = false
-    var puzzle_mode_active = false
-    var level_editor_active = false
-    var change_name_active = false
-    var replay_mode_active = false
+    var puzzle_mode_active = true
+    var level_editor_active = true
+    var change_name_active = true
+    var replay_mode_active = true
     var marathon = false
     var marathon_debug = false
     var marathon_level_debug = 1
@@ -311,7 +311,7 @@ $def with (name)
         // and setup screen data for marathon
         if (marathon) {
           console.log("MARATHON")
-          raise_level_time = 24
+          raise_level_time = MAX_RAISE_LEVEL_TIME
           player.board.marathonLevel(5)
 
           var marathon_data_items = new Array()
@@ -4906,6 +4906,9 @@ $def with (name)
               player_level = 1
               player_stage = 1
               marathon = true
+              MAX_RAISE_LEVEL_TIME = level_name[1]
+              MIN_RAISE_LEVEL_TIME = level_name[2]
+              FREQ_RAISE_LEVEL_TIME = level_name[3]
 
             // puzzle mode
             } else {
