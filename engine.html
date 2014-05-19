@@ -127,10 +127,10 @@ $def with (name)
     var game_record = ""
     var level_edit = false
     var level_edit_play = false
-    var puzzle_mode_active = true
-    var level_editor_active = true
-    var change_name_active = true
-    var replay_mode_active = true
+    var puzzle_mode_active = false
+    var level_editor_active = false
+    var change_name_active = false
+    var replay_mode_active = false
     var marathon = false
     var marathon_debug = false
     var marathon_level_debug = 1
@@ -5668,7 +5668,7 @@ $def with (name)
             jaws.start(Game)
           }))
           main_menu_items[main_menu_items.length-1].description
-            = "Brew potions to destroy robots. Clear\n" +
+            = "Brew potions to destroy robots.\n" +
             "Stacks rise toward the top of the board.\n" +
             "Try to survive and beat your high score!"
 
