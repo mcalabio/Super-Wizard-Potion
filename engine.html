@@ -127,14 +127,15 @@ $def with (name)
     var game_record = ""
     var level_edit = false
     var level_edit_play = false
-    var puzzle_mode_active = false
-    var level_editor_active = false
-    var change_name_active = false
-    var replay_mode_active = false
+    var puzzle_mode_active = true
+    var level_editor_active = true
+    var change_name_active = true
+    var replay_mode_active = true
     var marathon = false
     var marathon_debug = false
     var marathon_level_debug = 1
     var marathon_level = marathon_level_debug
+    var line_game = false
     var replay = null
     var replay_actions = 0
     var replay_index = -1
@@ -157,6 +158,9 @@ $def with (name)
 
     var cookie_save = getCookie("player_save")
     var replay_records = []
+
+    // json object storing line game puzzles in story mode
+    var line_games = {"1-6":{"blk_red":4,"pot_red":1,"rob_red":4,"height":5,"depth":3,"max_raise":20,"min_raise":20,"freq_raise":20}}
 
     function Game() {
       var player
@@ -242,7 +246,14 @@ $def with (name)
 
       marathon_level = marathon_level_debug
 
-      /* Called once when a game state is activated. Use it for one-time setup code. */
+      // line game
+      var line_game_data = line_games[level_name]
+      if (line_game_data != undefined)
+        line_game = true
+      else
+        line_game = false
+
+      /*  Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
         // live_info = document.getElementById("live_info")
         live_info = $("live_info")
@@ -326,6 +337,11 @@ $def with (name)
 
           // marathon_star_lock_menu.menu_box.setup(main_menu.x + main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 20,level_select_ok.menu_box.width)
 
+        } else if (line_game) {
+          raise_level_time = line_game_data["max_raise"]
+          player.board.marathonLevel(line_game_data["height"])
+
+          game_start = true
         } else {
           console.dir(level_data)
           if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
@@ -977,7 +993,7 @@ $def with (name)
           })
 
           jaws.on_keydown(["l"], function() {
-            if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
+            if ((marathon || line_game) && !player.board.stacksBreaking() && !player.board.stacksFull()) {
               player.board.raiseStacks()
               // record this action
               player.replay_data[player.timer.frame_ticker.toString()]
@@ -2472,7 +2488,7 @@ $def with (name)
         // check if the player has reached a win/lose condition and act accordingly
         this.checkWinLose = function() {
 
-          if (marathon)
+          if (marathon || line_game)
             return
 
           console.log("CHECKING")
