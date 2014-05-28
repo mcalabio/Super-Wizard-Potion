@@ -1567,8 +1567,8 @@ $def with (name)
             if (click_x < 0 || click_y < 0)
               click_outside_board = true
 
-            if (click_outside_board && marathon) {
-              if (marathon && !player.board.stacksBreaking() && !player.board.stacksFull()) {
+            if (click_outside_board && (marathon || line_game)) {
+              if ((marathon || line_game) && !player.board.stacksBreaking() && !player.board.stacksFull()) {
                 player.board.raiseStacks()
                 // record this action
                 player.replay_data[player.timer.frame_ticker.toString()]
@@ -1692,7 +1692,7 @@ $def with (name)
           if (pause || game_end != "")
             return
 
-          if (marathon) {
+          if (marathon || line_game) {
             // draw hand, flash if stack is full
             var this_stack = this.board.stacks[this.x]
             var this_stack_full = (this_stack.items.length + this.hand.items.length == BOARD_HEIGHT)
@@ -2137,12 +2137,16 @@ $def with (name)
 
           console.log("raising stack with raise_count = " + raise_count)
 
-          if (!marathon_debug) {
+          if (marathon && !marathon_debug) {
             if (raise_count == raise_count_level[marathon_level-1]) {
               if (marathon_level < ITEM_PROBS["0|0"].length) {
                 raise_count = 0
                 marathon_level++
               }
+            }
+          } else if (line_game) {
+            if (raise_count >= line_game_data["depth"]) {
+              game_end = "W"
             }
           }
 
@@ -2464,7 +2468,7 @@ $def with (name)
           var board_x = x - this.board.x
           var board_y = y - this.board.y
 
-          if (marathon) {
+          if (marathon || line_game) {
             if (board_x < 0 || board_x > this.board.width || board_y < 0 || board_y > this.board.height) {
               return [-1,-1]
             }
@@ -3642,7 +3646,7 @@ $def with (name)
           // for (var i=0; i<this.items.length;i++) {
           //   this.items[i].draw()
           // }
-          if (!marathon) {
+          if (!(marathon || line_game)) {
             for (var i=0; i<this.items.length;i++) {
               this.items[i].draw()
             }
@@ -3658,7 +3662,7 @@ $def with (name)
               }
             }
           }
-          if (this.level >= 0 && marathon) {
+          if (this.level >= 0 && (marathon || line_game)) {
             this.next_random_item.draw()
           }
         }
@@ -4211,7 +4215,7 @@ $def with (name)
               this.raise_level_frequency_timer = 0
             }
 
-            if (marathon && MAX_RAISE_LEVEL_TIME > 0 && !this.player.board.stacksBreaking())
+            if ((marathon || line_game) && MAX_RAISE_LEVEL_TIME > 0 && !this.player.board.stacksBreaking())
               this.raise_level_timer--
 
           }
