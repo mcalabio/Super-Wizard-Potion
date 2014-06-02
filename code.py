@@ -161,6 +161,14 @@ class engine:
 
 					break
 
+			try:
+				f = open('levels/sprints.json','r')
+				levels_data["sprints"] = f.read()
+				f.close()
+
+			except:
+				web.debug("failed to open sprints.json file")
+
 			return json.JSONEncoder().encode(levels_data)
 
 		# saveLevel()

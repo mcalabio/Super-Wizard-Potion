@@ -135,7 +135,7 @@ $def with (name)
     var marathon_debug = false
     var marathon_level_debug = 1
     var marathon_level = marathon_level_debug
-    var line_game = false
+    var sprint = false
     var replay = null
     var replay_actions = 0
     var replay_index = -1
@@ -160,7 +160,7 @@ $def with (name)
     var replay_records = []
 
     // json object storing line game puzzles in story mode
-    var line_games = {"1-6":{"blk_red":4,"pot_red":1,"rob_red":4,"height":5,"depth":1,"max_raise":20,"min_raise":20,"freq_raise":20}}
+    var sprints //= {"1-6":{"blk_red":4,"pot_red":1,"rob_red":4,"height":5,"depth":1,"max_raise":20,"min_raise":20,"freq_raise":20}}
 
     function Game() {
       var player
@@ -247,11 +247,11 @@ $def with (name)
       marathon_level = marathon_level_debug
 
       // line game
-      var line_game_data = line_games[level_name]
-      if (line_game_data != undefined)
-        line_game = true
+      var sprint_data = (sprints != undefined) ? sprints[level_name] : undefined
+      if (sprint_data != undefined)
+        sprint = true
       else
-        line_game = false
+        sprint = false
 
       /*  Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
@@ -337,9 +337,9 @@ $def with (name)
 
           // marathon_star_lock_menu.menu_box.setup(main_menu.x + main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 20,level_select_ok.menu_box.width)
 
-        } else if (line_game) {
-          raise_level_time = line_game_data["max_raise"]
-          player.board.marathonLevel(line_game_data["height"])
+        } else if (sprint) {
+          raise_level_time = sprint_data["max_raise"]
+          player.board.marathonLevel(sprint_data["height"])
 
           game_start = true
         } else {
@@ -993,7 +993,7 @@ $def with (name)
           })
 
           jaws.on_keydown(["l"], function() {
-            if ((marathon || line_game) && !player.board.stacksBreaking() && !player.board.stacksFull()) {
+            if ((marathon || sprint) && !player.board.stacksBreaking() && !player.board.stacksFull()) {
               player.board.raiseStacks()
               // record this action
               player.replay_data[player.timer.frame_ticker.toString()]
@@ -1467,7 +1467,27 @@ $def with (name)
 
             // push top of stack to hand
             var item = stack.items.pop()
-            if (item.breaking) {
+
+            if (i==0 && item.type==3) {
+              this.hand.items.push(item)
+              // update hand position
+              item.x = this.x
+              item.y = BOARD_HEIGHT - 1 - i
+              item.stack = this.hand
+
+              // update sprite destination
+              item.sprite.dx = this.board.posx(item.x)
+              item.sprite.dy = this.board.posy(item.y)
+
+              // reset chain
+              item.chain = 0
+
+              game_end = "W"
+
+              break
+            }
+
+            if (item.breaking || item.type == 3) {
               stack.items.push(item)
               break
             }
@@ -1567,8 +1587,8 @@ $def with (name)
             if (click_x < 0 || click_y < 0)
               click_outside_board = true
 
-            if (click_outside_board && (marathon || line_game)) {
-              if ((marathon || line_game) && !player.board.stacksBreaking() && !player.board.stacksFull()) {
+            if (click_outside_board && (marathon || sprint)) {
+              if ((marathon || sprint) && !player.board.stacksBreaking() && !player.board.stacksFull()) {
                 player.board.raiseStacks()
                 // record this action
                 player.replay_data[player.timer.frame_ticker.toString()]
@@ -1692,7 +1712,7 @@ $def with (name)
           if (pause || game_end != "")
             return
 
-          if (marathon || line_game) {
+          if (marathon || sprint) {
             // draw hand, flash if stack is full
             var this_stack = this.board.stacks[this.x]
             var this_stack_full = (this_stack.items.length + this.hand.items.length == BOARD_HEIGHT)
@@ -1996,6 +2016,8 @@ $def with (name)
         this.flask_count = [0,0,0,0,0,0,0,0,0]
         this.robot_count = [0,0,0,0,0,0]
 
+        this.cauldron_count = 0
+
         this.effects = new Array()
         this.sounds = new Array()
 
@@ -2068,7 +2090,6 @@ $def with (name)
         this.spawnItem = function(type,color) {
           var rand_stack = Math.floor(Math.random()*6)
           this.item_queue.push(new Item(this.stacks[rand_stack],type,color,rand_stack,-1))
-          window.alert("spawning item of type = " + type + " and color = " + color + "at x = " + rand_stack)
         }
 
         // checks if a stack contains breaking items
@@ -2168,10 +2189,11 @@ $def with (name)
                 marathon_level++
               }
             }
-          } else if (line_game) {
-            if (raise_count >= line_game_data["depth"]) {
+          } else if (sprint) {
+            if (raise_count >= sprint_data["depth"]) {
               // game_end = "W"
-              player.board.spawnItem(3,EMPTY)
+              if (player.board.cauldron_count < 1)
+                player.board.spawnItem(3,EMPTY)
             }
           }
 
@@ -2493,7 +2515,7 @@ $def with (name)
           var board_x = x - this.board.x
           var board_y = y - this.board.y
 
-          if (marathon || line_game) {
+          if (marathon || sprint) {
             if (board_x < 0 || board_x > this.board.width || board_y < 0 || board_y > this.board.height) {
               return [-1,-1]
             }
@@ -2517,7 +2539,7 @@ $def with (name)
         // check if the player has reached a win/lose condition and act accordingly
         this.checkWinLose = function() {
 
-          if (marathon || line_game)
+          if (marathon || sprint)
             return
 
           console.log("CHECKING")
@@ -3549,7 +3571,7 @@ $def with (name)
             }
 
             // animate robots
-            if (item.type == 1 || item.type == 2) {
+            if (item.type == 1 || item.type == 2 || item.type == 3) {
               item.sprite.setImage(item.sprite.anim_default.next())
             }
 
@@ -3671,7 +3693,7 @@ $def with (name)
           // for (var i=0; i<this.items.length;i++) {
           //   this.items[i].draw()
           // }
-          if (!(marathon || line_game)) {
+          if (!(marathon || sprint)) {
             for (var i=0; i<this.items.length;i++) {
               this.items[i].draw()
             }
@@ -3687,7 +3709,7 @@ $def with (name)
               }
             }
           }
-          if (this.level >= 0 && (marathon || line_game)) {
+          if (this.level >= 0 && (marathon || sprint)) {
             this.next_random_item.draw()
           }
         }
@@ -3760,6 +3782,7 @@ $def with (name)
           var anim = new jaws.Animation({sprite_sheet: "./static/images/CAULDRON.gif", frame_size: [40,40], frame_duration: 100})
           this.sprite.anim_default = anim.slice(0,4)
           this.sprite.setImage(this.sprite.anim_default.next())
+          board.cauldron_count++
         }
 
         this.sprite.width = ITEM_WIDTH
@@ -4246,7 +4269,7 @@ $def with (name)
               this.raise_level_frequency_timer = 0
             }
 
-            if ((marathon || line_game) && MAX_RAISE_LEVEL_TIME > 0 && !this.player.board.stacksBreaking())
+            if ((marathon || sprint) && MAX_RAISE_LEVEL_TIME > 0 && !this.player.board.stacksBreaking())
               this.raise_level_timer--
 
           }
@@ -6677,6 +6700,13 @@ $def with (name)
           });
           console.log(player_uid)
         }
+
+        // sprints
+        sprints = JSON.parse(level_data.sprints)
+
+        console.log("SPRINT DATA")
+        console.dir(level_data)
+
         latest_edit = level_data.levels[0].length + 1
         player_progress[0][0] = latest_edit - 2
         console.log("player_progress = " + player_progress[0][0])
