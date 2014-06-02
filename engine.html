@@ -46,7 +46,7 @@ $def with (name)
 
 
     var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
-    var TYPES = new Array("BLOCK","POTION","ROBOT")
+    var TYPES = new Array("BLOCK","POTION","ROBOT","CAULDRON")
     var RED = 0
     var GREEN = 1
     var PURPLE = 2
@@ -160,7 +160,7 @@ $def with (name)
     var replay_records = []
 
     // json object storing line game puzzles in story mode
-    var line_games = {"1-6":{"blk_red":4,"pot_red":1,"rob_red":4,"height":5,"depth":3,"max_raise":20,"min_raise":20,"freq_raise":20}}
+    var line_games = {"1-6":{"blk_red":4,"pot_red":1,"rob_red":4,"height":5,"depth":1,"max_raise":20,"min_raise":20,"freq_raise":20}}
 
     function Game() {
       var player
@@ -2001,6 +2001,8 @@ $def with (name)
 
         this.undo_alpha = 0
 
+        this.item_queue = []
+
         // provide position with respect to this Board
         this.posx = function(x) { return this.board.x + x * ITEM_WIDTH }
         this.posy = function(y) { return this.board.y + (BOARD_HEIGHT - 1 - y)*ITEM_WIDTH }
@@ -2019,6 +2021,21 @@ $def with (name)
 
 
           if (replay == null || replay["stack_queue"][x].length == 0) {
+
+
+            // before generating random item, first check if there are specific items on queue
+            if (this.item_queue.length > 0) {
+
+              for (var i = 0; i < this.item_queue.length; i++) {
+                var this_item = this.item_queue[i]
+                if (this_item.x == x) {
+                  this.item_queue.splice(i,1)
+                  return this_item
+                }
+              }
+
+            }
+
             var type_color_string = randomization_array[marathon_level-1].pop()
             randomization_array[marathon_level-1].push(type_color_string)
             fisherYates(randomization_array[marathon_level-1])
@@ -2045,6 +2062,13 @@ $def with (name)
 
           return new Item(stack,type,color,x,y)
 
+        }
+
+        // spawn specific item
+        this.spawnItem = function(type,color) {
+          var rand_stack = Math.floor(Math.random()*6)
+          this.item_queue.push(new Item(this.stacks[rand_stack],type,color,rand_stack,-1))
+          window.alert("spawning item of type = " + type + " and color = " + color + "at x = " + rand_stack)
         }
 
         // checks if a stack contains breaking items
@@ -2146,7 +2170,8 @@ $def with (name)
             }
           } else if (line_game) {
             if (raise_count >= line_game_data["depth"]) {
-              game_end = "W"
+              // game_end = "W"
+              player.board.spawnItem(3,EMPTY)
             }
           }
 
@@ -3730,7 +3755,13 @@ $def with (name)
             board.robot_count[4] += 1
           else
             board.robot_count[this.color] += 1
+        } else if (this.type == 3) {
+          this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y), anchor:"left"})
+          var anim = new jaws.Animation({sprite_sheet: "./static/images/CAULDRON.gif", frame_size: [40,40], frame_duration: 100})
+          this.sprite.anim_default = anim.slice(0,4)
+          this.sprite.setImage(this.sprite.anim_default.next())
         }
+
         this.sprite.width = ITEM_WIDTH
         this.sprite.height = ITEM_WIDTH
         this.sprite.dx = this.stack.board.posx(x)
@@ -6598,7 +6629,7 @@ $def with (name)
     jaws.onload = function() {
       console.log("Bugs: need to check if there's enough flasks for lose condition")
       jaws.unpack()
-      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif"]
+      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/images/CAULDRON.gif"]
 
       // "./static/sfx/grab.wav","./static/sfx/drop.wav","./static/sfx/robot_death.wav","./static/sfx/brew.wav","./static/sfx/break.wav","./static/sfx/melt1.wav","./static/sfx/white3.wav"
 
