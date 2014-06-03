@@ -216,6 +216,7 @@ $def with (name)
       })
 
       var randomization_array = new Array()
+      var sprint_randomization = new Array()
 
       var player_data
       var screen_data
@@ -339,14 +340,9 @@ $def with (name)
 
         } else if (sprint) {
           raise_level_time = sprint_data["max_raise"]
-          player.board.marathonLevel(sprint_data["height"])
+          player.board.sprintLevel(sprint_data)
 
           if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
-            if (!level_edit)
-              player.board.fillLevel(LEVEL_PATHS[player_path][player_level-1],player_stage)
-            else
-              player.board.fillLevel(player_level,player_stage)
-            addStateForUndo(player.hand,player.board)
             if (player_progress[player_level][1][player_stage.toString()] != undefined || level_edit) {
               var puzzle_data_items = new Array()
               puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){
@@ -2090,11 +2086,15 @@ $def with (name)
 
             }
 
-            var type_color_string = randomization_array[marathon_level-1].pop()
-            randomization_array[marathon_level-1].push(type_color_string)
-            fisherYates(randomization_array[marathon_level-1])
-            console.log("randomization array rarray = ")
-            console.dir(randomization_array[marathon_level-1])
+            if (marathon) {
+              var type_color_string = randomization_array[marathon_level-1].pop()
+              randomization_array[marathon_level-1].push(type_color_string)
+              fisherYates(randomization_array[marathon_level-1])
+            } else if (sprint) {
+              var type_color_string = sprint_randomization.pop()
+              sprint_randomization.push(type_color_string)
+              fisherYates(sprint_randomization)
+            }
             var type_color = type_color_string.split("|")
             var type = type_color[0]
             var color = type_color[1]
@@ -2276,6 +2276,47 @@ $def with (name)
             // check for matches
             this_stack.checkForMatches()
           }
+
+        }
+
+        // generate sprint board
+        this.sprintLevel = function(sprint_data) {
+          var sprint_data = {"prop":{"0|0":4,"1|0":0,"2|0":4},"game":{"height":5,"depth":1,"max_raise":20,"min_raise":20,"freq_raise":20}}
+
+          var value
+
+          // fill up the randomization array
+          for (var key in sprint_data.prop) {
+            if (sprint_data.prop.hasOwnProperty(key)) {
+              value = sprint_data.prop[key]
+              for (var j = 0; j < value; j++) {
+                sprint_randomization.push(key)
+              }
+            }
+          }
+          // shuffle the randomization array
+          fisherYates(sprint_randomization)
+
+          // create stacks for the board
+          var random_item
+          for (var s = 0; s < BOARD_WIDTH; s++) {
+            this.stacks.push(new Stack(this,sprint_data.game.height,s))
+            var this_stack = this.stacks[s]
+            // add level amount of random items to this stack
+            for (var l = 0; l < sprint_data.game.height; l++) {
+
+              random_item = this.randomItem(this_stack,s,l)
+              this_stack.items.push(random_item)
+
+            }
+
+            this_stack.next_random_item = this.randomItem(this_stack,s,-1)
+            console.log("this stack's next random item:")
+            console.dir(this_stack.next_random_item)
+
+            // check for matches
+            this_stack.checkForMatches()
+          }          
 
         }
 
