@@ -341,6 +341,35 @@ $def with (name)
           raise_level_time = sprint_data["max_raise"]
           player.board.marathonLevel(sprint_data["height"])
 
+          if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
+            if (!level_edit)
+              player.board.fillLevel(LEVEL_PATHS[player_path][player_level-1],player_stage)
+            else
+              player.board.fillLevel(player_level,player_stage)
+            addStateForUndo(player.hand,player.board)
+            if (player_progress[player_level][1][player_stage.toString()] != undefined || level_edit) {
+              var puzzle_data_items = new Array()
+              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){
+                  var result = window.prompt("enter star time",(star_time==undefined)?"MM:SS":star_time)
+                  if (result != null) star_time = result
+                  puzzle_data_items[0].text = "Star Time:  " + star_time
+              }))
+              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Score: \u03BB" + star_score,function(){
+                  var result = window.prompt("enter star score",(star_score)==undefined?"":star_score)
+                  if (result != null) star_score = result
+                  puzzle_data_items[1].text = "Star Score: \u03BB" + star_score
+              }))
+              if (level_edit) puzzle_data_items.push(new MenuItem(puzzle_data,"Star Lock:  " + star_lock,function(){
+                  var result = window.prompt("enter star lock",(star_lock)==undefined?"":star_lock)
+                  if (result != null) star_lock = result
+                  puzzle_data_items[2].text = "Star Lock:  " + star_lock
+              }))
+              puzzle_data = new MenuBox("",puzzle_data,(level_edit)?screen_data.x - 2*ITEM_WIDTH:screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,puzzle_data_items)
+              puzzle_data.index = -1
+              puzzle_data.active = (level_edit) ? true : false
+            }
+          }
+
           game_start = true
         } else {
           console.dir(level_data)
@@ -1468,6 +1497,7 @@ $def with (name)
             // push top of stack to hand
             var item = stack.items.pop()
 
+            // if the player grabs a cauldron
             if (i==0 && item.type==3) {
               this.hand.items.push(item)
               // update hand position
@@ -1483,6 +1513,8 @@ $def with (name)
               item.chain = 0
 
               game_end = "W"
+
+              this.drop(stack,1)
 
               break
             }
@@ -6703,9 +6735,6 @@ $def with (name)
 
         // sprints
         sprints = JSON.parse(level_data.sprints)
-
-        console.log("SPRINT DATA")
-        console.dir(level_data)
 
         latest_edit = level_data.levels[0].length + 1
         player_progress[0][0] = latest_edit - 2
