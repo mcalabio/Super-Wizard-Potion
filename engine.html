@@ -339,7 +339,7 @@ $def with (name)
           // marathon_star_lock_menu.menu_box.setup(main_menu.x + main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 20,level_select_ok.menu_box.width)
 
         } else if (sprint) {
-          raise_level_time = sprint_data["max_raise"]
+          raise_level_time = sprint_data.game["max_raise"]
           player.board.sprintLevel(sprint_data)
 
           if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
@@ -2222,8 +2222,7 @@ $def with (name)
               }
             }
           } else if (sprint) {
-            if (raise_count >= sprint_data["depth"]) {
-              // game_end = "W"
+            if (raise_count >= sprint_data.game["depth"]) {
               if (player.board.cauldron_count < 1)
                 player.board.spawnItem(3,EMPTY)
             }
@@ -2281,7 +2280,6 @@ $def with (name)
 
         // generate sprint board
         this.sprintLevel = function(sprint_data) {
-          var sprint_data = {"prop":{"0|0":4,"1|0":0,"2|0":4},"game":{"height":5,"depth":1,"max_raise":20,"min_raise":20,"freq_raise":20}}
 
           var value
 
@@ -6007,6 +6005,7 @@ $def with (name)
         console.log("ADDING LEVEL EDIT MENU ITEMS")
         console.dir(level_data)
         var item_count = 0
+        var sprint_count = 0
         for (var i = 0; i < level_data.levels.length; i++) {
           for (var j = 0; j < level_data.levels[i].length; j++) {
             // console.log("i = " + i + ", j = " + j)
@@ -6776,6 +6775,8 @@ $def with (name)
 
         // sprints
         sprints = JSON.parse(level_data.sprints)
+        console.log("SPRITNS")
+        console.dir(sprints)
 
         latest_edit = level_data.levels[0].length + 1
         player_progress[0][0] = latest_edit - 2
