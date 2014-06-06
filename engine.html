@@ -160,6 +160,7 @@ $def with (name)
     var replay_records = []
 
     // json object storing line game puzzles in story mode
+    var cauldron_ticker = 0
     var sprints //= {"1-6":{"blk_red":4,"pot_red":1,"rob_red":4,"height":5,"depth":1,"max_raise":20,"min_raise":20,"freq_raise":20}}
 
     function Game() {
@@ -957,6 +958,13 @@ $def with (name)
 
         this.cursor_top = new jaws.Sprite({x:this.board.posx(x), y:this.board.posy(y), image: this.sprite_sheet.frames[0]})
         this.cursor_bottom = new jaws.Sprite({x:this.board.posx(x), y:(this.board.posy(y)+20), image: this.sprite_sheet.frames[1]})
+        this.wizard = new jaws.Sprite({x:this.board.board.x + this.board.board.width + ITEM_WIDTH ,
+                                        y:this.board.board.y + this.board.board.height / 2,
+                                          anchor:"left"})
+        var anim = new jaws.Animation({sprite_sheet: "./static/images/WIZARD.gif", frame_size: [104,128], frame_duration: 100})
+        this.wizard.anim_default = anim.slice(0,3)
+        this.wizard.setImage(this.wizard.anim_default.next())
+
 
         // player timer
         this.timer = new Timer(this)
@@ -1710,6 +1718,9 @@ $def with (name)
           // reset cursor speed when it reaches dy
           if (this.hand.items.length == 0 && cursor_top.dy == cursor_top.y) this.cursor_speed = X_SPEED
 
+          // animate wizard
+          this.wizard.setImage(this.wizard.anim_default.next())
+
 
         }
 
@@ -1739,6 +1750,9 @@ $def with (name)
 
           if (pause || game_end != "")
             return
+
+          // draw wizard
+          this.wizard.draw()
 
           if (marathon || sprint) {
             // draw hand, flash if stack is full
@@ -2614,6 +2628,8 @@ $def with (name)
             return
 
           console.log("CHECKING")
+
+          cauldron_ticker += this.player.timer.frame_ticker
 
           // WIN CONDITION: robots cleared
           console.log("checking win condition")
@@ -4313,6 +4329,11 @@ $def with (name)
         this.raise_level_timer = raise_level_time
         this.raise_level_frequency_timer = 0
 
+        if (cauldron_ticker != 0) {
+          this.minutes = Math.floor(cauldron_ticker / 3600)
+          this.seconds = Math.floor(cauldron_ticker / 60 % 60)
+        }
+
         // increment the ticker and count the seconds and minutes
         this.update = function() {
 
@@ -6005,7 +6026,7 @@ $def with (name)
         console.log("ADDING LEVEL EDIT MENU ITEMS")
         console.dir(level_data)
         var item_count = 0
-        var sprint_count = 0
+        var sprint_items = []
         for (var i = 0; i < level_data.levels.length; i++) {
           for (var j = 0; j < level_data.levels[i].length; j++) {
             // console.log("i = " + i + ", j = " + j)
@@ -6033,10 +6054,38 @@ $def with (name)
               item_count++
               level_edit_select.index = item_count
             }
+            // go through each key in sprints data to see if this level name encountered
+            for (var key in sprints) {
+              if (key == this_level.text) {
+                sprint_items.push(key)
+              }
+            }
 
             console.dir(this_level)
             item_count++
           }
+        }
+
+        // add the rest of the sprints
+        for (var key in sprints) {
+
+          var added_already = false
+
+          // check if it has been added already
+          for (var i = 0; i < sprint_items.length; i++) {
+            if (sprint_items[i] == key)
+              added_already = true
+          }
+
+          if (!added_already) {
+            var this_level = new MenuItem(level_edit_select,key,function() {
+                replay = null
+                sprint = true
+                jaws.start(Game)
+            })
+            level_edit_select.items.push(this_level)
+          }
+
         }
 
         console.log("level_edit_select")
@@ -6724,7 +6773,7 @@ $def with (name)
     jaws.onload = function() {
       console.log("Bugs: need to check if there's enough flasks for lose condition")
       jaws.unpack()
-      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/images/CAULDRON.gif"]
+      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/images/CAULDRON.gif","./static/images/WIZARD.gif"]
 
       // "./static/sfx/grab.wav","./static/sfx/drop.wav","./static/sfx/robot_death.wav","./static/sfx/brew.wav","./static/sfx/break.wav","./static/sfx/melt1.wav","./static/sfx/white3.wav"
 

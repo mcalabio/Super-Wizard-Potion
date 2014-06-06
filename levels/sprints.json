@@ -1,3 +1,4 @@
 {
-	"1-6":{"prop":{"0|0":4,"1|0":0,"2|0":4},"game":{"height":5,"depth":1,"max_raise":20,"min_raise":20,"freq_raise":20}}
+	"1-6":{"prop":{"0|0":4,"1|0":0,"2|0":4},"game":{"height":5,"depth":1,"max_raise":20,"min_raise":20,"freq_raise":20}},
+	"10-3":{"prop":{"0|1":4,"1|0":0,"2|0":4},"game":{"height":5,"depth":1,"max_raise":20,"min_raise":20,"freq_raise":20}}	
 }
