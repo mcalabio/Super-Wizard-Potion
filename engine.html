@@ -2629,8 +2629,6 @@ $def with (name)
 
           console.log("CHECKING")
 
-          cauldron_ticker += this.player.timer.frame_ticker
-
           // WIN CONDITION: robots cleared
           console.log("checking win condition")
           if (!(this.robot_count<[0,0,0,0,0,0] || [0,0,0,0,0,0]<this.robot_count)) { // array equality
@@ -2743,6 +2741,9 @@ $def with (name)
             winlose_menu.active = true
             // winlose_menu.controls(winlose_menu)   
             var winlose_menu_items = new Array()       
+
+            cauldron_ticker += this.player.timer.frame_ticker
+            window.alert(cauldron_ticker)
 
             if (game_end == "W") {
 
@@ -4330,6 +4331,7 @@ $def with (name)
         this.raise_level_frequency_timer = 0
 
         if (cauldron_ticker != 0) {
+          window.alert(cauldron_ticker)
           this.minutes = Math.floor(cauldron_ticker / 3600)
           this.seconds = Math.floor(cauldron_ticker / 60 % 60)
         }
