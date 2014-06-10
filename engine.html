@@ -1501,8 +1501,8 @@ $def with (name)
             // push top of stack to hand
             var item = stack.items.pop()
 
-            // if the player grabs a cauldron
-            if (i==0 && item.type==3) {
+            // if the player grabs a cauldron or puzzle potion
+            if (i==0 && (item.type==3 || (item.type == 1 && item.color == 5))) {
               this.hand.items.push(item)
               // update hand position
               item.x = this.x
@@ -1523,7 +1523,7 @@ $def with (name)
               break
             }
 
-            if (item.breaking || item.type == 3) {
+            if (item.breaking || item.type == 3 || (item.type == 1 && item.color == 5)) {
               stack.items.push(item)
               break
             }
@@ -2621,6 +2621,20 @@ $def with (name)
 
         }
 
+        // check if this is the last robot on the board
+        this.lastRobot = function(robot) {
+          for (var c = 0; c < this.robot_count.length; c++) {
+            if (c != robot.color && this.robot_count[c] > 0) {
+              return false
+            }
+          }
+
+          if (this.robot_count[robot.color] == 1)
+            return true
+          else
+            return false
+        }
+
         // check if the player has reached a win/lose condition and act accordingly
         this.checkWinLose = function() {
 
@@ -2633,6 +2647,34 @@ $def with (name)
           console.log("checking win condition")
           if (!(this.robot_count<[0,0,0,0,0,0] || [0,0,0,0,0,0]<this.robot_count)) { // array equality
             game_end = "W"
+
+            // look for highest splash of robots
+            // var highest_splash
+            // var lowest_splash
+            // for (var i = 0; i < this.effects.length; i++) {
+            //   var this_effect = this.effects[i]
+            //   if (this_effect.type != undefined) {
+            //     if (highest_splash == undefined || this_effect.y > highest_splash.y)
+            //       highest_splash = this_effect
+            //     if (lowest_splash == undefined)
+            //       lowest_splash = this_effect
+            //   }
+            // }
+
+            // var this_potion = new Item(highest_splash.stack,1,5,highest_splash.x,lowest_splash.y)
+
+            // highest_splash.stack.items.splice(lowest_splash.y,0,this_potion)
+
+            // // update sprite destination for each item above old_item
+            // for (var i=0; i<highest_splash.stack.items.length; i++) {
+            //   var item = highest_splash.stack.items[i]
+            //   item.y = i
+            //   item.sprite.dy = this.posy(item.y)
+            // }
+
+            // // potion falls after spawn
+            // this_potion.sprite.y = player.board.posy(highest_splash.y)
+
             return
           }
 
@@ -2743,7 +2785,6 @@ $def with (name)
             var winlose_menu_items = new Array()       
 
             cauldron_ticker += this.player.timer.frame_ticker
-            window.alert(cauldron_ticker)
 
             if (game_end == "W") {
 
@@ -3345,15 +3386,21 @@ $def with (name)
 
           console.log("removing (" + old_item.type + ") of color (" + old_item.color + ")" + " with chain = " + old_item.chain + ", y = " + old_item.y)
 
-          // remove old item from items array
-          this.items.splice(old_item.y,1)
+          if (old_item.type == 2 && this.board.lastRobot(old_item)) {
+            var this_potion = new Item(this,1,5,this.x,old_item.y)
+            this.items.splice(old_item.y,0,this_potion)
+            // potion falls after spawn
+            this_potion.sprite.y = this.board.posy(old_item.y)
+          } else {
+            // remove old item from items array
+            this.items.splice(old_item.y,1)
+          }
 
           // update sprite destination for each item above old_item
-          Y_SPEED = FAST
           for (var i=0; i<this.items.length; i++) {
             var item = this.items[i]
-            if (item.y > old_item.y) item.y -= 1
-              item.sprite.dy = this.board.posy(item.y)
+            item.y = i
+            item.sprite.dy = this.board.posy(item.y)
           }
 
           // update board count
@@ -3382,7 +3429,7 @@ $def with (name)
             } else if (old_item.type == 2) {
               // make sure that there are no other robots in the process of being removed
               var below = this.items[old_item.y - 1]
-              if(below == undefined) {
+              if(below == undefined) {                
                 this.board.checkWinLose()
               } else {
                 // if there is an item below, check if it is a robot of the same color
@@ -4331,7 +4378,6 @@ $def with (name)
         this.raise_level_frequency_timer = 0
 
         if (cauldron_ticker != 0) {
-          window.alert(cauldron_ticker)
           this.minutes = Math.floor(cauldron_ticker / 3600)
           this.seconds = Math.floor(cauldron_ticker / 60 % 60)
         }
