@@ -2173,6 +2173,10 @@ $def with (name)
           var this_stack
           for (var s = 0; s < BOARD_WIDTH; s++) {
             this_stack = this.stacks[s]
+
+            if (this_stack.next_random_item == undefined)
+              continue
+
             console.log("raising this stack using random item:")
             console.dir(this_stack.next_random_item)
 
@@ -2210,7 +2214,7 @@ $def with (name)
             }
 
             // randomize next random item
-            this_stack.next_random_item = this.randomItem(this_stack,s,-1)
+            this_stack.next_random_item = (marathon || sprint) ? this.randomItem(this_stack,s,-1) : undefined
 
           }
 
@@ -2370,6 +2374,14 @@ $def with (name)
           star_score = stacks_string[7]
           star_lock = stacks_string[8]
 
+          // find biggest stack
+          var largest_stack_size = 0
+          for (var s=0; s < BOARD_WIDTH; s++) {
+            items = stacks_string[s].split(',')
+            if(items.length > largest_stack_size)
+              largest_stack_size = items.length
+          }
+
           // go through each stack
           for (var s=0; s < BOARD_WIDTH; s++) {
 
@@ -2395,7 +2407,7 @@ $def with (name)
 
               console.log("stack(" + s + ") looking though item of type = " + type + ", color = " + color)
 
-              this_stack.items.push(new Item(this_stack,type,color,s,i))
+              this_stack.queue.push(new Item(this_stack,type,color,s,(-1)*largest_stack_size+i))
 
             }
 
@@ -3065,8 +3077,22 @@ $def with (name)
         this.update = function() {
 
           // update stacks
+          var filling_stack = false
           for (var s=0; s<this.stacks.length; s++) {
-            this.stacks[s].update()
+
+            var this_stack = this.stacks[s]            
+
+            if (this_stack.queue.length > 0) {
+              this_stack.next_random_item = this_stack.queue.pop()
+              filling_stack = true
+            }
+
+            this_stack.update()
+          }
+
+          if (filling_stack) {
+            this.raiseStacks()
+            this.player.y = 0
           }
 
           // update effects
@@ -3143,6 +3169,7 @@ $def with (name)
         this.level = level
         this.x = x
         this.next_random_item  // string of form "type|color" for use in marathon
+        this.queue = []
 
         // check for flasks touching robots
         this.breakRobots = function(item) {
