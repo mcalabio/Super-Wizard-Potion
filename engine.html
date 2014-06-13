@@ -2321,8 +2321,8 @@ $def with (name)
             // add level amount of random items to this stack
             for (var l = 0; l < sprint_data.game.height; l++) {
 
-              random_item = this.randomItem(this_stack,s,l)
-              this_stack.items.push(random_item)
+              random_item = this.randomItem(this_stack,s,(-1)*sprint_data.game.height+l)
+              this_stack.queue.push(random_item)
 
             }
 
