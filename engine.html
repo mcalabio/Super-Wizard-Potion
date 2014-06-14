@@ -2135,7 +2135,8 @@ $def with (name)
         // spawn specific item
         this.spawnItem = function(type,color) {
           var rand_stack = Math.floor(Math.random()*6)
-          this.item_queue.push(new Item(this.stacks[rand_stack],type,color,rand_stack,-1))
+          this.stacks[rand_stack].next_random_item = new Item(this.stacks[rand_stack],type,color,rand_stack,-1)
+          // this.item_queue.push(new Item(this.stacks[rand_stack],type,color,rand_stack,-1))
         }
 
         // checks if a stack contains breaking items
@@ -3091,6 +3092,7 @@ $def with (name)
           }
 
           if (filling_stack) {
+            raise_count--
             this.raiseStacks()
             this.player.y = 0
           }
@@ -5886,10 +5888,11 @@ $def with (name)
             }
             console.log("determining index")
             console.log("level_count = " + level_count)
-            if (level_count + 1 >= level_select_menu.items.length)
-              level_select_menu.index = level_select_menu.items.length - 1
-            else
-              level_select_menu.index = level_count
+            level_select_menu.index = level_count - level_count % 6
+            // if (level_count + 1 >= level_select_menu.items.length)
+            //   level_select_menu.index = level_select_menu.items.length - 1
+            // else
+            //   level_select_menu.index = level_count
           
             for (var i = 0; i < level_select_menu.star_sprites.length; i++) {
               level_select_menu.star_sprites[i].active = false
@@ -5985,8 +5988,8 @@ $def with (name)
             continue
           for (var j = 0; j < level_data.levels[LEVEL_PATHS[player_path][i-1]].length; j++) {
             console.log("add level menu item, j = " + j)
-            if (i == 1 && j+1 == 1)
-              level_select_menu.index = item_count
+            // if (i == 1 && j+1 == 1)
+            //   level_select_menu.index = item_count
             var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
                 var level_name = level_select_menu.items[level_select_menu.index].text
                 level_name = level_name.split("-")
@@ -6000,6 +6003,7 @@ $def with (name)
 
             // set "l-1" to be active but locked unless star_lock met
             if (i == 1 && j == 0) {
+              level_select_menu.index = item_count
               this_level.active = true
               this_level.locked = (starTotal() >= this_level.star_lock) ? false : true
 
@@ -6014,7 +6018,7 @@ $def with (name)
 
               if (j > 0) {
                 if (j <= player_progress[i][0])
-                  this_level.active = true
+                  this_level.active = false
               } else {
                 if (player_progress[i-1][0] >= 6)
                   this_level.active = true
