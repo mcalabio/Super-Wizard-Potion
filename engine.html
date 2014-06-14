@@ -430,7 +430,7 @@ $def with (name)
           else if (replay != null)
             main_menu_auto = [6,0,0]
           else
-            main_menu_auto = [0,player_level,player_stage]
+            main_menu_auto = [0,player_level,0]
           jaws.start(MainMenu)
         }))
 
@@ -5563,21 +5563,21 @@ $def with (name)
         }
 
         // display how many stars player has earned for this level
-        level_name = level_name.split("-")
-        var level = parseInt(level_name[0])
-        var stage = level_name[1]
-        var these_stars = 0     
-        console.log("star_progress = ")
-        console.dir(star_progress)       
-        if (star_progress[level][stage] != undefined) {
-          for (var i = 0; i < star_progress[level][stage].length; i++) {        
-            these_stars += star_progress[level][stage][i]
-          }
-        }
-        for (var i = 0; i < these_stars; i++) {
-          if (this.star_sprites[i] != undefined)
-            this.star_sprites[i].active = true
-        }
+        // level_name = level_name.split("-")
+        // var level = parseInt(level_name[0])
+        // var stage = level_name[1]
+        // var these_stars = 0     
+        // console.log("star_progress = ")
+        // console.dir(star_progress)       
+        // if (star_progress[level][stage] != undefined) {
+        //   for (var i = 0; i < star_progress[level][stage].length; i++) {        
+        //     these_stars += star_progress[level][stage][i]
+        //   }
+        // }
+        // for (var i = 0; i < these_stars; i++) {
+        //   if (this.star_sprites[i] != undefined)
+        //     this.star_sprites[i].active = true
+        // }
 
       }
 
@@ -5970,7 +5970,7 @@ $def with (name)
 
 
         // level select menu
-        var level_select_menu = new MenuBox("Level",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, new Array(),true,true)
+        var level_select_menu = new MenuBox("Cauldron",main_menu,main_menu.x + main_menu.width + 1, main_menu.y, 150, new Array(),true,true)
         level_select_menu.back = this.back
 
         var level_select_ok = new OkSubMenu("",level_select_menu,function() {
@@ -5990,14 +5990,17 @@ $def with (name)
             console.log("add level menu item, j = " + j)
             // if (i == 1 && j+1 == 1)
             //   level_select_menu.index = item_count
-            var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
+            var this_level = new MenuItem(level_select_menu,i,function() {
                 var level_name = level_select_menu.items[level_select_menu.index].text
-                level_name = level_name.split("-")
-                player_level = level_name[0]
-                player_stage = level_name[1]
+                // level_name = level_name.split("-")
+                player_level = this.level
+                player_stage = this.stage + 1
+                window.alert(player_level + "-" + player_stage)
                 replay = null
                 jaws.start(Game)
             })
+            this_level.level = i
+            this_level.stage = j
             var this_level_star_lock = level_data.levels[LEVEL_PATHS[player_path][i-1]][j].split('\n')[8]
             this_level.star_lock = (this_level.text[0] != "1") ? ((this_level_star_lock == undefined) ? ZERO_STAR_LOCK : this_level_star_lock) : this_level_star_lock
 
@@ -6334,18 +6337,7 @@ $def with (name)
           if (main_menu_auto[0] == 0) {
             main_menu.items[main_menu_auto[0]].action()
             main_menu.index = main_menu_auto[0]
-            var item_count = 0
-            for (var i = 0; i < level_data.levels.length; i++) {
-              for (var j = 0; j < level_data.levels[i].length; j++) {
-                var this_level = level_select_menu.items[item_count]
-                var level_name = this_level.text.split("-")
-                if (main_menu_auto[1]==level_name[0] && main_menu_auto[2]==level_name[1]) {
-                  level_select_menu.index = item_count
-                  break
-                }
-                item_count++
-              }
-            }
+            level_select_menu.index = (main_menu_auto[1]-1)*6
           } else {
               main_menu.index = main_menu_auto[0]
               active_menu.controls(active_menu)
