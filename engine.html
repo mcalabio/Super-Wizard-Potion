@@ -5866,13 +5866,7 @@ $def with (name)
             marathon = false
             level_select_menu.controls(level_select_menu,level_select_ok,menus)
             var level_count = 0
-            for (var i = 1; i < player_progress.length; i++) {
-              console.log(player_progress[i][0])
-              level_count += parseInt(player_progress[i][0])
-            }
-            console.log("determining index")
-            console.log("level_count = " + level_count)
-            level_select_menu.index = level_count - level_count % 6
+            level_select_menu.index = level_count
             // if (level_count + 1 >= level_select_menu.items.length)
             //   level_select_menu.index = level_select_menu.items.length - 1
             // else
@@ -5970,54 +5964,25 @@ $def with (name)
           console.log("playerpath level  = " + LEVEL_PATHS[player_path])
           if (level_data.levels[LEVEL_PATHS[player_path][i-1]] == undefined)
             continue
-          for (var j = 0; j < level_data.levels[LEVEL_PATHS[player_path][i-1]].length; j++) {
-            console.log("add level menu item, j = " + j)
-            // if (i == 1 && j+1 == 1)
-            //   level_select_menu.index = item_count
-            var this_level = new MenuItem(level_select_menu,i,function() {
-                var level_name = level_select_menu.items[level_select_menu.index].text
-                // level_name = level_name.split("-")
-                player_level = this.level
-                player_stage = (player_progress[player_level][0] > 0) ? 0 : this.stage + 1
-                replay = null
-                jaws.start(Game)
-            })
-            this_level.level = i
-            this_level.stage = j
-            var this_level_star_lock = level_data.levels[LEVEL_PATHS[player_path][i-1]][j].split('\n')[8]
-            this_level.star_lock = (this_level.text[0] != "1") ? ((this_level_star_lock == undefined) ? ZERO_STAR_LOCK : this_level_star_lock) : this_level_star_lock
 
-            // set "l-1" to be active but locked unless star_lock met
-            if (i == 1 && j == 0) {
-              level_select_menu.index = item_count
-              this_level.active = true
-              this_level.locked = (starTotal() >= this_level.star_lock) ? false : true
+          var this_level = new MenuItem(level_select_menu,i,function() {
+              player_level = this.level
+              player_stage = this.stage
+              replay = null
+              jaws.start(Game)
+          })
+          this_level.level = i
+          this_level.stage = 0
+          this_level.star_lock = 0
 
-            // set other puzzles to be inactive unless previous puzzle completed
-            } else {
+          // set unlocked cauldrons to be active
+          this_level.active = false
+          if (player_progress[i-1][0] >= 5 || i == 1)
+            this_level.active = true
 
-              console.log("j = " + j)
-              console.log("player_progress = ")
-              console.dir(player_progress)
-
-              this_level.active = false
-
-              if (j > 0) {
-                if (j <= player_progress[i][0])
-                  this_level.active = true
-              } else {
-                if (player_progress[i-1][0] >= 6)
-                  this_level.active = true
-              }
-            }
-
-            // set world 0 to be inactive
-            if (i == 0)
-              this_level.active = false
-
-            level_select_menu.items.push(this_level)
-            item_count++
-          }
+          level_select_menu.items.push(this_level)
+          item_count++
+        
         }
         console.log("level_select_menu")
         console.dir(level_select_menu)
@@ -6320,7 +6285,7 @@ $def with (name)
           if (main_menu_auto[0] == 0) {
             main_menu.items[main_menu_auto[0]].action()
             main_menu.index = main_menu_auto[0]
-            level_select_menu.index = (main_menu_auto[1]-1)*6
+            level_select_menu.index = (main_menu_auto[1]-1)
           } else {
               main_menu.index = main_menu_auto[0]
               active_menu.controls(active_menu)
