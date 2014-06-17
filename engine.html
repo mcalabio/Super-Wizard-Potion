@@ -264,9 +264,12 @@ $def with (name)
 
         console.dir("jaws.context = " + jaws.context.strokeRect)
 
+        // reset cauldron timer
+        if (player_stage == 1)
+          cauldron_ticker = 0
+
         // initialize player
         player = new Player(3,0)
-
 
         // setup player data in a menu box
         player_data = new MenuBox(
@@ -370,7 +373,13 @@ $def with (name)
           game_start = true
         } else {
           console.dir(level_data)
-          if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
+
+          if (player_stage == 0) {
+
+            // spawn unlocked puzzle potions
+            player.board.fillPuzzlePotions()
+
+          } else if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
             if (!level_edit)
               player.board.fillLevel(LEVEL_PATHS[player_path][player_level-1],player_stage)
             else
@@ -793,7 +802,10 @@ $def with (name)
             winlose_delay--
           } else if (winlose_delay == 0) {
             if (replay == null)
-              winlose_menu.controls(winlose_menu)
+              if (game_end == "W")
+                jaws.start(Game)
+              else
+                winlose_menu.controls(winlose_menu)
             winlose_delay--
           }
           if (!winlose)
@@ -1519,6 +1531,13 @@ $def with (name)
               game_end = "W"
 
               this.drop(stack,1)
+
+              // warp to puzzle potion's stage
+              player_stage = item.puzzle_stage
+              if (player_stage > 6) {
+                player_level++
+                player_stage = 0
+              }
 
               break
             }
@@ -2337,6 +2356,23 @@ $def with (name)
 
         }
 
+        // spawn puzzle potions when player first enters the cauldron
+        this.fillPuzzlePotions = function() {
+
+          for (var s=0; s < BOARD_WIDTH; s++) {
+            this.stacks.push(new Stack(this,0,s))
+            var this_stack = this.stacks[s]
+            if (s <= player_progress[player_level][0]) {
+              var this_item = new Item(this_stack,1,5,s,-1)
+              this_item.puzzle_stage = s + 1
+              this_stack.next_random_item = this_item
+            }
+          }
+
+          this.raiseStacks()          
+
+        }
+
         this.fillLevel = function(level,stage,undo) {
 
           console.log("level_data")
@@ -2799,148 +2835,7 @@ $def with (name)
 
             cauldron_ticker += this.player.timer.frame_ticker
 
-            if (game_end == "W") {
-
-              winlose_data.items[1].text += "  " + player.timer.clock_text
-              winlose_data.items[2].text += " \u03BB" + player.score
-
-              // update star progress
-              if (!player_undid)
-                player.new_stars = updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
-
-              player.stars = starTotal()
-              player_data.items[0].text = "  x " + player.stars
-
-              winlose_menu.title = ""
-
-              // allow player to advance to next level if they have enough stars     
-              console.log("level_data")
-              console.dir(level_data)
-              var level_check
-              var stage_check
-              if (player_stage < level_data["levels"][player_level].length) {
-                level_check = player_level
-                stage_check = player_stage
-              } else {
-                level_check = parseInt(player_level) + 1
-                stage_check = 0
-              }
-              console.log("level_check = " + level_check)
-              console.log("stage_check = " + stage_check)
-              var next_level = (level_data.levels[level_check] != undefined) ? level_data.levels[level_check][stage_check] : undefined
-              var next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined
-
-              // stage menu if beat last stage (already)
-              if (player_stage == level_data.levels[player_level].length ||
-                  player_progress[player_level][0] >= level_data.levels[player_level].length) {
-
-                winlose_menu_items.push(continue_menu_item)              
-
-                // add MenuItem for each stage of this level
-                for (var s = 0; s < level_data.levels[player_level].length; s++) {
-                  var stage_menu_item = new MenuItem(winlose_menu,player_level.toString() + "-" + (s+1).toString(), function() {
-                    player_stage = parseInt(this.text[2])
-                    console.dir(this)
-                    jaws.start(Game)
-                  })
-                  winlose_menu_items.push(stage_menu_item)
-                }
-                if (level_edit) {
-                  winlose_menu_items.push(restart_menu_item)
-                  restart_menu_item.text = "Back to Editor"
-                  restart_menu_item.action = function() {
-                    level_edit_play = false
-                    jaws.start(Game)
-                  }
-                }
-                // add Back to Menu item
-                winlose_menu_items.push(back_menu_item)
-                winlose_menu.items = winlose_menu_items
-                winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
-
-                next_level = (level_data.levels[LEVEL_PATHS[player_path][parseInt(player_level)]] != undefined) ?
-                  level_data.levels[LEVEL_PATHS[player_path][parseInt(player_level)]][0] : undefined
-
-                // next_level = (level_data.levels[parseInt(player_level) + 1] != undefined) ? level_data.levels[parseInt(player_level) + 1][0] : undefined
-                next_star_lock = (next_level != undefined) ? next_level.split('\n')[8] : undefined       
-
-                // continue
-                if (next_level != undefined && !level_edit) {
-                  console.log("killed my wife")
-                  winlose_menu.items[0].active = true
-                  if (next_star_lock == undefined || starTotal() >= next_star_lock)
-                    winlose_menu.items[0].locked = false
-                  else
-                    winlose_menu.items[0].locked = true
-                  winlose_menu.items[0].text = "Cont. to " + (parseInt(player_level) + 1) + "-1"
-                  winlose_menu.items[0].action = function() {
-                    player_level++
-                    player_stage = 1
-                    jaws.start(Game)
-                  }
-                } else if (next_level == undefined) { 
-                  if (player_stage == 6)
-                    setTimeout(function() {window.alert(thanks_for_coming)}, 500)
-                }
-
-                // default index
-                if (player_progress[player_level][0] >= player_stage)
-                  winlose_menu.index = player_stage                         
-
-              // beating puzzles for the first time
-              } else {
-
-                winlose_menu_items.push(continue_menu_item)
-                winlose_menu_items.push(restart_menu_item)
-                if (level_edit) {
-                  restart_menu_item.text = "Back to Editor"
-                  restart_menu_item.action = function() {
-                    level_edit_play = false
-                    jaws.start(Game)
-                  }
-                }
-                winlose_menu_items.push(back_menu_item)
-                winlose_menu.items = winlose_menu_items
-                winlose_menu.setup(winlose_menu.x,winlose_menu.y,winlose_menu.width)
-
-                // continue
-                if (next_level != undefined) {
-                  winlose_menu.items[0].active = true
-                }
-
-                // default index
-                // restart if beat this level already
-                if (player_progress[player_level][0] >= player_stage)
-                  winlose_menu.index = 1
-              }
-
-              // update player progress
-              if (player_progress[player_level][0] < player_stage)
-                player_progress[player_level][0] = parseInt(player_stage)
-
-              // update best time and score for this level-stage
-              var this_level_progress = player_progress[player_level][1]
-              var this_stage_progress = this_level_progress[player_stage.toString()]
-              if (this_stage_progress == undefined) // create new array if stage newly beaten
-                this_stage_progress = this_level_progress[player_stage.toString()] = ["99:99",0]
-              if (player.timer.clock_text < this_stage_progress[0]) {
-                this_stage_progress[0] = player.timer.clock_text
-                if (puzzle_data != undefined)
-                  puzzle_data.items[0].color = "Grey"
-              }
-              if (player.score > this_stage_progress[1]) {
-                this_stage_progress[1] = player.score
-                if (puzzle_data != undefined)
-                  puzzle_data.items[1].color = "Grey"
-              }
-
-              console.log("player_progress = ")
-              console.dir(player_progress)
-
-              // update player_save data and cookie data
-              updateSaveAndCookie()
-
-            } else if (game_end == "L") {
+            if (game_end == "L") {
 
               // drop player hand
               player.drop(player.board.stacks[player.x],player.hand.items.length)
@@ -3050,6 +2945,10 @@ $def with (name)
           screen_data.index = 1
         }
 
+        this.puzzleClear = function() {
+
+        }
+
         // check for items of specified type,color that are breaking
         this.checkForBreaking = function(type,color) {
 
@@ -3148,11 +3047,11 @@ $def with (name)
             if (winlose_delay <= 0) {
               if (marathon) {
                 score_sheet_data.draw()
-              } else
+              } else if (game_end != "W")
                 winlose_data.draw()
-              if (replay == null)
-                winlose_menu.draw()
-              else
+              if (replay == null) {
+                if (game_end != "W") winlose_menu.draw()
+              } else
                 replay_menu.draw()
             }
           } else if (replay_menu != undefined && replay_menu.active) {
@@ -3417,6 +3316,7 @@ $def with (name)
 
           if (old_item.type == 2 && this.board.lastRobot(old_item)) {
             var this_potion = new Item(this,1,5,this.x,old_item.y)
+            this_potion.puzzle_stage = player_stage + 1
             this.items.splice(old_item.y,0,this_potion)
             // potion falls after spawn
             this_potion.sprite.y = this.board.posy(old_item.y)
@@ -3904,6 +3804,9 @@ $def with (name)
         this.sandwich = false
 
         this.splash = undefined
+
+        this.puzzle_stage = (type == 3) ? 7 : 0   // puzzle potions warp to this stage in cauldron,
+                                                  // cauldron warps to stage 7 (next cauldron)
 
         var board = stack.board
 
@@ -5994,8 +5897,8 @@ $def with (name)
                 var level_name = level_select_menu.items[level_select_menu.index].text
                 // level_name = level_name.split("-")
                 player_level = this.level
-                player_stage = this.stage + 1
-                window.alert(player_level + "-" + player_stage)
+                window.alert(player_progress[player_level][0])
+                player_stage = (player_progress[player_level][0] > 0) ? 0 : this.stage + 1
                 replay = null
                 jaws.start(Game)
             })
