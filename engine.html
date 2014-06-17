@@ -797,15 +797,17 @@ $def with (name)
         if (need_to_restart)
           jaws.start(Game)
 
-        if (game_end == "W" || game_end == "L") {
+        // A is for Animation
+        if (game_end == "A" || game_end == "L") {
           if (winlose_delay > 0) {
             winlose_delay--
           } else if (winlose_delay == 0) {
-            if (replay == null)
-              if (game_end == "W")
-                jaws.start(Game)
-              else
+            if (replay == null) {
+              if (game_end == "L")
                 winlose_menu.controls(winlose_menu)
+              else if (game_end == "A")
+                jaws.start(Game)
+            }
             winlose_delay--
           }
           if (!winlose)
@@ -1030,10 +1032,11 @@ $def with (name)
         // player controls
         this.controls = function() {
 
+          console.log("player gameplay controls")
+
           jaws.on_keydown(["enter","esc","p"], function() {
 
-            if (game_end == "")
-              pauseGame(pause_menu,player,restart_menu_item,save_menu_item)
+            pauseGame(pause_menu,player,restart_menu_item,save_menu_item)
 
           })
 
@@ -1059,7 +1062,7 @@ $def with (name)
           })
 
           jaws.on_keydown(["left","a"], function() {
-            if (pause || game_end != "") return
+            if (pause) return
             X_SPEED = SLOW
             player.control_scheme = 0
             if(player.x > 0) {
@@ -1083,7 +1086,7 @@ $def with (name)
             console.log("player (" + player.x + " , " + player.y + ")")
           })
           jaws.on_keydown(["right","d"], function() {
-            if (pause || game_end != "") return
+            if (pause) return
             X_SPEED = SLOW
             player.control_scheme = 0
             if(player.x < BOARD_WIDTH - 1) {
@@ -1108,7 +1111,7 @@ $def with (name)
             console.log("player (" + player.x + " , " + player.y + ")")
           })
           jaws.on_keydown(["up","w"], function() {
-            if (pause || game_end != "") return
+            if (pause) return
             player.control_scheme = 0
             if(player.y < BOARD_HEIGHT-1) {
               // record this action
@@ -1120,7 +1123,7 @@ $def with (name)
           })
           jaws.on_keydown(["down","s"], function() {
 
-            if (pause || game_end != "") return
+            if (pause) return
 
             if (level_edit) {
               if (ctrl && shift) {
@@ -1150,7 +1153,7 @@ $def with (name)
             console.log("player (" + player.x + " , " + player.y + ")")
           })
           jaws.on_keydown(["k","c"], function() {
-            if (pause || game_end != "") return
+            if (pause) return
             if(player.hand.items.length == 0) {
               // record this action
               player.replay_data[player.timer.frame_ticker.toString()]
@@ -1166,7 +1169,7 @@ $def with (name)
             player.keyboard_actions++
           })
           jaws.on_keydown(["x","j","space"], function() {
-            if (pause || game_end != "") return
+            if (pause) return
             if(player.hand.items.length == 0) {
               //grab depth determined by cursor y-position
               var depth = player.board.stacks[player.x].items.length - player.y
@@ -1254,7 +1257,7 @@ $def with (name)
           })
 
           jaws.on_keydown(["left_mouse_button"], function() {
-            if (pause || game_end != "") return
+            if (pause) return
             var click_coordinates = new Array()
             click_coordinates = player.board.boardCoordinates(jaws.mouse_x,jaws.mouse_y)
             console.log("click coordinates on board: (" + click_coordinates[0] + "," + click_coordinates[1] + ")")
@@ -1265,7 +1268,7 @@ $def with (name)
           })
 
           jaws.on_keydown(["right_mouse_button"], function() {
-            if (pause || game_end != "") return
+            if (pause) return
             var click_coordinates = new Array()
             click_coordinates = player.board.boardCoordinates(jaws.mouse_x,jaws.mouse_y)
             console.log("right click coordinates on board: (" + click_coordinates[0] + "," + click_coordinates[1] + ")")
@@ -1528,8 +1531,6 @@ $def with (name)
               // reset chain
               item.chain = 0
 
-              game_end = "W"
-
               this.drop(stack,1)
 
               // warp to puzzle potion's stage
@@ -1538,6 +1539,8 @@ $def with (name)
                 player_level++
                 player_stage = 0
               }
+
+              game_end = "A"
 
               break
             }
@@ -1767,7 +1770,7 @@ $def with (name)
 
           this.board.draw()
 
-          if (pause || game_end != "")
+          if (pause)
             return
 
           // draw wizard
@@ -1790,6 +1793,8 @@ $def with (name)
             return
 
           if (this.control_scheme == 0 || this.hand.items.length > 0) {
+            if (game_end == "A" || game_end == "L")
+              return
             this.cursor_top.draw()
             this.cursor_bottom.draw()
           }
@@ -1848,6 +1853,9 @@ $def with (name)
         this.hand.color = EMPTY
 
         this.controls = function(click_x, click_y, right_click) {
+
+          console.log("level editor controls")
+
           var color
 
           // catch clicks made in toolbox
@@ -2835,7 +2843,11 @@ $def with (name)
 
             cauldron_ticker += this.player.timer.frame_ticker
 
-            if (game_end == "L") {
+            if (game_end == "W") {
+
+              this.puzzleClear()
+
+            } else if (game_end == "L") {
 
               // drop player hand
               player.drop(player.board.stacks[player.x],player.hand.items.length)
@@ -2947,6 +2959,39 @@ $def with (name)
 
         this.puzzleClear = function() {
 
+          // update star progress
+          if (!player_undid)
+            player.new_stars = updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
+
+          player.stars = starTotal()
+          player_data.items[0].text = "  x " + player.stars
+
+          // update player progress
+          if (player_progress[player_level][0] < player_stage)
+            player_progress[player_level][0] = parseInt(player_stage)
+
+          // update best time and score for this level-stage
+          var this_level_progress = player_progress[player_level][1]
+          var this_stage_progress = this_level_progress[player_stage.toString()]
+          if (this_stage_progress == undefined) // create new array if stage newly beaten
+            this_stage_progress = this_level_progress[player_stage.toString()] = ["99:99",0]
+          if (player.timer.clock_text < this_stage_progress[0]) {
+            this_stage_progress[0] = player.timer.clock_text
+            if (puzzle_data != undefined)
+              puzzle_data.items[0].color = "Grey"
+          }
+          if (player.score > this_stage_progress[1]) {
+            this_stage_progress[1] = player.score
+            if (puzzle_data != undefined)
+              puzzle_data.items[1].color = "Grey"
+          }
+
+          console.log("player_progress = ")
+          console.dir(player_progress)
+
+          // update player_save data and cookie data
+          updateSaveAndCookie()
+
         }
 
         // check for items of specified type,color that are breaking
@@ -3047,10 +3092,11 @@ $def with (name)
             if (winlose_delay <= 0) {
               if (marathon) {
                 score_sheet_data.draw()
-              } else if (game_end != "W")
-                winlose_data.draw()
+                if (game_end != "W")
+                  winlose_data.draw()
+              }
               if (replay == null) {
-                if (game_end != "W") winlose_menu.draw()
+                if (game_end == "L") winlose_menu.draw()
               } else
                 replay_menu.draw()
             }
@@ -3320,6 +3366,7 @@ $def with (name)
             this.items.splice(old_item.y,0,this_potion)
             // potion falls after spawn
             this_potion.sprite.y = this.board.posy(old_item.y)
+            game_end = "W"
           } else {
             // remove old item from items array
             this.items.splice(old_item.y,1)
@@ -5536,6 +5583,9 @@ $def with (name)
 
       this.controls = function(menu,ok_submenu,menus) {
 
+        console.log("menu controls for ")
+        console.dir(menu)
+
         jaws.on_keydown(["up","w"], function() {
           (menu.scrolling) ? menu.down_action() : menu.up_action()
         })
@@ -5897,7 +5947,6 @@ $def with (name)
                 var level_name = level_select_menu.items[level_select_menu.index].text
                 // level_name = level_name.split("-")
                 player_level = this.level
-                window.alert(player_progress[player_level][0])
                 player_stage = (player_progress[player_level][0] > 0) ? 0 : this.stage + 1
                 replay = null
                 jaws.start(Game)
@@ -6466,6 +6515,8 @@ $def with (name)
 
       this.controls = function(menu,ok_submenu) {
 
+        console.log("menu controls for menu")
+        console.dir(menu)
 
         var shift = false
 
