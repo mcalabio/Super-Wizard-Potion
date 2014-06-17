@@ -1538,8 +1538,9 @@ $def with (name)
               if (player_stage > 6) {
                 player_level++
                 player_stage = 0
-              }
+              }              
 
+              this.board.breakItems()
               game_end = "A"
 
               break
@@ -2278,6 +2279,35 @@ $def with (name)
           screen_data.items[0].text = marathon_level + ":" + raise_count
 
           Y_SPEED = SLOW
+
+        }
+
+        // break all items on the board
+        this.breakItems = function() {
+
+          for (var s = 0; s < this.stacks.length; s++) {
+
+            var this_stack = this.stacks[s]
+            for (var i = 0; i < this_stack.items.length; i++) {
+              var this_item = this_stack.items[i]
+              if (!(this_item.type == 1 && this_item.color == 5)) {
+                this_item.breaking = true
+                if (this_item.type == 1 && this_item.color != 5) {
+                  this_item.color = UNSTABLE
+                  // put splashes here
+                  this_stack.board.effects.push(new Splash(this_stack,this_item.type,this_item.color,this_item.x,this_item.y,this_stack.board.effects.length,this_item.deathcounter))
+
+                  // update sprite data
+                  this_item.sprite = new jaws.Sprite({x:this_stack.board.posx(this_item.x),y:this_stack.board.posy(this_item.y), anchor: "left"})
+                  var anim = new jaws.Animation({sprite_sheet: "./static/images/POTION_SPRITES.gif", frame_size: [40,40], frame_duration: 20})
+                  this_item.sprite.anim_default = anim.slice(0,6)
+                  this_item.sprite.dx = this_stack.board.posx(this_item.x)
+                  this_item.sprite.dy = this_stack.board.posy(this_item.y)
+                }
+              }
+            }
+
+          }
 
         }
 
@@ -3367,6 +3397,7 @@ $def with (name)
             // potion falls after spawn
             this_potion.sprite.y = this.board.posy(old_item.y)
             game_end = "W"
+            this.board.puzzleClear()
           } else {
             // remove old item from items array
             this.items.splice(old_item.y,1)
@@ -5973,7 +6004,7 @@ $def with (name)
 
               if (j > 0) {
                 if (j <= player_progress[i][0])
-                  this_level.active = false
+                  this_level.active = true
               } else {
                 if (player_progress[i-1][0] >= 6)
                   this_level.active = true
