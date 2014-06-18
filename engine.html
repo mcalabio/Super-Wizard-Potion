@@ -612,23 +612,38 @@ $def with (name)
           console.log("ADDING LEVEL MENU ITEMS")
           var item_count = 0
           for (var i = 0; i < level_data.levels.length; i++) {
-            for (var j = 0; j < level_data.levels[i].length; j++) {
-              if (i == 1 && j+1 == 1)
-                level_select_menu.index = item_count
-              console.log("i = " + i + ", j = " + j)
-              var this_level = new MenuItem(level_select_menu,(i + "-" + (j+1)),function() {
+            for (var j = 0; j < 6 || j < level_data.levels[i].length; j++) {
+              // console.log("i = " + i + ", j = " + j)
+              var this_level = new MenuItem(level_edit_select,(i + "-" + (j+1)),function() {
                   player_level = this.level
                   player_stage = this.stage
                   replay = null
                   level_edit_play = false
                   jaws.start(Game)
               })
-
-              var data = level_data.levels[i][j].split('\n')
-              this_level.text = (data[9]!=undefined)?data[9]:(i+"-"+(j+1).toString())
+              if (level_data.levels[i][j] != undefined) {
+                var data = level_data.levels[i][j].split('\n')
+                this_level.text = (i>0)?(i+"-"+(j+1).toString()):(data[9]!=undefined)?data[9]:(i+"-"+(j+1).toString())
+              } else {
+                if (sprints[this_level.text] == undefined)
+                  continue
+              }
               this_level.level = i
               this_level.stage = j+1
               level_select_menu.items.push(this_level)
+              if (i == 0 && j == level_data.levels[i].length-1) {
+                var new_level = new MenuItem(level_select_menu,"[new]",function() {
+                  player_level = 0
+                  player_stage = level_data.levels[0].length + 1
+                  replay = null
+                  jaws.start(Game)
+                })
+                level_edit_select.items.push(new_level)
+                console.dir(new_level)
+                item_count++
+                level_edit_select.index = item_count
+              }
+
               console.dir(this_level)
               item_count++
             }
