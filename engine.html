@@ -298,15 +298,14 @@ $def with (name)
               level_name
             ),function(){return}
             ))
-        if (!level_edit) {
 
-          // display level and stage number
-          screen_data_items[0].text = (!marathon)?(player_level + "-" + player_stage):(marathon_level)
+        // display level and stage number
+        screen_data_items[0].text = (!marathon)?(player_level + "-" + player_stage):(marathon_level)
 
-          // display timer and score
-          screen_data_items.push(new MenuItem(screen_data,player.timer.clock_text,function(){return}))
-          screen_data_items.push(new MenuItem(screen_data,'\u03BB'+player.score,function(){return}))
-        }
+        // display timer and score
+        screen_data_items.push(new MenuItem(screen_data,player.timer.clock_text,function(){return}))
+        screen_data_items.push(new MenuItem(screen_data,'\u03BB'+player.score,function(){return}))
+
         screen_data = new MenuBox(
           "Level",
           screen_data,
@@ -1540,6 +1539,9 @@ $def with (name)
                 player_stage = 0
               }              
 
+              if (level_edit_play)
+                window.alert(screen_data.items[1].text)
+
               this.board.breakItems()
               game_end = "A"
 
@@ -2276,7 +2278,8 @@ $def with (name)
           }
 
           // update screen data
-          screen_data.items[0].text = marathon_level + ":" + raise_count
+          if (marathon)
+            screen_data.items[0].text = marathon_level + ":" + raise_count
 
           Y_SPEED = SLOW
 
@@ -2390,7 +2393,10 @@ $def with (name)
 
             // check for matches
             this_stack.checkForMatches()
-          }          
+          } 
+
+          if (level_edit)
+            level_edit_play = true         
 
         }
 
@@ -4387,7 +4393,7 @@ $def with (name)
         this.raise_level_timer = raise_level_time
         this.raise_level_frequency_timer = 0
 
-        if (cauldron_ticker != 0) {
+        if (cauldron_ticker != 0 && !level_edit_play) {
           this.minutes = Math.floor(cauldron_ticker / 3600)
           this.seconds = Math.floor(cauldron_ticker / 60 % 60)
         }
@@ -4443,7 +4449,7 @@ $def with (name)
           var sec_text = (this.seconds < 10) ? "0" + this.seconds : this.seconds
 
           this.clock_text = min_text + ":" + sec_text
-          if (!level_edit)
+          if (!level_edit || level_edit_play)
             screen_data.items[1].text = this.clock_text
 
         }
@@ -6295,6 +6301,7 @@ $def with (name)
         active_menu.controls(active_menu)
         console.log("menus!")
         console.dir(menus)
+        level_edit_play = false
       }
 
       this.update = function() {
