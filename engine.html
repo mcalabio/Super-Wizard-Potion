@@ -1822,7 +1822,7 @@ $def with (name)
         // flasks
         for (var f = 0; f < 8; f++) {
 
-          if (f == 3 || f == 4 || f == 5) {
+          if (f == 3 || f == 5) {
             this.flasks.push(new jaws.Sprite({x:this.posx(0),y:this.posy(f),image:"./static/images/POTION_" + COLORS[(f==6) ? 7 : ((f==7) ? 6 : f)] + ".gif",anchor:"left"}))
           } else {
             this.flasks.push(new jaws.Sprite({x:this.posx(0),y:this.posy(f), anchor:"left"}))
