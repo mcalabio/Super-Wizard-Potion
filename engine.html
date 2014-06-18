@@ -580,13 +580,13 @@ $def with (name)
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save As",function() {
             player.level_save_as()
           }))
-          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Publish",function() {
-            console.log("Publish")
-            if (player_level > 0)
-              player.level_save()
-            else
-              player.level_publish()
-          }))          
+          // level_edit_menu_items.push(new MenuItem(level_edit_menu,"Publish",function() {
+          //   console.log("Publish")
+          //   if (player_level > 0)
+          //     player.level_save()
+          //   else
+          //     player.level_publish()
+          // }))          
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Delete",function() {
             player.level_delete()
           }))
