@@ -1534,7 +1534,7 @@ $def with (name)
               this.drop(stack,1)
 
               // warp to puzzle potion's stage
-              player_stage = item.puzzle_stage
+              player_stage = (!level_edit) ? item.puzzle_stage : player_stage
               if (player_stage > 6) {
                 player_level++
                 player_stage = 0
