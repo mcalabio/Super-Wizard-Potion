@@ -248,8 +248,8 @@ $def with (name)
 
       marathon_level = marathon_level_debug
 
-      // line game
-      var sprint_data = (sprints != undefined) ? sprints[level_name] : undefined
+      // sprint mode
+      var sprint_data = (sprints != undefined) ? sprints[player_level + "-" + player_stage] : undefined
       if (sprint_data != undefined)
         sprint = true
       else
@@ -6067,7 +6067,7 @@ $def with (name)
         var item_count = 0
         var sprint_items = []
         for (var i = 0; i < level_data.levels.length; i++) {
-          for (var j = 0; j < level_data.levels[i].length; j++) {
+          for (var j = 0; j < 6 || j < level_data.levels[i].length; j++) {
             // console.log("i = " + i + ", j = " + j)
             var this_level = new MenuItem(level_edit_select,(i + "-" + (j+1)),function() {
                 player_level = this.level
@@ -6075,9 +6075,13 @@ $def with (name)
                 replay = null
                 jaws.start(Game)
             })
-
-            var data = level_data.levels[i][j].split('\n')
-            this_level.text = (data[9]!=undefined)?data[9]:(i+"-"+(j+1).toString())
+            if (level_data.levels[i][j] != undefined) {
+              var data = level_data.levels[i][j].split('\n')
+              this_level.text = (i>0)?(i+"-"+(j+1).toString()):(data[9]!=undefined)?data[9]:(i+"-"+(j+1).toString())
+            } else {
+              if (sprints[this_level.text] == undefined)
+                continue
+            }
             this_level.level = i
             this_level.stage = j+1
             level_edit_select.items.push(this_level)
