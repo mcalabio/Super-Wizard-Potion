@@ -385,7 +385,7 @@ $def with (name)
             addStateForUndo(player.hand,player.board)
             if (player_progress[player_level][1][player_stage.toString()] != undefined || level_edit) {
               var puzzle_data_items = new Array()
-              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){
+              if (!level_edit) puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){
                   var result = window.prompt("enter star time",(star_time==undefined)?"MM:SS":star_time)
                   if (result != null) star_time = result
                   puzzle_data_items[0].text = "Star Time:  " + star_time
@@ -395,11 +395,11 @@ $def with (name)
                   if (result != null) star_score = result
                   puzzle_data_items[1].text = "Star Score: \u03BB" + star_score
               }))
-              if (level_edit) puzzle_data_items.push(new MenuItem(puzzle_data,"Star Lock:  " + star_lock,function(){
-                  var result = window.prompt("enter star lock",(star_lock)==undefined?"":star_lock)
-                  if (result != null) star_lock = result
-                  puzzle_data_items[2].text = "Star Lock:  " + star_lock
-              }))
+              // if (level_edit) puzzle_data_items.push(new MenuItem(puzzle_data,"Star Lock:  " + star_lock,function(){
+              //     var result = window.prompt("enter star lock",(star_lock)==undefined?"":star_lock)
+              //     if (result != null) star_lock = result
+              //     puzzle_data_items[2].text = "Star Lock:  " + star_lock
+              // }))
               puzzle_data = new MenuBox("",puzzle_data,(level_edit)?screen_data.x - 2*ITEM_WIDTH:screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,puzzle_data_items)
               puzzle_data.index = -1
               puzzle_data.active = (level_edit) ? true : false
