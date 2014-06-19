@@ -233,7 +233,6 @@ $def with (name)
           level_data.levels[player_level][player_stage-1].split('\n')[9]
       var beat_marathon_time = false
       var beat_marathon_score = false
-      var drew_puzzle_screen = false
 
       // undo states
       var player_undid = false
@@ -579,13 +578,15 @@ $def with (name)
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save As",function() {
             player.level_save_as()
           }))
-          // level_edit_menu_items.push(new MenuItem(level_edit_menu,"Publish",function() {
-          //   console.log("Publish")
-          //   if (player_level > 0)
-          //     player.level_save()
-          //   else
-          //     player.level_publish()
-          // }))          
+          level_edit_menu_items.push(new MenuItem(level_edit_menu,"Screenshot",function() {
+            var gamescreen_canvas = $("gameScreen")
+            var puzzleScreen_canvas = $("puzzleScreen")
+            puzzleScreen.getContext("2d").drawImage(gamescreen_canvas,40,40,240,400,0,0,240,400)
+            // save as jpg
+            var data_url = puzzleScreen_canvas.toDataURL( "image/png" , 1 )
+            saveImage(player_level,player_stage,level_name,data_url.substring(data_url.indexOf(",")+1,data_url.length))
+            window.alert("screenshot saved for " + player_level + "-" + player_stage)
+          }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Delete",function() {
             player.level_delete()
           }))
@@ -934,24 +935,6 @@ $def with (name)
             star_sprites[s].draw()
           }
         });
-
-        // display board on puzzleScreen
-        if (!drew_puzzle_screen && level_edit) {
-          var gamescreen_canvas = $("gameScreen")
-          var puzzleScreen_canvas = $("puzzleScreen")
-          puzzleScreen.getContext("2d").drawImage(gamescreen_canvas,40,40,240,400,0,0,240,400)
-
-          // save as jpg
-          var data_url = puzzleScreen_canvas.toDataURL( "image/png" , 1 )
-
-          // window.prompt("encoded data",data_url.substring(data_url.indexOf(",")+1,data_url.length))
-
-          saveImage(player_level,player_stage,level_name,data_url.substring(data_url.indexOf(",")+1,data_url.length))
-
-          // window.open(data_url, '_blank')
-
-          drew_puzzle_screen = true          
-        }
 
         if (continue_lock_box.active)
           continue_lock_box.draw()
