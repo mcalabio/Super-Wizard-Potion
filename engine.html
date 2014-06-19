@@ -1983,6 +1983,7 @@ $def with (name)
                   this_stack.items.push(stack_above.pop())
                   this_item = this_stack.items[this_stack.items.length-1]
                   this_item.y = this_stack.items.length - 1
+                  this_item.sprite.dy = player.board.posy(this_item.y)
                   i++
                 }
 
@@ -3010,13 +3011,13 @@ $def with (name)
             this_stage_progress = this_level_progress[player_stage.toString()] = ["99:99",0]
           if (player.timer.clock_text < this_stage_progress[0]) {
             this_stage_progress[0] = player.timer.clock_text
-            if (puzzle_data != undefined)
-              puzzle_data.items[0].color = "Grey"
+            // if (puzzle_data != undefined)
+              // puzzle_data.items[0].color = "Grey"
           }
           if (player.score > this_stage_progress[1]) {
             this_stage_progress[1] = player.score
-            if (puzzle_data != undefined)
-              puzzle_data.items[1].color = "Grey"
+            // if (puzzle_data != undefined)
+              // puzzle_data.items[1].color = "Grey"
           }
 
           console.log("player_progress = ")
