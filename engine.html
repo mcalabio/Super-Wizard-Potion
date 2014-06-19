@@ -1549,8 +1549,8 @@ $def with (name)
 
               // warp to puzzle potion's stage
               player_stage = (!level_edit) ? item.puzzle_stage : player_stage
-              if (player_stage > 6) {
-                player_level++
+              if (item.type ==3) {
+                player_level = item.puzzle_stage
                 player_stage = 0
               }              
 
@@ -3913,7 +3913,7 @@ $def with (name)
 
         this.splash = undefined
 
-        this.puzzle_stage = (type == 3) ? 7 : 0   // puzzle potions warp to this stage in cauldron,
+        this.puzzle_stage = (type == 3)?player_level + 1:0   // puzzle potions warp to this stage in cauldron,
                                                   // cauldron warps to stage 7 (next cauldron)
 
         var board = stack.board
