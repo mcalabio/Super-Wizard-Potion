@@ -67,16 +67,6 @@ $def with (name)
       WHITE : 7
     }
 
-    // LEVEL BRANCHING
-    var LEVEL_PATHS = [
-
-      [1,2,3,4,6],
-      [1,2,3,4,7],
-      [1,2,3,5,7],
-      [1,2,3,5,8]
-
-    ]
-
     var thanks_for_coming = "Thanks for playing! Stay tuned for more puzzles! If you have friends that you think might also be interested in play-testing, please direct them to us."
 
     // PROBABILITIES FOR
@@ -379,7 +369,7 @@ $def with (name)
 
           } else if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
             if (!level_edit)
-              player.board.fillLevel(LEVEL_PATHS[player_path][player_level-1],player_stage)
+              player.board.fillLevel(player_level,player_stage)
             else
               player.board.fillLevel(player_level,player_stage)
             addStateForUndo(player.hand,player.board)
@@ -5978,10 +5968,9 @@ $def with (name)
         console.log("ADDING LEVEL MENU ITEMS")
         console.dir(player_path)
         var item_count = 0
-        for (var i = 1; i <= LEVEL_PATHS[player_path].length; i++) {
+        for (var i = 1; i <= level_data.levels.length; i++) {
           console.log("add level menu item, i = " + i)
-          console.log("playerpath level  = " + LEVEL_PATHS[player_path])
-          if (level_data.levels[LEVEL_PATHS[player_path][i-1]] == undefined)
+          if (level_data.levels[i-1] == undefined)
             continue
 
           var this_level = new MenuItem(level_select_menu,i,function() {
