@@ -3621,8 +3621,8 @@ $def with (name)
 
             // update sprite data
             this_robot.sprite = new jaws.Sprite({x:this_robot.stack.board.posx(this_robot.x), y:this_robot.stack.board.posy(this_robot.y), anchor: "left"})
-            var anim = new jaws.Animation({sprite_sheet: "./static/images/ROBOT_" + death_color + "_DEATH.gif", frame_size: [40,40], frame_duration: 20})
-            this_robot.sprite.anim_default = anim.slice(0,6)
+            var anim = new jaws.Animation({sprite_sheet: "./static/images/ROBOT_" + death_color + "_DEATH.gif", frame_size: [40,40], frame_duration: 50})
+            this_robot.sprite.anim_default = anim.slice(0,5)
 
             var rand_color = Math.floor(Math.random()*WHITE)
             for (var c=0; c < rand_color; c++)
