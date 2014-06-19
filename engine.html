@@ -1223,7 +1223,7 @@ $def with (name)
             if (ctrl)
               undoLastMove()
             else {
-              if (pause || game_end != "") return
+              if (pause) return
               if(player.hand.items.length == 0) {
                 // record this action
                 player.replay_data[player.timer.frame_ticker.toString()]
@@ -1557,6 +1557,10 @@ $def with (name)
               if (level_edit_play)
                 window.alert(screen_data.items[1].text)
 
+              if (item.type != 3) {
+                item.sprite.dy = (-1) * ITEM_WIDTH
+              }
+
               this.board.breakItems()
               game_end = "A"
 
@@ -1576,7 +1580,8 @@ $def with (name)
 
             // update sprite destination
             item.sprite.dx = this.board.posx(item.x)
-            item.sprite.dy = this.board.posy(item.y)
+            if (item.type != 1 || item.color != 5)
+              item.sprite.dy = this.board.posy(item.y)
 
             // reset chain
             item.chain = 0
@@ -2912,7 +2917,8 @@ $def with (name)
 
 
               winlose_menu.y = winlose_data.y
-              winlose_menu_items.push(undo_menu_item)
+              if (!marathon && !sprint)
+                winlose_menu_items.push(undo_menu_item)
               winlose_menu_items.push(restart_menu_item)
               restart_menu_item.action = function () {
                 jaws.start(Game) // no need to save record here
@@ -4103,10 +4109,16 @@ $def with (name)
 
           if (this.y < 0)
             this.sprite.y = this.stack.board.posy(this.y)
-          else
-            this.sprite.dy = this.stack.board.posy(this.y)
 
           this.sprite.draw()
+
+          if (this.puzzle_stage > 0) {
+            jaws.context.font = MENU_FONT
+            jaws.context.lineWidth = 10
+            jaws.context.fillStyle =  "White"
+            jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+            jaws.context.fillText(this.puzzle_stage, this.sprite.x + 15, this.sprite.y + 35)
+          }
         }
       }
 
@@ -4537,7 +4549,7 @@ $def with (name)
       function undoLastMove (from_menu) {
 
         // SANITY CHECK!!!
-        if (undo_hand.length <= 0 || undo_board.length <= 0 || !game_start || marathon)
+        if (undo_hand.length <= 0 || undo_board.length <= 0 || !game_start || marathon || sprint)
           return
 
         var called_by_menu = from_menu || false
