@@ -967,11 +967,12 @@ $def with (name)
 
         this.cursor_top = new jaws.Sprite({x:this.board.posx(x), y:this.board.posy(y), image: this.sprite_sheet.frames[0]})
         this.cursor_bottom = new jaws.Sprite({x:this.board.posx(x), y:(this.board.posy(y)+20), image: this.sprite_sheet.frames[1]})
-        this.wizard = new jaws.Sprite({x:this.board.board.x - ITEM_WIDTH ,
+        this.wizard = new jaws.Sprite({x:this.board.board.x - ITEM_WIDTH + 16,
                                         y:this.board.board.y + this.board.board.height + 9,
                                           anchor:"bottom_right"})
-        var anim = new jaws.Animation({sprite_sheet: "./static/images/WIZARD.gif", frame_size: [104,128], frame_duration: 100})
+        var anim = new jaws.Animation({sprite_sheet: "./static/images/WIZARD.gif", frame_size: [136,128], frame_duration: 100})
         this.wizard.anim_default = anim.slice(0,3)
+        this.wizard.grab = anim.slice(2,5)
         this.wizard.setImage(this.wizard.anim_default.next())
 
 
@@ -1745,7 +1746,14 @@ $def with (name)
           if (this.hand.items.length == 0 && cursor_top.dy == cursor_top.y) this.cursor_speed = X_SPEED
 
           // animate wizard
-          this.wizard.setImage(this.wizard.anim_default.next())
+          if (this.hand.items.length == 0) {
+            if (this.wizard.grab.atLastFrame())
+              this.wizard.grab.next()
+            this.wizard.setImage(this.wizard.anim_default.next())
+          } else {
+            if (!this.wizard.grab.atLastFrame())
+              this.wizard.setImage(this.wizard.grab.next())
+          }
 
 
         }
