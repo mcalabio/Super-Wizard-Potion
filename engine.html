@@ -244,6 +244,8 @@ $def with (name)
       else
         sprint = false
 
+      var background = new jaws.Sprite({x:0,y:0,image:"./static/images/backgrounds/CAULDRON_1.gif",anchor:"left"})
+
       /*  Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
         // live_info = document.getElementById("live_info")
@@ -901,8 +903,10 @@ $def with (name)
         jaws.clear()
 
         // background
-        jaws.context.fillStyle = 'Black' //PURPLE_HEX
-        jaws.context.fillRect(0,0,600,500)
+        // jaws.context.fillStyle = 'Black' //PURPLE_HEX
+        // jaws.context.fillRect(0,0,600,500)
+
+        background.draw()
 
         // the viewport magic. wrap all draw()-calls inside viewport.apply and it will draw those relative to the viewport.
         viewport.apply( function() {
@@ -959,9 +963,9 @@ $def with (name)
 
         this.cursor_top = new jaws.Sprite({x:this.board.posx(x), y:this.board.posy(y), image: this.sprite_sheet.frames[0]})
         this.cursor_bottom = new jaws.Sprite({x:this.board.posx(x), y:(this.board.posy(y)+20), image: this.sprite_sheet.frames[1]})
-        this.wizard = new jaws.Sprite({x:this.board.board.x + this.board.board.width + ITEM_WIDTH ,
-                                        y:this.board.board.y + this.board.board.height / 2,
-                                          anchor:"left"})
+        this.wizard = new jaws.Sprite({x:this.board.board.x - ITEM_WIDTH ,
+                                        y:this.board.board.y + this.board.board.height + 9,
+                                          anchor:"bottom_right"})
         var anim = new jaws.Animation({sprite_sheet: "./static/images/WIZARD.gif", frame_size: [104,128], frame_duration: 100})
         this.wizard.anim_default = anim.slice(0,3)
         this.wizard.setImage(this.wizard.anim_default.next())
@@ -1531,7 +1535,7 @@ $def with (name)
                 window.alert(screen_data.items[1].text)
 
               if (item.type != 3) {
-                item.sprite.dy = (-1) * ITEM_WIDTH
+                item.sprite.dy = (-1) * 9999
               }
 
               this.board.breakItems()
@@ -2077,6 +2081,10 @@ $def with (name)
         this.player = player
         this.stacks = new Array()
         this.board = new jaws.Sprite({x:ITEM_WIDTH,y:ITEM_WIDTH,image:"./static/images/BOARD.gif",anchor:"left"})
+
+        if (!level_edit) {
+          this.board.x = (600/2) - (this.board.width/2)
+        }
 
         this.block_count = [0,0,0,0,0,0,0,0]
         this.flask_count = [0,0,0,0,0,0,0,0,0]
@@ -3087,23 +3095,23 @@ $def with (name)
           // draw pause menu
           if (pause) {
             jaws.context.fillStyle = PURPLE_HEX //"Black"
-            jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
+            jaws.context.fillRect(this.board.x,this.board.y,this.board.width,this.board.height)
             jaws.context.fillStyle = "rgba(10,0,10," + this.undo_alpha + ")"
-            jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
+            jaws.context.fillRect(this.board.x,this.board.y,this.board.width,this.board.height)
             pause_menu.draw()
             return
           }
 
           // draw background
-          jaws.context.fillStyle = PURPLE_HEX //"Black"
-          jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)
+          // jaws.context.fillStyle = PURPLE_HEX //"Black"
+          // jaws.context.fillRect(this.board.x,this.board.y,this.board.width,this.board.height)
 
           // draw undo background
           if (player_undid) {
             if (this.undo_alpha < 1)
               this.undo_alpha += .05
             jaws.context.fillStyle = "rgba(10,0,10," + this.undo_alpha + ")"
-            jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH,this.board.width,this.board.height)            
+            jaws.context.fillRect(this.board.x,this.board.y,this.board.width,this.board.height)            
           }
 
           // draw all stacks in this board and containing items
@@ -3113,8 +3121,8 @@ $def with (name)
 
           // hide next random items
           var alpha = player.timer.raise_level_timer/raise_level_time/2 + .5
-          jaws.context.fillStyle =  "rgba(0,0,0," + alpha + ")"//"rgba(112,0,84," + alpha + ")"
-          jaws.context.fillRect(ITEM_WIDTH,ITEM_WIDTH+this.board.height,this.board.width,ITEM_WIDTH)
+          // jaws.context.fillStyle =  "rgba(0,0,0," + alpha + ")"//"rgba(112,0,84," + alpha + ")"
+          // jaws.context.fillRect(this.board.x,this.board.y+this.board.height,this.board.width,ITEM_WIDTH)
 
           // draw all effects on this board
           for (var e=0; e < this.effects.length; e++) {
@@ -6808,7 +6816,7 @@ $def with (name)
     jaws.onload = function() {
       console.log("Bugs: need to check if there's enough flasks for lose condition")
       jaws.unpack()
-      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/images/CAULDRON.gif","./static/images/WIZARD.gif"]
+      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/images/CAULDRON.gif","./static/images/WIZARD.gif","./static/images/backgrounds/CAULDRON_1.gif"]
 
       // "./static/sfx/grab.wav","./static/sfx/drop.wav","./static/sfx/robot_death.wav","./static/sfx/brew.wav","./static/sfx/break.wav","./static/sfx/melt1.wav","./static/sfx/white3.wav"
 
