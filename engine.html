@@ -334,7 +334,19 @@ $def with (name)
 
         } else if (sprint) {
           raise_level_time = sprint_data.game["max_raise"]
-          player.board.sprintLevel(sprint_data)
+          var value
+          // fill up the randomization array
+          for (var key in sprint_data.prop) {
+            if (sprint_data.prop.hasOwnProperty(key)) {
+              value = sprint_data.prop[key]
+              for (var j = 0; j < value; j++) {
+                sprint_randomization.push(key)
+              }
+            }
+          }
+          // shuffle the randomization array
+          fisherYates(sprint_randomization)
+          player.board.fillLevel(player_level,player_stage)
 
           if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
             if (player_progress[player_level][1][player_stage.toString()] != undefined || level_edit) {
@@ -562,11 +574,11 @@ $def with (name)
             player.level_open()
           }))
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save",function() {
-            if (player_level > 0)
-              return
+            // if (player_level > 0)
+            //   return
             player.level_save()
           }))
-          level_edit_menu_items[level_edit_menu_items.length-1].locked = (player_level > 0) ? true : false
+          level_edit_menu_items[level_edit_menu_items.length-1].locked = (player_level > 0) ? false : false
           level_edit_menu_items.push(new MenuItem(level_edit_menu,"Save As",function() {
             player.level_save_as()
           }))
@@ -2153,9 +2165,12 @@ $def with (name)
               sprint_randomization.push(type_color_string)
               fisherYates(sprint_randomization)
             }
-            var type_color = type_color_string.split("|")
-            var type = type_color[0]
-            var color = type_color[1]
+
+            if (marathon || sprint) {
+              var type_color = type_color_string.split("|")
+              var type = type_color[0]
+              var color = type_color[1]
+            }
 
             // add this item to replay data
             this.player.replay_data["stack_queue"][x].push(type_color_string)
@@ -2219,8 +2234,14 @@ $def with (name)
           for (var s = 0; s < BOARD_WIDTH; s++) {
             this_stack = this.stacks[s]
 
-            if (this_stack.next_random_item == undefined)
-              continue
+            if (this_stack.next_random_item == undefined) {
+
+              if (sprint && raise_count >= -1) {
+                this_stack.next_random_item = this.randomItem(this_stack,s,-1)
+                continue
+              } else
+                continue
+            }
 
             console.log("raising this stack using random item:")
             console.dir(this_stack.next_random_item)
@@ -2259,7 +2280,7 @@ $def with (name)
             }
 
             // randomize next random item
-            this_stack.next_random_item = (marathon || sprint) ? this.randomItem(this_stack,s,-1) : undefined
+            this_stack.next_random_item = (marathon || (sprint && raise_count >= -1)) ? this.randomItem(this_stack,s,-1) : undefined
 
           }
 
@@ -2374,21 +2395,7 @@ $def with (name)
         // generate sprint board
         this.sprintLevel = function(sprint_data) {
 
-          var value
-
-          // fill up the randomization array
-          for (var key in sprint_data.prop) {
-            if (sprint_data.prop.hasOwnProperty(key)) {
-              value = sprint_data.prop[key]
-              for (var j = 0; j < value; j++) {
-                sprint_randomization.push(key)
-              }
-            }
-          }
-          // shuffle the randomization array
-          fisherYates(sprint_randomization)
-
-          // create stacks for the board
+          // // create stacks for the board
           var random_item
           for (var s = 0; s < BOARD_WIDTH; s++) {
             this.stacks.push(new Stack(this,sprint_data.game.height,s))
@@ -2409,8 +2416,14 @@ $def with (name)
             this_stack.checkForMatches()
           } 
 
+          for (var s = 0; s < BOARD_WIDTH; s++) {
+            var this_stack = this.stacks[s]
+            random_item = this.randomItem(this_stack,s,-1)
+            this_stack.next_random_item = random_item
+          }
+
           if (level_edit) {
-            level_edit_play = true
+
             player.timer.seconds = 0
             player.timer.minutes = 0
           }
@@ -2458,6 +2471,9 @@ $def with (name)
               for (var s=0; s < BOARD_WIDTH; s++)
                 this.stacks.push(new Stack(this,level,s))
               return
+            } else if (sprint) {
+              this.sprintLevel(sprint_data)
+              return
             } else {
               player_level = 1
               player_stage = 1
@@ -2479,6 +2495,8 @@ $def with (name)
             if(items.length > largest_stack_size)
               largest_stack_size = items.length
           }
+
+          raise_count = largest_stack_size * (-1)
 
           // go through each stack
           for (var s=0; s < BOARD_WIDTH; s++) {
@@ -2710,7 +2728,7 @@ $def with (name)
           var board_x = x - this.board.x
           var board_y = y - this.board.y
 
-          if (marathon || sprint) {
+          if (marathon || (sprint && !level_edit && !level_edit_play)) {
             if (board_x < 0 || board_x > this.board.width || board_y < 0 || board_y > this.board.height) {
               return [-1,-1]
             }
@@ -3090,7 +3108,6 @@ $def with (name)
           }
 
           if (filling_stack) {
-            raise_count--
             this.raiseStacks()
             this.player.y = 0
           }
@@ -3876,7 +3893,8 @@ $def with (name)
             }
           }
           if (this.level >= 0 && (marathon || sprint)) {
-            this.next_random_item.draw()
+            if (this.next_random_item != undefined)
+               this.next_random_item.draw()
           }
         }
 
