@@ -903,10 +903,14 @@ $def with (name)
         jaws.clear()
 
         // background
-        // jaws.context.fillStyle = 'Black' //PURPLE_HEX
-        // jaws.context.fillRect(0,0,600,500)
-
-        background.draw()
+        if (!level_edit)
+          background.draw()
+        else {
+          jaws.context.fillStyle = 'Black' //PURPLE_HEX
+          jaws.context.fillRect(0,0,600,500)
+          jaws.context.fillStyle = PURPLE_HEX
+          jaws.context.fillRect(player.board.board.x,player.board.board.y,player.board.board.width,player.board.board.height)
+        }
 
         // the viewport magic. wrap all draw()-calls inside viewport.apply and it will draw those relative to the viewport.
         viewport.apply( function() {
