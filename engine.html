@@ -241,13 +241,16 @@ $def with (name)
       // sprint mode
       if (player_stage >= 0) {
         sprint_data = (sprints != undefined) ? sprints[player_level + "-" + player_stage] : undefined
-        if (sprint_data != undefined)
+        if (sprint_data != undefined) 
           sprint = true
-        else
-          sprint = false
+        else {
+          sprint_data = (sprints != undefined) ? sprints[level_name] : undefined
+          sprint = (sprint_data == undefined) ? false : true
+        }
       }
 
       var largest_stack_size = 0
+      var sprint_rises = 0
 
       var background = new jaws.Sprite({x:0,y:0,image:"./static/images/backgrounds/CAULDRON_1.gif",anchor:"left"})
 
@@ -296,7 +299,8 @@ $def with (name)
             ))
 
         // display level and stage number
-        screen_data_items[0].text = (!marathon)?(player_level + "-" + player_stage):(marathon_level)
+        // screen_data_items[0].text = (!marathon)?(player_level + "-" + player_stage):(marathon_level)
+        screen_data_items[0].text = (!marathon)?(level_name):(marathon_level)
 
         // display timer and score
         screen_data_items.push(new MenuItem(screen_data,player.timer.clock_text,function(){return}))
@@ -2267,7 +2271,6 @@ $def with (name)
         // raise level using random items in each stack's queue
         this.raiseStacks = function() {
 
-
           // reset board y position
           this.board.y = ITEM_WIDTH
 
@@ -2277,8 +2280,9 @@ $def with (name)
 
             if (this_stack.next_random_item == undefined) {
 
-              if (sprint && (!level_edit || level_edit_play) && (raise_count >= -1 || raise_count >= largest_stack_size*(-1)-2)) {
+              if (sprint && (!level_edit || level_edit_play) && raise_count >= -1) {
                 this_stack.next_random_item = this.randomItem(this_stack,s,-1)
+                continue
               } else
                 continue
             }
@@ -2320,7 +2324,7 @@ $def with (name)
             }
 
             // randomize next random item
-            this_stack.next_random_item = (marathon || (sprint && (raise_count >= -1 || raise_count > (-1)*largest_stack_size))) ? this.randomItem(this_stack,s,-1) : undefined
+            this_stack.next_random_item = (marathon || (sprint && (!level_edit || level_edit_play) && raise_count >= -1)) ? this.randomItem(this_stack,s,-1) : undefined
 
           }
 
@@ -2510,6 +2514,7 @@ $def with (name)
             if (level_edit) {
 
               if (sprint && level_edit_play) {
+                sprint_rises = sprint_data.game["height"]
                 this.sprintLevel(sprint_data)
                 return
               }
@@ -2518,6 +2523,7 @@ $def with (name)
                 this.stacks.push(new Stack(this,level,s))
               return
             } else if (sprint) {
+              sprint_rises = sprint_data.game["height"]
               this.sprintLevel(sprint_data)
               return
             } else {
@@ -3156,6 +3162,10 @@ $def with (name)
           if (filling_stack || raise_count < 0) {
             this.raiseStacks()
             this.player.y = 0
+          } else if (sprint_data != undefined && sprint_rises < sprint_data.game["height"]) {
+            this.raiseStacks()
+            sprint_rises++
+            raise_count = 0
           }
 
           // update effects
