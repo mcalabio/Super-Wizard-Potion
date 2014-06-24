@@ -244,6 +244,8 @@ $def with (name)
       else
         sprint = false
 
+      var largest_stack_size = 0
+
       var background = new jaws.Sprite({x:0,y:0,image:"./static/images/backgrounds/CAULDRON_1.gif",anchor:"left"})
 
       /*  Called once when a game state is activated. Use it for one-time setup code. */
@@ -2236,9 +2238,8 @@ $def with (name)
 
             if (this_stack.next_random_item == undefined) {
 
-              if (sprint && raise_count >= -1) {
+              if (sprint && (!level_edit || level_edit_play) && (raise_count >= -1 || raise_count >= largest_stack_size*(-1)-1)) {
                 this_stack.next_random_item = this.randomItem(this_stack,s,-1)
-                continue
               } else
                 continue
             }
@@ -2280,7 +2281,7 @@ $def with (name)
             }
 
             // randomize next random item
-            this_stack.next_random_item = (marathon || (sprint && raise_count >= -1)) ? this.randomItem(this_stack,s,-1) : undefined
+            this_stack.next_random_item = (marathon || (sprint && (raise_count >= -1 || raise_count > (-1)*largest_stack_size))) ? this.randomItem(this_stack,s,-1) : undefined
 
           }
 
@@ -2468,6 +2469,12 @@ $def with (name)
           // SANITY CHECK
           if (data == "" || data == "\n\n\n\n\n\n" || data == undefined) {
             if (level_edit) {
+
+              if (sprint && level_edit_play) {
+                this.sprintLevel(sprint_data)
+                return
+              }
+
               for (var s=0; s < BOARD_WIDTH; s++)
                 this.stacks.push(new Stack(this,level,s))
               return
@@ -2489,14 +2496,14 @@ $def with (name)
           star_lock = stacks_string[8]
 
           // find biggest stack
-          var largest_stack_size = 0
+          largest_stack_size = 0
           for (var s=0; s < BOARD_WIDTH; s++) {
             items = stacks_string[s].split(',')
             if(items.length > largest_stack_size)
               largest_stack_size = items.length
           }
 
-          raise_count = largest_stack_size * (-1)
+          raise_count = largest_stack_size * (-1) - ((sprint) ? sprint_data.game.height : 0)
 
           // go through each stack
           for (var s=0; s < BOARD_WIDTH; s++) {
@@ -3107,7 +3114,7 @@ $def with (name)
             this_stack.update()
           }
 
-          if (filling_stack) {
+          if (filling_stack || raise_count < 0) {
             this.raiseStacks()
             this.player.y = 0
           }
