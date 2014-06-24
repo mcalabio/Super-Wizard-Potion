@@ -152,6 +152,7 @@ $def with (name)
     // json object storing line game puzzles in story mode
     var cauldron_ticker = 0
     var sprints //= {"1-6":{"blk_red":4,"pot_red":1,"rob_red":4,"height":5,"depth":1,"max_raise":20,"min_raise":20,"freq_raise":20}}
+    var sprint_data
 
     function Game() {
       var player
@@ -238,11 +239,13 @@ $def with (name)
       marathon_level = marathon_level_debug
 
       // sprint mode
-      var sprint_data = (sprints != undefined) ? sprints[player_level + "-" + player_stage] : undefined
-      if (sprint_data != undefined)
-        sprint = true
-      else
-        sprint = false
+      if (player_stage >= 0) {
+        sprint_data = (sprints != undefined) ? sprints[player_level + "-" + player_stage] : undefined
+        if (sprint_data != undefined)
+          sprint = true
+        else
+          sprint = false
+      }
 
       var largest_stack_size = 0
 
@@ -618,6 +621,7 @@ $def with (name)
           // add level menu items
           console.log("ADDING LEVEL MENU ITEMS")
           var item_count = 0
+          var sprint_items = []
           for (var i = 0; i < level_data.levels.length; i++) {
             for (var j = 0; j < 6 || j < level_data.levels[i].length; j++) {
               // console.log("i = " + i + ", j = " + j)
@@ -648,12 +652,44 @@ $def with (name)
                 level_edit_select.items.push(new_level)
                 console.dir(new_level)
                 item_count++
-                level_edit_select.index = item_count
+                level_select_menu.index = item_count
+              }
+
+              // go through each key in sprints data to see if this level name encountered
+              for (var key in sprints) {
+                if (key == this_level.text) {
+                  sprint_items.push(key)
+                }
               }
 
               console.dir(this_level)
               item_count++
             }
+          }
+
+          // add the rest of the sprints
+          for (var key in sprints) {
+
+            var added_already = false
+
+            // check if it has been added already
+            for (var i = 0; i < sprint_items.length; i++) {
+              if (sprint_items[i] == key)
+                added_already = true
+            }
+
+            if (!added_already) {
+              var this_level = new MenuItem(level_select_menu,key,function() {
+                  replay = null
+                  sprint = true
+                  player_level = 0
+                  player_stage = -1
+                  sprint_data = sprints[this.text]
+                  jaws.start(Game)
+              })
+              level_select_menu.items.push(this_level)
+            }
+
           }
 
           console.log("level_select_menu")
@@ -1305,7 +1341,10 @@ $def with (name)
           level_select_menu.active = true
           level_select_menu.controls(level_select_menu,level_select_ok)
           level_select_ok.menu_box.active = true
-          level_select_menu.index = (player_level==0)?(player_stage-1):((player_level-1)*6+parseInt(player_stage)-1+level_data.levels[0].length)
+          if (player_stage < 0)
+            level_select_menu.index = level_select_menu.items.length - 1
+          else
+            level_select_menu.index = (player_level==0)?(player_stage-1):((player_level-1)*6+parseInt(player_stage)-1+level_data.levels[0].length)
         }
 
         this.level_save = function() {
@@ -2238,7 +2277,7 @@ $def with (name)
 
             if (this_stack.next_random_item == undefined) {
 
-              if (sprint && (!level_edit || level_edit_play) && (raise_count >= -1 || raise_count >= largest_stack_size*(-1)-1)) {
+              if (sprint && (!level_edit || level_edit_play) && (raise_count >= -1 || raise_count >= largest_stack_size*(-1)-2)) {
                 this_stack.next_random_item = this.randomItem(this_stack,s,-1)
               } else
                 continue
@@ -6169,6 +6208,9 @@ $def with (name)
             var this_level = new MenuItem(level_edit_select,key,function() {
                 replay = null
                 sprint = true
+                player_level = 0
+                player_stage = -1
+                sprint_data = sprints[this.text]
                 jaws.start(Game)
             })
             level_edit_select.items.push(this_level)
