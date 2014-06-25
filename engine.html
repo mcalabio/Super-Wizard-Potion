@@ -360,7 +360,7 @@ $def with (name)
           if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
             if (player_progress[player_level][1][player_stage.toString()] != undefined || level_edit) {
               var puzzle_data_items = new Array()
-              puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){
+              if (!level_edit) puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){
                   var result = window.prompt("enter star time",(star_time==undefined)?"MM:SS":star_time)
                   if (result != null) star_time = result
                   puzzle_data_items[0].text = "Star Time:  " + star_time
@@ -370,11 +370,11 @@ $def with (name)
                   if (result != null) star_score = result
                   puzzle_data_items[1].text = "Star Score: \u03BB" + star_score
               }))
-              if (level_edit) puzzle_data_items.push(new MenuItem(puzzle_data,"Star Lock:  " + star_lock,function(){
-                  var result = window.prompt("enter star lock",(star_lock)==undefined?"":star_lock)
-                  if (result != null) star_lock = result
-                  puzzle_data_items[2].text = "Star Lock:  " + star_lock
-              }))
+              // if (level_edit) puzzle_data_items.push(new MenuItem(puzzle_data,"Star Lock:  " + star_lock,function(){
+              //     var result = window.prompt("enter star lock",(star_lock)==undefined?"":star_lock)
+              //     if (result != null) star_lock = result
+              //     puzzle_data_items[2].text = "Star Lock:  " + star_lock
+              // }))
               puzzle_data = new MenuBox("",puzzle_data,(level_edit)?screen_data.x - 2*ITEM_WIDTH:screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,puzzle_data_items)
               puzzle_data.index = -1
               puzzle_data.active = (level_edit) ? true : false
@@ -1027,6 +1027,7 @@ $def with (name)
         var anim = new jaws.Animation({sprite_sheet: "./static/images/WIZARD.gif", frame_size: [136,128], frame_duration: 100})
         this.wizard.anim_default = anim.slice(0,3)
         this.wizard.grab = anim.slice(2,5)
+        this.wizard.grabbing = anim.slice(5,8)
         this.wizard.setImage(this.wizard.anim_default.next())
 
 
@@ -1814,6 +1815,8 @@ $def with (name)
           } else {
             if (!this.wizard.grab.atLastFrame())
               this.wizard.setImage(this.wizard.grab.next())
+            else
+              this.wizard.setImage(this.wizard.grabbing.next())
           }
 
 
