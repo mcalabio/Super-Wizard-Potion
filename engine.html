@@ -1586,15 +1586,19 @@ $def with (name)
 
               this.drop(stack,1)
 
-              // warp to puzzle potion's stage
-              player_stage = (!level_edit) ? item.puzzle_stage : player_stage
-              if (item.type ==3) {
-                player_level = item.puzzle_stage
-                player_stage = 0
-              }              
+              if (!level_edit_play) {
 
-              if (level_edit_play)
+                // warp to puzzle potion's stage
+                player_stage = (!level_edit) ? item.puzzle_stage : player_stage
+                if (item.type ==3) {
+                  player_level = item.puzzle_stage
+                  player_stage = 0
+                }              
+
+              } else {
                 window.alert(screen_data.items[1].text)
+                jaws.start(Game)
+              }
 
               if (item.type != 3) {
                 item.sprite.dy = (-1) * 9999
