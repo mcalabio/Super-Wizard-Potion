@@ -2810,6 +2810,11 @@ $def with (name)
 
         // check if this is the last robot on the board
         this.lastRobot = function(robot) {
+
+          // SANITY CHECK, this function only relevant for marathon and puzzles, not sprints
+          if (sprint)
+            return false
+
           for (var c = 0; c < this.robot_count.length; c++) {
             if (c != robot.color && this.robot_count[c] > 0) {
               return false
