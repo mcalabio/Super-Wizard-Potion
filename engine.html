@@ -292,15 +292,15 @@ $def with (name)
         screen_data_items.push(new MenuItem(screen_data,
           (marathon) ?
             ("Marathon") :
-            ((level_name==undefined || level_name=="") ?
-              ("player_level + "-" + player_stage") :
+            ((player_level>0 || level_name==undefined || level_name=="") ?
+              (player_level + "-" + player_stage) :
               level_name
             ),function(){return}
             ))
 
         // display level and stage number
         // screen_data_items[0].text = (!marathon)?(player_level + "-" + player_stage):(marathon_level)
-        screen_data_items[0].text = (!marathon)?(level_name):(marathon_level)
+        // screen_data_items[0].text = (!marathon)?(level_name):(marathon_level)
 
         // display timer and score
         screen_data_items.push(new MenuItem(screen_data,player.timer.clock_text,function(){return}))
