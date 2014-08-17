@@ -239,8 +239,8 @@ $def with (name)
       marathon_level = marathon_level_debug
 
       // sprint mode
-      if (player_stage >= 0) {
-        sprint_data = (sprints != undefined) ? sprints[player_level + "-" + player_stage] : undefined
+      if (player_stage >= 0 || marathon) {
+        sprint_data = (sprints != undefined) ? sprints[((marathon)?marathon_level:player_level) + "-" + ((marathon)?"6":player_stage)] : undefined
         if (sprint_data != undefined) 
           sprint = true
         else {
@@ -326,8 +326,8 @@ $def with (name)
         // and setup screen data for marathon
         if (marathon) {
           console.log("MARATHON")
-          raise_level_time = MAX_RAISE_LEVEL_TIME
-          player.board.marathonLevel(5)
+        //   raise_level_time = MAX_RAISE_LEVEL_TIME
+        //   player.board.marathonLevel(5)
 
           var marathon_data_items = new Array()
           marathon_data_items.push(new MenuItem(marathon_data,"Best Time:  " + marathon_progress[0],function(){return}))
@@ -336,12 +336,16 @@ $def with (name)
           marathon_data = new MenuBox("",marathon_data,screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,marathon_data_items)
           marathon_data.index = -1
 
+          player_level = marathon_level
+          player_stage = 6
+
           // start timer immediately
-          game_start = true
+          // game_start = true
 
           // marathon_star_lock_menu.menu_box.setup(main_menu.x + main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 20,level_select_ok.menu_box.width)
-
-        } else if (sprint) {
+        }
+        // } else 
+        if (sprint || marathon) {
           raise_level_time = sprint_data.game["max_raise"]
           var value
           // fill up the randomization array
@@ -2208,11 +2212,12 @@ $def with (name)
 
             }
 
-            if (marathon) {
-              var type_color_string = randomization_array[marathon_level-1].pop()
-              randomization_array[marathon_level-1].push(type_color_string)
-              fisherYates(randomization_array[marathon_level-1])
-            } else if (sprint) {
+            // if (marathon) {
+            //   var type_color_string = randomization_array[marathon_level-1].pop()
+            //   randomization_array[marathon_level-1].push(type_color_string)
+            //   fisherYates(randomization_array[marathon_level-1])
+            // } else 
+            if (sprint || marathon) {
               var type_color_string = sprint_randomization.pop()
               sprint_randomization.push(type_color_string)
               fisherYates(sprint_randomization)
@@ -2287,7 +2292,7 @@ $def with (name)
 
             if (this_stack.next_random_item == undefined) {
 
-              if (sprint && (!level_edit || level_edit_play) && raise_count >= -1) {
+              if ((sprint||marathon) && (!level_edit || level_edit_play) && raise_count >= -1) {
                 this_stack.next_random_item = this.randomItem(this_stack,s,-1)
                 continue
               } else
@@ -2331,7 +2336,7 @@ $def with (name)
             }
 
             // randomize next random item
-            this_stack.next_random_item = (marathon || (sprint && (!level_edit || level_edit_play) && raise_count >= -1)) ? this.randomItem(this_stack,s,-1) : undefined
+            this_stack.next_random_item = (marathon || ((sprint||marathon) && (!level_edit || level_edit_play) && raise_count >= -1)) ? this.randomItem(this_stack,s,-1) : undefined
 
           }
 
@@ -2349,14 +2354,15 @@ $def with (name)
 
           console.log("raising stack with raise_count = " + raise_count)
 
-          if (marathon && !marathon_debug) {
-            if (raise_count == raise_count_level[marathon_level-1]) {
-              if (marathon_level < ITEM_PROBS["0|0"].length) {
-                raise_count = 0
-                marathon_level++
-              }
-            }
-          } else if (sprint) {
+          // if (marathon && !marathon_debug) {
+          //   if (raise_count == raise_count_level[marathon_level-1]) {
+          //     if (marathon_level < ITEM_PROBS["0|0"].length) {
+          //       raise_count = 0
+          //       marathon_level++
+          //     }
+          //   }
+          // } else 
+          if (sprint||marathon) {
             if (raise_count >= sprint_data.game["depth"]) {
               if (player.board.cauldron_count < 1)
                 player.board.spawnItem(3,EMPTY)
@@ -2520,7 +2526,7 @@ $def with (name)
           if (data == "" || data == "\n\n\n\n\n\n" || data == undefined) {
             if (level_edit) {
 
-              if (sprint && level_edit_play) {
+              if ((sprint||marathon) && level_edit_play) {
                 sprint_rises = sprint_data.game["height"]
                 this.sprintLevel(sprint_data)
                 return
@@ -2529,7 +2535,7 @@ $def with (name)
               for (var s=0; s < BOARD_WIDTH; s++)
                 this.stacks.push(new Stack(this,level,s))
               return
-            } else if (sprint) {
+            } else if ((sprint||marathon)) {
               sprint_rises = sprint_data.game["height"]
               this.sprintLevel(sprint_data)
               return
@@ -2555,7 +2561,7 @@ $def with (name)
               largest_stack_size = items.length
           }
 
-          raise_count = largest_stack_size * (-1) - ((sprint) ? sprint_data.game.height : 0)
+          raise_count = largest_stack_size * (-1) - ((sprint||marathon) ? sprint_data.game.height : 0)
 
           // go through each stack
           for (var s=0; s < BOARD_WIDTH; s++) {
@@ -2787,7 +2793,7 @@ $def with (name)
           var board_x = x - this.board.x
           var board_y = y - this.board.y
 
-          if (marathon || (sprint && !level_edit && !level_edit_play)) {
+          if (marathon || ((sprint||marathon) && !level_edit && !level_edit_play)) {
             if (board_x < 0 || board_x > this.board.width || board_y < 0 || board_y > this.board.height) {
               return [-1,-1]
             }
@@ -2811,8 +2817,8 @@ $def with (name)
         // check if this is the last robot on the board
         this.lastRobot = function(robot) {
 
-          // SANITY CHECK, this function only relevant for marathon and puzzles, not sprints
-          if (sprint)
+          // SANITY CHECK, this function only relevant for puzzles, not marathon/sprints
+          if (sprint || marathon)
             return false
 
           for (var c = 0; c < this.robot_count.length; c++) {
