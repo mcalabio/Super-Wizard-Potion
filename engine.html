@@ -182,6 +182,7 @@ $def with (name)
       var restart_menu_item = new MenuItem(pause_menu,"Restart",function() {
         // update marathon progress
         if (marathon) {
+          marathon_level = marathon_level_debug
           if (player.timer.clock_text > marathon_progress[0])
             marathon_progress[0] = player.timer.clock_text
           if (player.score > marathon_progress[1])
@@ -235,8 +236,6 @@ $def with (name)
       progress_buttons.hidden = true
 
       var replay_length = 0
-
-      marathon_level = marathon_level_debug
 
       // sprint mode
       if (player_stage >= 0 || marathon) {
@@ -1598,6 +1597,8 @@ $def with (name)
                 if (item.type ==3) {
                   player_level = item.puzzle_stage
                   player_stage = 0
+                  if (marathon)
+                    marathon_level++
                 }              
 
               } else {
@@ -1605,6 +1606,7 @@ $def with (name)
                 jaws.start(Game)
               }
 
+              // make puzzle potion float to the top
               if (item.type != 3) {
                 item.sprite.dy = (-1) * 9999
               }
@@ -2978,7 +2980,7 @@ $def with (name)
 
           if (replay == null) {
 
-            winlose_menu.active = true
+            winlose_menu.active = (marathon)?false:true
             // winlose_menu.controls(winlose_menu)   
             var winlose_menu_items = new Array()       
 
@@ -3003,6 +3005,8 @@ $def with (name)
                 winlose_menu_items.push(undo_menu_item)
               winlose_menu_items.push(restart_menu_item)
               restart_menu_item.action = function () {
+                if (marathon)
+                  marathon_level = marathon_level_debug
                 jaws.start(Game) // no need to save record here
               }
               winlose_menu_items.push(back_menu_item)
@@ -3235,7 +3239,7 @@ $def with (name)
           // draw winlose menu
           if (game_end != "" && game_end != "R") {
             if (winlose_delay <= 0) {
-              if (marathon) {
+              if (marathon && game_end == "L") {
                 score_sheet_data.draw()
                 if (game_end != "W")
                   winlose_data.draw()
@@ -4773,6 +4777,8 @@ $def with (name)
       if (level_edit_play) {
         restart_menu_item.text = "Back to Editor"
         restart_menu_item.action = function() {
+          if (marathon)
+            marathon_level = marathon_level_debug
           level_edit_play = false
           jaws.start(Game)
         }
@@ -6009,6 +6015,7 @@ $def with (name)
             level_edit = false
             marathon = true
             replay = null
+            marathon_level = marathon_level_debug
             jaws.start(Game)
           }))
           main_menu_items[main_menu_items.length-1].description
