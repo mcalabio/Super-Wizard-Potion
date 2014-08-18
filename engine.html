@@ -2387,7 +2387,10 @@ $def with (name)
             var this_stack = this.stacks[s]
             for (var i = 0; i < this_stack.items.length; i++) {
               var this_item = this_stack.items[i]
-              if (!(this_item.type == 1 && this_item.color == 5)) {
+              if (this_item.type == 2) {
+                this_item.breaking = true
+              }
+              else if (!(this_item.type == 1 && this_item.color == 5)) {
                 this_item.breaking = true
                 if (this_item.type == 1 && this_item.color != 5) {
                   this_item.color = UNSTABLE
@@ -2402,6 +2405,7 @@ $def with (name)
                   this_item.sprite.dy = this_stack.board.posy(this_item.y)
                 }
               }
+
             }
 
           }
