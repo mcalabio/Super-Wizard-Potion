@@ -1052,6 +1052,8 @@ $def with (name)
 
         }
 
+        this.suicide_raise = false // raise twice when stacks are full to kill yourself
+
         this.addScore = function(type,combo,chain) {
 
           // add to player's score
@@ -1095,11 +1097,21 @@ $def with (name)
           })
 
           jaws.on_keydown(["l"], function() {
-            if ((marathon || sprint) && !player.board.stacksBreaking() && !player.board.stacksFull()) {
-              player.board.raiseStacks()
-              // record this action
-              player.replay_data[player.timer.frame_ticker.toString()]
-                = [player.x,player.y,"raise",0]
+            if ((marathon || sprint) && !player.board.stacksBreaking()) {
+              if (player.board.stacksFull()) {
+                if (player.suicide_raise) {
+                  player.board.raiseStacks()
+                  // record this action
+                  player.replay_data[player.timer.frame_ticker.toString()]
+                   = [player.x,player.y,"raise",0]
+                } else
+                  player.suicide_raise = true
+              } else {
+                player.board.raiseStacks()
+                // record this action
+                player.replay_data[player.timer.frame_ticker.toString()]
+                  = [player.x,player.y,"raise",0]
+              }
             }
           })
 
@@ -1719,11 +1731,22 @@ $def with (name)
               click_outside_board = true
 
             if (click_outside_board && (marathon || sprint)) {
-              if ((marathon || sprint) && !player.board.stacksBreaking() && !player.board.stacksFull()) {
-                player.board.raiseStacks()
-                // record this action
-                player.replay_data[player.timer.frame_ticker.toString()]
-                  = [player.x,player.y,"raise",0]
+              if ((marathon || sprint) && !player.board.stacksBreaking()) {
+
+                if (player.board.stacksFull()) {
+                  if (player.suicide_raise) {
+                    player.board.raiseStacks()
+                    // record this action
+                    player.replay_data[player.timer.frame_ticker.toString()]
+                     = [player.x,player.y,"raise",0]
+                  } else
+                    player.suicide_raise = true
+                } else {
+                  player.board.raiseStacks()
+                  // record this action
+                  player.replay_data[player.timer.frame_ticker.toString()]
+                    = [player.x,player.y,"raise",0]
+                }
               }
               return
             }
@@ -2375,6 +2398,9 @@ $def with (name)
 
           // reset timer
           player.timer.raise_level_timer = raise_level_time
+
+          // reset suicide raise
+          player.suicide_raise = false
 
           // increment raise_count
           raise_count++
