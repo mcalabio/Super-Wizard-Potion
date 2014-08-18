@@ -2252,9 +2252,34 @@ $def with (name)
 
         // spawn specific item
         this.spawnItem = function(type,color) {
-          var rand_stack = Math.floor(Math.random()*6)
-          this.stacks[rand_stack].next_random_item = new Item(this.stacks[rand_stack],type,color,rand_stack,-1)
-          // this.item_queue.push(new Item(this.stacks[rand_stack],type,color,rand_stack,-1))
+
+          if (replay == null) {
+
+            var rand_stack = Math.floor(Math.random()*6)
+            this.stacks[rand_stack].next_random_item = new Item(this.stacks[rand_stack],type,color,rand_stack,-1)
+
+            // add this item to replay data
+            this.player.replay_data["stack_queue"][rand_stack].push(type + "|" + color)
+
+          // for replays, get recorded item in stack queue
+          } else {
+
+            // find out which stack to spawn the item
+            var stack_x = -1
+            for (var s = 0; s < this.stacks.length; s++) {
+              var type_color_string = replay["stack_queue"][s].shift()
+              var type_color = type_color_string.split("|")
+              if (type_color[0] == type && type_color[1] == color) {
+                stack_x = s
+                break
+              } else
+                replay["stack_queue"][s].unshift(type_color_string)
+            }
+
+            this.stacks[stack_x].next_random_item = new Item(this.stacks[stack_x],type,color,stack_x,-1)
+
+          }
+
         }
 
         // checks if a stack contains breaking items
@@ -4445,6 +4470,7 @@ $def with (name)
       function replayAction(frame_ticker) {
         if (replay[frame_ticker] != undefined) {
           console.log("REPLAY ACTION " + frame_ticker)
+          console.dir(replay)
           console.dir(replay[frame_ticker])
           var frame = replay[frame_ticker]
 
@@ -4525,7 +4551,7 @@ $def with (name)
         // increment the ticker and count the seconds and minutes
         this.update = function() {
 
-          if (replay != null) {
+          if (replay != null && game_end == "") {
             replayAction(this.frame_ticker)
           }
 
@@ -5986,7 +6012,7 @@ $def with (name)
 
         // main menu
         var main_menu_items = new Array()
-          main_menu_items.push(new MenuItem(main_menu,"Puzzle Mode",function() {
+          main_menu_items.push(new MenuItem(main_menu,"Zonkies - Begin Here",function() {
             menus.push(level_select_menu)
             menus.push(level_select_ok)
             level_select_menu.submenus.push(level_select_ok)
