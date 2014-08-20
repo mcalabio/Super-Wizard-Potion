@@ -215,6 +215,7 @@ $def with (name)
       var screen_data
       var puzzle_data
       var marathon_data
+      var speech_box
       var star_time
       var star_score
       var star_lock
@@ -480,6 +481,24 @@ $def with (name)
         if (marathon) {
           score_sheet_data = new MenuBox("",score_sheet_data,menu_x,menu_y, 5*ITEM_WIDTH+15, [])
         }
+
+        // wizard speech box
+        speech_box = new MenuBox("",speech_box,0,player.wizard.y - player.wizard.height * 2, 4*ITEM_WIDTH+15,[
+          new MenuItem(speech_box,"The monsters",function() {return}),
+          new MenuItem(speech_box,"are rising,",function() {return}),
+          new MenuItem(speech_box,"I mustn't",function() {return}),
+          new MenuItem(speech_box,"let them reach",function() {return}),
+          new MenuItem(speech_box,"the top!",function() {return})
+          ])
+        speech_box.active = (sprint) ? true : false
+        speech_box.index = -1
+        // speech_box.center(player.wizard.x,player.wizard.width)
+        // speech_box.setup(speech_box.x,speech_box.y,speech_box.width)
+
+
+        
+
+
 
         // add star sprites for winlose data
         for (var s=0; s < winlose_data_items.length; s++) {
@@ -984,6 +1003,8 @@ $def with (name)
             if (level_select_ok.menu_box.active)
               level_select_ok.draw()
           }
+          if (speech_box.active)
+            speech_box.draw()
           // if (marathon)
           //   marathon_data.draw()
           // else (!level_edit)
@@ -6497,6 +6518,8 @@ $def with (name)
         console.log("menus!")
         console.dir(menus)
         level_edit_play = false
+        console.log("player progress")
+        console.dir(player_progress)
       }
 
       this.update = function() {
