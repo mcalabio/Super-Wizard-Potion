@@ -276,7 +276,8 @@ $def with (name)
           player.board.board.x + player.board.board.width + ITEM_WIDTH,
           player.board.board.y,
           160,
-          [new MenuItem(screen_data,"  x " + player.stars,function(){return})]
+          [new MenuItem(screen_data,"",function(){return})]
+          // [new MenuItem(screen_data,"  x " + player.stars,function(){return})]
         )
         player_data.index = -1
         var player_stars_sprite = new jaws.Sprite({x:player_data.x+20,y:player_data.y+36,image:"./static/images/STAR.gif",anchor:"left"})   
@@ -384,7 +385,6 @@ $def with (name)
             }
           }
 
-          game_start = true
         } else {
           console.dir(level_data)
 
@@ -422,6 +422,8 @@ $def with (name)
             }
           }
         }
+
+        game_start = true
 
         // pause menu
         pause = false
@@ -982,13 +984,13 @@ $def with (name)
             if (level_select_ok.menu_box.active)
               level_select_ok.draw()
           }
-          if (marathon)
-            marathon_data.draw()
-          else (!level_edit)
-            if (puzzle_data != undefined) puzzle_data.draw()
-          for (var s=0; s < star_sprites.length; s++) {
-            star_sprites[s].draw()
-          }
+          // if (marathon)
+          //   marathon_data.draw()
+          // else (!level_edit)
+          //   if (puzzle_data != undefined) puzzle_data.draw()
+          // for (var s=0; s < star_sprites.length; s++) {
+          //   star_sprites[s].draw()
+          // }
         });
 
         if (continue_lock_box.active)
@@ -1568,8 +1570,8 @@ $def with (name)
         this.grab = function(stack,depth) {
 
           // start the timer
-          if (!game_start)
-            game_start = true
+          // if (!game_start)
+            // game_start = true
 
           // count player moves
           this.moves++
@@ -3165,7 +3167,8 @@ $def with (name)
             player.new_stars = updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
 
           player.stars = starTotal()
-          player_data.items[0].text = "  x " + player.stars
+          player_data.items[0].text = ""
+          // player_data.items[0].text = "  x " + player.stars
 
           // update player progress
           if (player_progress[player_level][0] < player_stage)
@@ -4494,6 +4497,8 @@ $def with (name)
 
       // replay[frame_ticker] = [player_x,player_y,action,]
       function replayAction(frame_ticker) {
+        if (raise_count < 0)
+          return
         if (replay[frame_ticker] != undefined) {
           console.log("REPLAY ACTION " + frame_ticker)
           console.dir(replay)
@@ -5056,8 +5061,14 @@ $def with (name)
       var record_object = {}
 
       record_object["name"] = player_name
-      record_object["puzzle"] = (marathon) ? ("MRTHN-" + MAX_RAISE_LEVEL_TIME + "-" + MIN_RAISE_LEVEL_TIME + "-" + FREQ_RAISE_LEVEL_TIME) : (player_level + "-" + player_stage)
-      record_object["result"] = (marathon) ? marathon_level : winloss
+      record_object["puzzle"] = (marathon) ? ("MRTHN-" + MAX_RAISE_LEVEL_TIME + "-" + MIN_RAISE_LEVEL_TIME + "-" + FREQ_RAISE_LEVEL_TIME)
+                                : (sprint) ? (winloss=="A") ? (player_level - 1) + "-6"
+                                  : (player_level + "-" + player_stage) 
+                                    : (winloss=="A") ? (player_level + "-" + (player_stage-1))      
+                                      : (player_level + "-" + player_stage)
+      record_object["result"] = (marathon) ? 
+                                  (winloss=="A") ? (marathon_level-1) : marathon_level
+                                    : (winloss=="A") ? "W" : winloss
       record_object["score"] = board.player.score
       record_object["time"] = board.player.timer.clock_text
       record_object["moves"] = board.player.moves
@@ -5384,7 +5395,7 @@ $def with (name)
 
     function saveRecord (record) {
 
-      if (replay != null)
+      if (replay != null || (record.result=="W" && player_stage == 1))
         return
 
       var json_data = JSON.stringify({'type': "saveRecord", 'data': record})
@@ -6534,15 +6545,15 @@ $def with (name)
         jaws.context.fillText(player_name, ITEM_WIDTH + 17, 28)
 
         // star sprite
-        star_total_sprite.x = ITEM_WIDTH + 19 + player_name.length*12.5
-        star_total_sprite.draw()
+        // star_total_sprite.x = ITEM_WIDTH + 19 + player_name.length*12.5
+        // star_total_sprite.draw()
 
         // player star count
-        jaws.context.font = MENU_FONT
-        jaws.context.lineWidth = 10
-        jaws.context.fillStyle =  "White"
-        jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-        jaws.context.fillText("x " + starTotal(), star_total_sprite.x + star_total_sprite.width + 10, 28)
+        // jaws.context.font = MENU_FONT
+        // jaws.context.lineWidth = 10
+        // jaws.context.fillStyle =  "White"
+        // jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+        // jaws.context.fillText("x " + starTotal(), star_total_sprite.x + star_total_sprite.width + 10, 28)
 
         for (var i = 0; i < menus.length; i++) {
           menus[i].draw()
@@ -6727,26 +6738,31 @@ $def with (name)
 
           disablekeys = true
 
-          // check which path this player will be taking
-          playerPath(player_name, function(data) {
+          if (player_name.length > 0) {
+            jaws.switchGameState(MainMenu)
+          } else
+            jaws.start(PlayerNameState)
 
-            console.log("in a callback with data = " + data)
+          // // check which path this player will be taking
+          // playerPath(player_name, function(data) {
 
-            if (data < 0) {
-              player_path = 3
-              puzzle_mode_active = false
-              // jaws.start(PlayerNameState)
-            } else {
-              player_path = data
-              puzzle_mode_active = true
-            }
+          //   console.log("in a callback with data = " + data)
 
-            if (player_name.length > 0) {
-              jaws.switchGameState(MainMenu)
-            } else
-              jaws.start(PlayerNameState)
+          //   if (data < 0) {
+          //     player_path = 3
+          //     puzzle_mode_active = false
+          //     // jaws.start(PlayerNameState)
+          //   } else {
+          //     player_path = data
+          //     puzzle_mode_active = true
+          //   }
 
-          })
+          //   if (player_name.length > 0) {
+          //     jaws.switchGameState(MainMenu)
+          //   } else
+          //     jaws.start(PlayerNameState)
+
+          // })
 
         } )
 
