@@ -4582,7 +4582,7 @@ $def with (name)
         // increment the ticker and count the seconds and minutes
         this.update = function() {
 
-          if (replay != null && game_end == "") {
+          if (replay != null && (game_end == "" || game_end == "W")) {
             replayAction(this.frame_ticker)
           }
 
