@@ -5080,12 +5080,9 @@ $def with (name)
       record_object["uid"] = player_uid
       record_object["score_sheet"] = board.player.score_sheet
 
-      var record = "," + JSON.stringify(record_object) + "]"
+      game_record = "," + JSON.stringify(record_object) + "]"
 
-      console.dir(record)
-      game_record = record
-
-      return record
+      return record_object
 
     }
 
@@ -5395,10 +5392,12 @@ $def with (name)
 
     function saveRecord (record) {
 
-      if (replay != null || (record.result=="W" && player_stage == 1))
+      if (replay != null || (record["result"]!="W" && player_stage == 0) || (record["result"]=="W" && player_stage == 1) || (record["result"]=="W" && record["score"] == 0))
         return
 
-      var json_data = JSON.stringify({'type': "saveRecord", 'data': record})
+      var record_string = "," + JSON.stringify(record) + "]"
+
+      var json_data = JSON.stringify({'type': "saveRecord", 'data': record_string})
 
       console.log("savingRecord() with json_data = " + json_data)
       jQuery.ajax({
