@@ -39,6 +39,8 @@ class engine:
 			f.close()
 			web.debug("git commiting")
 			git.commit(a=True, m="'new record added'")
+			web.debug("git pushing")
+			git.push()
 
 			return record
 
