@@ -1630,8 +1630,15 @@ $def with (name)
                 // warp to puzzle potion's stage
                 player_stage = (!level_edit) ? item.puzzle_stage : player_stage
                 if (item.type ==3) {
+
                   player_level = item.puzzle_stage
                   player_stage = 0
+
+                  if (player_level >= level_data.levels.length) {
+                    window.alert(thanks_for_coming)
+                    jaws.start(MainMenu)
+                  }
+
                   if (marathon)
                     marathon_level++
                 }              
@@ -6178,7 +6185,7 @@ $def with (name)
         console.log("ADDING LEVEL MENU ITEMS")
         console.dir(player_path)
         var item_count = 0
-        for (var i = 1; i <= level_data.levels.length; i++) {
+        for (var i = 1; i < level_data.levels.length; i++) {
           console.log("add level menu item, i = " + i)
           if (level_data.levels[i-1] == undefined)
             continue
