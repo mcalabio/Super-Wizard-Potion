@@ -4050,8 +4050,10 @@ $def with (name)
             }
           }
           if (this.level >= 0 && (marathon || sprint)) {
-            if (this.next_random_item != undefined)
-               this.next_random_item.draw()
+            if (this.next_random_item != undefined) {
+              this.next_random_item.sprite.alpha = 1 - player.timer.raise_level_timer/raise_level_time
+              this.next_random_item.draw()
+            }
           }
         }
 
