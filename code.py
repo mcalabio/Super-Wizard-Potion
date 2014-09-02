@@ -3,11 +3,6 @@ import sys
 import json
 import os
 from binascii import a2b_base64
-from git import *
-
-repo = Repo(".")
-assert repo.bare == False
-git = repo.git
 
 render = web.template.render('.')
 
@@ -37,10 +32,6 @@ class engine:
 			f.seek(-1,2)
 			f.write(record)
 			f.close()
-			web.debug("git commiting")
-			git.commit(a=True, m="'new record added'")
-			web.debug("git pushing")
-			git.push()
 
 			return record
 
