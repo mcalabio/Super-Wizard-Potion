@@ -6415,14 +6415,14 @@ $def with (name)
         help_menu_items[help_menu_items.length-1].description
           = "Melting blocks gives you 1 point.\n"
           + "Brewing potions gives you 1 point.\n"
-          + "Clear stacks of robots to multiply your score.\n"
+          + "Clear stacks of monsters to multiply your score.\n"
           + "Perform chains to exponentiate your score.\n"
         help_menu_items.push(new MenuItem(help_menu, "Misc.", function() {return}))
         help_menu_items[help_menu_items.length-1].description
           = "CTRL+Z to undo your last move in Puzzle Mode.\n"
           + "(no stars can be earned if you undo)\n"
           + "Press L or click outside of the board\n"
-          + "to make the stacks rise in Marathon Mode."
+          + "to make the stacks rise in Action Mode."
         var help_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 200, help_menu_items)
         help_menu.back = this.back
 
