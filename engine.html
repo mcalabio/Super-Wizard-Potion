@@ -412,11 +412,18 @@ $def with (name)
             player.board.fillPuzzlePotions()
 
           } else if (level_data.levels[player_level][player_stage-1] != undefined || level_edit) {
-            if (!level_edit)
-              player.board.fillLevel(player_level,player_stage)
-            else
-              player.board.fillLevel(player_level,player_stage)
-            addStateForUndo(player.hand,player.board)
+
+            var stacks_string = level_data.levels[player_level][player_stage-1].split('\n')
+            var board_string = ""
+            for (var s = 0; s < BOARD_WIDTH; s++) {
+              board_string += stacks_string[s]
+              board_string += "\n"    
+            }
+
+            player.board.fillLevel(player_level,player_stage)
+
+            addStateForUndo(player.hand,board_string)
+
             if (player_progress[player_level][1][player_stage.toString()] != undefined || level_edit) {
               var puzzle_data_items = new Array()
               if (!level_edit) puzzle_data_items.push(new MenuItem(puzzle_data,"Star Time:  " + star_time,function(){
@@ -1700,7 +1707,7 @@ $def with (name)
           }
 
           // add current state of board and hand to undo arrays
-          addStateForUndo(this.hand,this.board)
+          addStateForUndo(this.hand,this.board.levelString())
 
           // play sound effect
           // if (depth > 0) {
@@ -1751,7 +1758,7 @@ $def with (name)
             this.y = stack_items.length - depth // at item at bottom of hand stack
 
           // add current state of board and hand to undo arrays
-          addStateForUndo(this.hand,this.board)
+          addStateForUndo(this.hand,this.board.levelString())
 
           // play sound effects
           // drop_sound.stop()
@@ -2629,6 +2636,9 @@ $def with (name)
           console.log("level_data")
           console.dir(level_data)
 
+          console.log("data")
+          console.dir(data)
+
           // SANITY CHECK
           if (data == "" || data == "\n\n\n\n\n\n" || data == undefined) {
             if (level_edit) {
@@ -2705,7 +2715,26 @@ $def with (name)
           console.log("flask_count = " + this.flask_count)
           console.log("robot_count = " + this.robot_count)
 
+        }
 
+        // return the configuration of the board in string form
+        this.levelString = function() {
+          // construct level string
+          var level_string = ""
+          // go through each stack
+          for (var s = 0; s < this.stacks.length; s++) {
+            // go through each item in the stack
+            var this_stack = this.stacks[s]
+            for (var i = 0; i < this_stack.items.length; i++) {
+              // append this item string to level_string
+              var this_item = this_stack.items[i]
+              if (i>0) level_string = level_string + ","
+              level_string = level_string + this_item.type + "|" + this_item.color
+            }
+            level_string = level_string + "\n"
+          }
+
+          return level_string
 
         }
 
@@ -4701,25 +4730,14 @@ $def with (name)
       // to the undo state arrays
       function addStateForUndo (hand,board,undo) {
 
+        // SANITY CHECK
+        if (player_stage == 0)
+          return
+
         var called_by_undo = undo || false
 
-        // construct level string
-        var level_string = ""
-        // go through each stack
-        for (var s = 0; s < board.stacks.length; s++) {
-          // go through each item in the stack
-          var this_stack = board.stacks[s]
-          for (var i = 0; i < this_stack.items.length; i++) {
-            // append this item string to level_string
-            var this_item = this_stack.items[i]
-            if (i>0) level_string = level_string + ","
-            level_string = level_string + this_item.type + "|" + this_item.color
-          }
-          level_string = level_string + "\n"
-        }
-
-        // add level string to undo state array
-        undo_board.push(level_string)
+        // add board string to undo state array
+        undo_board.push(board)
 
         // construct hand string
         var hand_string = ""
@@ -4791,7 +4809,7 @@ $def with (name)
         Y_SPEED = FAST
         player.cursor_speed = Y_SPEED
 
-        if (undo_hand.length > 1)
+        if (undo_hand.length > 0)
           undo_hand.pop()
         var player_state = undo_hand.pop()
         player.x = player_state[0]
@@ -4829,14 +4847,13 @@ $def with (name)
 
         }
 
-        if (undo_board.length > 1)
+        if (undo_board.length > 0)
           undo_board.pop()
         var board_state = undo_board.pop()
 
         player.board.clearBoard()
         player.board.fillLevel(player_level,player_stage,board_state)
-
-        addStateForUndo(player.hand,player.board,true)
+        addStateForUndo(player.hand,board_state,true)
 
         console.log("popped the last hand and board states!")
         console.dir(undo_hand)
