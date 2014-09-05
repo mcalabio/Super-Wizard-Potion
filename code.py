@@ -165,6 +165,7 @@ class engine:
 				f = open('levels/sprints.json','r')
 				levels_data["sprints"] = f.read()
 				f.close()
+				web.debug("sprints.json file found!")
 
 			except:
 				web.debug("failed to open sprints.json file")

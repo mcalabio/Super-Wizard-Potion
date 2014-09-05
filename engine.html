@@ -71,33 +71,11 @@ $def with (name)
 
     // PROBABILITIES FOR
     // GENERATING RANDOM ITEMS IN MARATHON
-    var ITEM_PROBS = {
-
-    // BLOCKS
-      "0|0" : [4,7,10,7,10,7,10,10,10,10,10,10,10,8] , // RED
-      "0|1" : [0,7,10,7,10,7,10,04,04,10,10,10,10,8] , // GREEN
-      "0|2" : [0,0,00,0,00,7,10,04,04,04,04,10,10,8]  , // PURPLE
-      "0|4" : [0,0,00,0,00,0,00,10,10,10,10,10,10,6]  , // YELLOW
-      "0|7" : [0,0,00,7,10,7,10,10,10,10,10,10,10,16] , // WHITE
-
-    // POTIONS               //  //  //
-      "1|0" : [0,1,1,1,1,1,1,0,1,1,1,1,1,1] , // RED
-      "1|1" : [0,1,1,1,1,1,1,0,0,0,1,1,1,1] , // GREEN
-      "1|2" : [0,0,0,0,0,1,1,0,0,0,0,0,1,1] , // PURPLE
-      "1|4" : [0,0,0,0,0,0,0,2,2,2,2,2,2,1] , // YELLOW
-      "1|6" : [0,0,0,2,4,3,4,4,4,4,4,4,4,3] , // EMPTY
-      "1|7" : [1,3,3,1,1,2,2,2,3,4,4,5,5,3] , // WHITE
-
-    // ROBOTS                //  //  //
-      "2|0" : [4,6,6,6,6,6,6,0,4,3,3,3,3,6] , // RED
-      "2|1" : [0,6,6,6,6,6,6,0,0,0,3,3,3,6] , // GREEN
-      "2|2" : [0,0,0,0,0,6,6,0,0,0,0,0,3,6] , // PURPLE
-      "2|3" : [0,0,0,0,0,0,0,6,6,6,6,6,6,1] , // RED ARMOR
-      "2|4" : [0,0,0,0,0,0,0,0,0,6,6,6,6,1] , // GREEN ARMOR
-      "2|5" : [0,0,0,0,0,0,0,0,0,0,0,6,6,1] , // PURPLE ARMOR
-    }
-
-    var raise_count_level = [1,8,8,8,6,5,5,5,5,5,5,5]
+    var ITEM_PROBS
+    // depths for each marathon level
+    var raise_count_level
+    // initial height of marathon mode
+    var MARATHON_HEIGHT
 
     // GLOBALS
     var X_SPEED = SLOW
@@ -256,7 +234,7 @@ $def with (name)
       var replay_length = 0
 
       // sprint mode
-      if (player_stage >= 0 || marathon) {
+      if (player_stage >= 6 && !marathon) {
         sprint_data = (sprints != undefined) ? sprints[((marathon)?marathon_level:player_level) + "-" + ((marathon)?"6":player_stage)] : undefined
         if (sprint_data != undefined)
           sprint = true
@@ -344,8 +322,26 @@ $def with (name)
         // and setup screen data for marathon
         if (marathon) {
           console.log("MARATHON")
-        //   raise_level_time = MAX_RAISE_LEVEL_TIME
-        //   player.board.marathonLevel(5)
+          raise_level_time = MAX_RAISE_LEVEL_TIME
+          player.board.marathonLevel(MARATHON_HEIGHT)
+
+          // // fill up the randomization array
+          // for (var i = 0; i < ITEM_PROBS["0|0"].length; i++) {
+          //   randomization_array.push([])
+          //   for (var key in ITEM_PROBS) {
+          //     if (ITEM_PROBS.hasOwnProperty(key)) {
+          //       value = ITEM_PROBS[key]
+          //       for (var j = 0; j < value[i]; j++) {
+          //         randomization_array[i].push(key)
+          //       }
+          //     }
+          //   }
+          //   // shuffle the randomization array
+          //   fisherYates(randomization_array[i])
+          // }
+
+          // // fill the level
+          // player.board.fillLevel(1,1)
 
           var marathon_data_items = new Array()
           marathon_data_items.push(new MenuItem(marathon_data,"Best Time:  " + marathon_progress[0],function(){return}))
@@ -354,16 +350,15 @@ $def with (name)
           marathon_data = new MenuBox("",marathon_data,screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,marathon_data_items)
           marathon_data.index = -1
 
-          player_level = marathon_level
+          player_level = marathon_level_debug
           player_stage = 6
 
           // start timer immediately
-          // game_start = true
+          game_start = true
 
           // marathon_star_lock_menu.menu_box.setup(main_menu.x + main_menu.width/2 + ITEM_WIDTH*2, main_menu.y + 20,level_select_ok.menu_box.width)
-        }
-        // } else
-        if (sprint || marathon) {
+
+        } else if (sprint) {
           raise_level_time = sprint_data.game["max_raise"]
           var value
           // fill up the randomization array
@@ -1358,6 +1353,7 @@ $def with (name)
             }
             // update marathon progress
             if (marathon) {
+              marathon_level = marathon_level_debug              
               if (player.timer.clock_text > marathon_progress[0])
                 marathon_progress[0] = player.timer.clock_text
               if (player.score > marathon_progress[1])
@@ -1665,8 +1661,6 @@ $def with (name)
                     jaws.start(MainMenu)
                   }
 
-                  if (marathon)
-                    marathon_level++
                 }
 
               } else {
@@ -2293,12 +2287,11 @@ $def with (name)
 
             }
 
-            // if (marathon) {
-            //   var type_color_string = randomization_array[marathon_level-1].pop()
-            //   randomization_array[marathon_level-1].push(type_color_string)
-            //   fisherYates(randomization_array[marathon_level-1])
-            // } else
-            if (sprint || marathon) {
+            if (marathon) {
+              var type_color_string = randomization_array[marathon_level-1].pop()
+              randomization_array[marathon_level-1].push(type_color_string)
+              fisherYates(randomization_array[marathon_level-1])
+            } else if (sprint) {
               var type_color_string = sprint_randomization.pop()
               sprint_randomization.push(type_color_string)
               fisherYates(sprint_randomization)
@@ -2464,15 +2457,14 @@ $def with (name)
 
           console.log("raising stack with raise_count = " + raise_count)
 
-          // if (marathon && !marathon_debug) {
-          //   if (raise_count == raise_count_level[marathon_level-1]) {
-          //     if (marathon_level < ITEM_PROBS["0|0"].length) {
-          //       raise_count = 0
-          //       marathon_level++
-          //     }
-          //   }
-          // } else
-          if (sprint||marathon) {
+          if (marathon && !marathon_debug) {
+            if (raise_count == raise_count_level[marathon_level-1]) {
+              if (marathon_level < ITEM_PROBS["0|0"].length) {
+                raise_count = 0
+                marathon_level++
+              }
+            }
+          } else if (sprint) {
             if (raise_count >= sprint_data.game["depth"]) {
               if (player.board.cauldron_count < 1)
                 player.board.spawnItem(3,EMPTY)
@@ -2568,23 +2560,25 @@ $def with (name)
 
           // // create stacks for the board
           var random_item
-          for (var s = 0; s < BOARD_WIDTH; s++) {
-            this.stacks.push(new Stack(this,sprint_data.game.height,s))
-            var this_stack = this.stacks[s]
-            // add level amount of random items to this stack
-            for (var l = 0; l < sprint_data.game.height; l++) {
+          if (sprint) {
+            for (var s = 0; s < BOARD_WIDTH; s++) {
+              this.stacks.push(new Stack(this,sprint_data.game.height,s))
+              var this_stack = this.stacks[s]
+              // add level amount of random items to this stack
+              for (var l = 0; l < sprint_data.game.height; l++) {
 
-              random_item = this.randomItem(this_stack,s,(-1)*sprint_data.game.height+l)
-              this_stack.queue.push(random_item)
+                random_item = this.randomItem(this_stack,s,(-1)*sprint_data.game.height+l)
+                this_stack.queue.push(random_item)
 
+              }
+
+              this_stack.next_random_item = this.randomItem(this_stack,s,-1)
+              console.log("this stack's next random item:")
+              console.dir(this_stack.next_random_item)
+
+              // check for matches
+              this_stack.checkForMatches()
             }
-
-            this_stack.next_random_item = this.randomItem(this_stack,s,-1)
-            console.log("this stack's next random item:")
-            console.dir(this_stack.next_random_item)
-
-            // check for matches
-            this_stack.checkForMatches()
           }
 
           for (var s = 0; s < BOARD_WIDTH; s++) {
@@ -2644,7 +2638,7 @@ $def with (name)
             if (level_edit) {
 
               if ((sprint||marathon) && level_edit_play) {
-                sprint_rises = sprint_data.game["height"]
+                sprint_rises = (marathon) ? MARATHON_HEIGHT : sprint_data.game["height"]
                 this.sprintLevel(sprint_data)
                 return
               }
@@ -2653,7 +2647,7 @@ $def with (name)
                 this.stacks.push(new Stack(this,level,s))
               return
             } else if ((sprint||marathon)) {
-              sprint_rises = sprint_data.game["height"]
+              sprint_rises = (marathon) ? MARATHON_HEIGHT : sprint_data.game["height"]
               this.sprintLevel(sprint_data)
               return
             } else {
@@ -2678,7 +2672,8 @@ $def with (name)
               largest_stack_size = items.length
           }
 
-          raise_count = largest_stack_size * (-1) - ((sprint||marathon) ? sprint_data.game.height : 0)
+          raise_count = largest_stack_size * (-1) - ((sprint) ? sprint_data.game.height : 0)
+          if (marathon) raise_count = MARATHON_HEIGHT
 
           // go through each stack
           for (var s=0; s < BOARD_WIDTH; s++) {
@@ -2954,7 +2949,7 @@ $def with (name)
         this.lastRobot = function(robot) {
 
           // SANITY CHECK, this function only relevant for puzzles, not marathon/sprints
-          if (sprint || marathon)
+          if (sprint)
             return false
 
           for (var c = 0; c < this.robot_count.length; c++) {
@@ -3319,11 +3314,12 @@ $def with (name)
           if (filling_stack || raise_count < 0) {
             this.raiseStacks()
             this.player.y = 0
-          } else if (sprint_data != undefined && sprint_rises < sprint_data.game["height"]) {
+          } else if (sprint && sprint_data != undefined && sprint_rises < sprint_data.game["height"]) {
             this.raiseStacks()
-            sprint_rises++
+            sprint_rises++            
             raise_count = 0
           }
+
 
           // update effects
           for (var e=0; e<this.effects.length; e++) {
@@ -7146,9 +7142,16 @@ $def with (name)
         }
 
         // sprints
+        console.log("level_data.sprints = ")
+        console.dir(level_data.sprints)
         sprints = JSON.parse(level_data.sprints)
         console.log("SPRITNS")
         console.dir(sprints)
+
+        // get marathon data from sprints file
+        ITEM_PROBS = sprints["marathon_probs"]
+        raise_count_level = sprints["marathon_depths"]
+        MARATHON_HEIGHT = sprints["marathon_height"]
 
         latest_edit = level_data.levels[0].length + 1
         player_progress[0][0] = latest_edit - 2
