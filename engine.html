@@ -2949,7 +2949,7 @@ $def with (name)
         this.lastRobot = function(robot) {
 
           // SANITY CHECK, this function only relevant for puzzles, not marathon/sprints
-          if (sprint)
+          if (sprint || marathon || (level_edit && !level_edit_play))
             return false
 
           for (var c = 0; c < this.robot_count.length; c++) {
