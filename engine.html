@@ -198,6 +198,7 @@ $def with (name)
       var marathon_data
       var speech_box
       var speech_pages = []
+      var speech_page_num = 0
       var speech_box_1 = [
         new MenuItem(speech_box,"The monsters",function() {return}),
         new MenuItem(speech_box,"are rising,",function() {return}),
@@ -1049,12 +1050,21 @@ $def with (name)
           }
           if (speech_box.active) {
             speech_box_timer++
-            if (speech_box_timer < 300)
-              speech_box.items = speech_box_1
-            else if (speech_box_timer < 600)
-              speech_box.items = speech_box_2
-            if (speech_box_timer == 600)
-              speech_box_timer = 0
+
+
+
+            if (speech_box_timer % SPEECH_LENGTH == 0) {              
+
+              speech_box.items = speech_pages[speech_page_num]
+
+              speech_page_num++
+              if (speech_page_num >= speech_pages.length) {
+                speech_page_num = 0
+                speech_box_timer = 0
+              }
+
+            }
+
             speech_box.draw()
           }
           // if (marathon)
