@@ -77,6 +77,8 @@ $def with (name)
     // initial height of marathon mode
     var MARATHON_HEIGHT
 
+    var SPEECH_LENGTH = 300 // frames
+
     // GLOBALS
     var X_SPEED = SLOW
     var Y_SPEED = FAST
@@ -195,6 +197,7 @@ $def with (name)
       var puzzle_data
       var marathon_data
       var speech_box
+      var speech_pages = []
       var speech_box_1 = [
         new MenuItem(speech_box,"The monsters",function() {return}),
         new MenuItem(speech_box,"are rising,",function() {return}),
@@ -235,13 +238,16 @@ $def with (name)
 
       // sprint mode
       if (player_stage >= 6 && !marathon) {
-        sprint_data = (sprints != undefined) ? sprints[((marathon)?marathon_level:player_level) + "-" + ((marathon)?"6":player_stage)] : undefined
+        sprint_data = (sprints != undefined) ? sprints[player_level + "-" + player_stage] : undefined
         if (sprint_data != undefined)
           sprint = true
         else {
           sprint_data = (sprints != undefined) ? sprints[level_name] : undefined
           sprint = (sprint_data == undefined) ? false : true
         }
+      } else {
+        sprint_data = undefined
+        sprint = false
       }
 
       var largest_stack_size = 0
@@ -501,17 +507,42 @@ $def with (name)
           score_sheet_data = new MenuBox("",score_sheet_data,menu_x,menu_y, 5*ITEM_WIDTH+15, [])
         }
 
+        // get speech pages from sprints.json file
+        if (sprints != undefined && sprints["speech"] != undefined)
+          var this_level_speech = sprints["speech"][(player_level + "-" + player_stage)]
+        if (this_level_speech != undefined) {
+
+          // construct array for each page
+          for (var i = 0; i < this_level_speech.length; i++) {
+
+            console.log("this_level_speech[i] = ")
+            console.dir(this_level_speech[i])
+
+            // add menu item for each line
+            var this_page = []
+            for (var j = 0; j < this_level_speech[i].length; j++) {
+              this_page.push(new MenuItem(speech_box,this_level_speech[i][j],function() {return}))
+            }
+
+            speech_pages.push(this_page)
+
+          }
+
+        }
+
         // wizard speech box
         speech_box = new MenuBox("",speech_box,0,player.wizard.y - player.wizard.height * 2, 4*ITEM_WIDTH+15,speech_box_2)
+
+        console.log("speech_pages = ")
+        console.dir(speech_pages)
+
+        if (speech_pages.length > 0) {
+          speech_box.items = speech_pages[0]
+          speech_box.active = true
+        }
+
         speech_box.active = (sprint) ? true : false
         speech_box.index = -1
-        // speech_box.center(player.wizard.x,player.wizard.width)
-        // speech_box.setup(speech_box.x,speech_box.y,speech_box.width)
-
-
-
-
-
 
         // add star sprites for winlose data
         for (var s=0; s < winlose_data_items.length; s++) {
