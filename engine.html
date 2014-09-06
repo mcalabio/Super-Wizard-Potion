@@ -237,7 +237,7 @@ $def with (name)
       var replay_length = 0
 
       // sprint mode
-      if (player_stage >= 6 && !marathon) {
+      if (player_stage > 0 && !marathon) {
         sprint_data = (sprints != undefined) ? sprints[player_level + "-" + player_stage] : undefined
         if (sprint_data != undefined)
           sprint = true
@@ -536,12 +536,12 @@ $def with (name)
         console.log("speech_pages = ")
         console.dir(speech_pages)
 
-        if (speech_pages.length > 0) {
+        if (speech_pages.length > 0 || sprint) {
           speech_box.items = speech_pages[0]
           speech_box.active = true
-        }
+        } else
+          speech_box.active = false
 
-        speech_box.active = (sprint) ? true : false
         speech_box.index = -1
 
         // add star sprites for winlose data
