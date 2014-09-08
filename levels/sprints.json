@@ -53,15 +53,15 @@
 			"To destroy the",
 			"red monster, I",
 			"must brew a",
-			"potion by",
-			"stacking the"
+			"red potion",
+			""
 			] ,
 			[
-			"three red",
+			"by stacking",
+			"the three red",
 			"blocks on top",
 			"of the white",
-			"potion.",
-			""
+			"potion."
 			]
 		],
 
@@ -144,49 +144,140 @@
 			"I must destroy",
 			"the armor of a",
 			"stack of",
-			"white blocks",
-			"on top of an"
+			"monsters with",
+			"one gold"
 			] ,
 			[
-			"empty flask.",
-			"Only then can",
-			"I brew a red",
 			"potion.",
+			"",
+			"",
+			"",
 			""
 			]
 		],
 
-		"1-4" : [
+		"2-5" : [
 			[
-			"To brew a white",
-			"potion, I must",
-			"stack three",
-			"white blocks",
-			"on top of an"
-			] ,
-			[
-			"empty flask.",
-			"Only then can",
-			"I brew a red",
-			"potion.",
+			"It's getting",
+			"tight in here",
+			"...",
+			"",
 			""
 			]
 		],
 
-		"1-4" : [
+		"3-1" : [
 			[
-			"To brew a white",
-			"potion, I must",
-			"stack three",
-			"white blocks",
-			"on top of an"
+			"What is this?",
+			"",
+			"",
+			"",
+			""
+			]
+		],
+
+		"3-5" : [
+			[
+			"I know I can",
+			"do this",
+			"",
+			"",
+			""
+			] 
+		],
+
+		"4-1" : [
+			[
+			"Where am I?",
+			"I have an",
+			"overwhelming",
+			"feeling I've",
+			""
 			] ,
 			[
-			"empty flask.",
-			"Only then can",
-			"I brew a red",
-			"potion.",
+			"been here",
+			"before.",
+			"",
+			"",
 			""
+			]
+		],
+
+		"4-3" : [
+			[
+			"There must be",
+			"a way.",
+			"",
+			"",
+			""
+			]
+		],
+
+		"1-6" : [
+			[
+			"The monsters",
+			"are rising,",
+			"I mustn't let",
+			"them reach",
+			"the top!"
+			] ,
+			[
+			"(Raise stacks",
+			"by pressing L",
+			"or clicking",
+			"outside of",
+			"the board.)"
+			]
+		],
+
+		"2-6" : [
+			[
+			"The monsters",
+			"are rising,",
+			"I mustn't let",
+			"them reach",
+			"the top!"
+			] ,
+			[
+			"(Raise stacks",
+			"by pressing L",
+			"or clicking",
+			"outside of",
+			"the board.)"
+			]
+		],
+
+		"3-6" : [
+			[
+			"The monsters",
+			"are rising,",
+			"I mustn't let",
+			"them reach",
+			"the top!"
+			] ,
+			[
+			"(Raise stacks",
+			"by pressing L",
+			"or clicking",
+			"outside of",
+			"the board.)"
+			]
+		],
+
+		"4-6" : [
+			[
+			"The monsters",
+			"are rising,",
+			"I mustn't let",
+			"them reach",
+			"the top!"
+			] ,
+			[
+			"(Raise stacks",
+			"by pressing L",
+			"or clicking",
+			"outside of",
+			"the board.)"
 			]
 		]
 
