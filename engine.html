@@ -76,6 +76,7 @@ $def with (name)
     var raise_count_level
     // initial height of marathon mode
     var MARATHON_HEIGHT
+    var MARATHON_LOOP_SCALE
 
     var SPEECH_LENGTH = 300 // frames
 
@@ -106,6 +107,7 @@ $def with (name)
     var marathon_debug = false
     var marathon_level_debug = 1
     var marathon_level = marathon_level_debug
+    var marathon_loop = 1
     var sprint = false
     var replay = null
     var replay_actions = 0
@@ -164,6 +166,7 @@ $def with (name)
         // update marathon progress
         if (marathon) {
           marathon_level = marathon_level_debug
+          marathon_level_depth = player.board.marathonLevelDepth(marathon_level,raise_count_level[(marathon_level-1) % raise_count_level.length],marathon_loop)
           if (player.timer.clock_text > marathon_progress[0])
             marathon_progress[0] = player.timer.clock_text
           if (player.score > marathon_progress[1])
@@ -345,6 +348,9 @@ $def with (name)
 
           player_level = 1
           player_stage = 6
+
+          marathon_level_depth = player.board.marathonLevelDepth(marathon_level,raise_count_level[(marathon_level-1) % raise_count_level.length],marathon_loop)
+          marathon_loop = Math.floor((marathon_level - 1)/raise_count_level.length) + 1
 
           // start timer immediately
           game_start = true
@@ -1380,7 +1386,8 @@ $def with (name)
             }
             // update marathon progress
             if (marathon) {
-              marathon_level = marathon_level_debug              
+              marathon_level = marathon_level_debug
+              marathon_level_depth = player.board.marathonLevelDepth(marathon_level,raise_count_level[(marathon_level-1) % raise_count_level.length],marathon_loop)
               if (player.timer.clock_text > marathon_progress[0])
                 marathon_progress[0] = player.timer.clock_text
               if (player.score > marathon_progress[1])
@@ -2486,9 +2493,13 @@ $def with (name)
           console.log("raising stack with raise_count = " + raise_count)
 
           if (marathon && !marathon_debug) {
-            if (raise_count == raise_count_level[(marathon_level-1) % raise_count_level.length]) {
+            if (raise_count == marathon_level_depth) {
               raise_count = 0
               marathon_level++
+              if ((marathon_level-1)%raise_count_level.length == 0)
+                marathon_loop = Math.floor((marathon_level - 1)/raise_count_level.length) + 1
+              marathon_level_depth = player.board.marathonLevelDepth(marathon_level,raise_count_level[(marathon_level-1) % raise_count_level.length],marathon_loop)
+
             }
           } else if (sprint) {
             if (raise_count >= sprint_data.game["depth"]) {
@@ -2499,7 +2510,7 @@ $def with (name)
 
           // update screen data
           if (marathon)
-            screen_data.items[0].text = marathon_level + ":" + raise_count
+            screen_data.items[0].text = marathon_level + ":" + (raise_count + 1)
 
           Y_SPEED = SLOW
 
@@ -2578,6 +2589,18 @@ $def with (name)
             // check for matches
             this_stack.checkForMatches()
           }
+
+        }
+
+        // calculate depth of marathon_level
+        this.marathonLevelDepth = function(marathon_level,depth,marathon_loop) {
+
+          if (marathon_loop > 1) {
+            depth = depth * (marathon_loop-1) * MARATHON_LOOP_SCALE
+          }
+
+          return depth
+
 
         }
 
@@ -3160,8 +3183,10 @@ $def with (name)
                 winlose_menu_items.push(undo_menu_item)
               winlose_menu_items.push(restart_menu_item)
               restart_menu_item.action = function () {
-                if (marathon)
+                if (marathon) {
                   marathon_level = marathon_level_debug
+                  marathon_level_depth = player.board.marathonLevelDepth(marathon_level,raise_count_level[(marathon_level-1) % raise_count_level.length],marathon_loop)
+                }
                 jaws.start(Game) // no need to save record here
               }
               winlose_menu_items.push(back_menu_item)
@@ -4927,8 +4952,10 @@ $def with (name)
       if (level_edit_play) {
         restart_menu_item.text = "Back to Editor"
         restart_menu_item.action = function() {
-          if (marathon)
+          if (marathon) {
             marathon_level = marathon_level_debug
+            marathon_level_depth = player.board.marathonLevelDepth(marathon_level,raise_count_level[(marathon_level-1) % raise_count_level.length],marathon_loop)
+            }
           level_edit_play = false
           jaws.start(Game)
         }
@@ -7178,6 +7205,7 @@ $def with (name)
         ITEM_PROBS = sprints["marathon_probs"]
         raise_count_level = sprints["marathon_depths"]
         MARATHON_HEIGHT = sprints["marathon_height"]
+        MARATHON_LOOP_SCALE = sprints["marathon_loop_scale"]
 
         latest_edit = level_data.levels[0].length + 1
         player_progress[0][0] = latest_edit - 2

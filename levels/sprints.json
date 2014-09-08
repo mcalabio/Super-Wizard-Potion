@@ -40,9 +40,11 @@
 		
 		},
 
-	"marathon_depths" : [5,4,4,4,5,5,5,5,5,5,5] ,
+	"marathon_depths" : [2,2,2,2,2,2,2,2,2,2,2] ,
 
 	"marathon_height" : 5 , 
+
+	"marathon_loop_scale" : 1.5 ,
 
 	"speech" : {
 
