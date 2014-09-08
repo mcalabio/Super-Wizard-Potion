@@ -78,7 +78,7 @@ $def with (name)
     var MARATHON_HEIGHT
     var MARATHON_LOOP_SCALE
 
-    var SPEECH_LENGTH = 150 // frames
+    var SPEECH_LENGTH = 300 // frames
 
     // GLOBALS
     var X_SPEED = SLOW
@@ -1042,9 +1042,6 @@ $def with (name)
               level_select_ok.draw()
           }
           if (speech_box.active) {
-            speech_box_timer++
-
-
 
             if (speech_box_timer % SPEECH_LENGTH == 0) {              
 
@@ -1057,6 +1054,8 @@ $def with (name)
               }
 
             }
+
+            speech_box_timer++
 
             speech_box.draw()
           }
