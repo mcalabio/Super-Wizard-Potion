@@ -78,7 +78,7 @@ $def with (name)
     var MARATHON_HEIGHT
     var MARATHON_LOOP_SCALE
 
-    var SPEECH_LENGTH = 300 // frames
+    var SPEECH_LENGTH = 150 // frames
 
     // GLOBALS
     var X_SPEED = SLOW
@@ -99,10 +99,10 @@ $def with (name)
     var level_edit = false
     var level_edit_play = false
     var puzzle_mode_active = true
-    var marathon_mode_active = true
-    var level_editor_active = true
-    var change_name_active = true
-    var replay_mode_active = true
+    var marathon_mode_active = false
+    var level_editor_active = false
+    var change_name_active = false
+    var replay_mode_active = false
     var marathon = false
     var marathon_debug = false
     var marathon_level_debug = 1
@@ -1687,6 +1687,8 @@ $def with (name)
                 // warp to puzzle potion's stage
                 player_stage = (!level_edit) ? item.puzzle_stage : player_stage
                 if (item.type ==3) {
+                  player_stage = 6
+                  player.board.puzzleClear()
 
                   player_level = item.puzzle_stage
                   player_stage = 0
@@ -3295,8 +3297,14 @@ $def with (name)
           // player_data.items[0].text = "  x " + player.stars
 
           // update player progress
-          if (player_progress[player_level][0] < player_stage)
+          if (player_progress[player_level][0] < player_stage) {
             player_progress[player_level][0] = parseInt(player_stage)
+            // unlock marathon mode
+            if (player_level == 2 && player_stage == 6)
+              window.alert("You have unlocked Marathon Mode! You can get to it in the main menu.")
+          }
+
+
 
           // update best time and score for this level-stage
           var this_level_progress = player_progress[player_level][1]
@@ -6269,6 +6277,10 @@ $def with (name)
         main_menu.items[3].active = level_editor_active // set level editor to be active
         main_menu.items[6].active = replay_mode_active // set replay mode to be active
 
+        // unlock marathon mode after cauldron 2
+        if (player_progress[2][0] >= 6)
+          main_menu_items[1].active = true
+
         menus.push(main_menu)
         active_menu = main_menu
         active_menu.active = true
@@ -6303,7 +6315,7 @@ $def with (name)
 
           // set unlocked cauldrons to be active
           this_level.active = false
-          if (player_progress[i-1][0] >= 5 || i == 1)
+          if (player_progress[i-1][0] >= 6 || i == 1)
             this_level.active = true
 
           level_select_menu.items.push(this_level)
