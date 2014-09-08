@@ -48,88 +48,145 @@
 
 	"speech" : {
 
+		"1-1" : [
+			[
+			"To destroy the",
+			"red monster, I",
+			"must brew a",
+			"potion by",
+			"stacking the"
+			] ,
+			[
+			"three red",
+			"blocks on top",
+			"of the white",
+			"potion.",
+			""
+			]
+		],
+
+		"1-2" : [
+			[
+			"I must destroy",
+			"the three",
+			"monsters with",
+			"one red potion.",
+			""
+			]
+		],
+
 		"1-3" : [
 			[
-			"The jath",
-			"are mazzy,",
-			"I mustn't",
-			"let them bleach",
-			"the pot!"
-			] ,
-			[
-			"(Press RB",
-			"or dick",
-			"outside the",
-			"sloard to",
-			"raise strcks)"
+			"I must destroy",
+			"the green",
+			"monsters with",
+			"a green potion.",
+			""
 			]
 		],
 
-		"1-6" : [
+		"1-4" : [
 			[
-			"The jath",
-			"are mazzy,",
-			"I mustn't",
-			"let them bleach",
-			"the pot!"
+			"To brew a white",
+			"potion, I must",
+			"stack three",
+			"white blocks",
+			"on top of an"
 			] ,
 			[
-			"(Press RB",
-			"or dick",
-			"outside the",
-			"sloard to",
-			"raise strcks)"
+			"empty flask.",
+			"Only then can",
+			"I brew a red",
+			"potion.",
+			""
 			]
 		],
 
-		"2-6" : [
+		"1-5" : [
 			[
-			"The jath",
-			"are mazzy,",
-			"I mustn't",
-			"let them bleach",
-			"the pot!"
-			] ,
-			[
-			"(Press RB",
-			"or dick",
-			"outside the",
-			"sloard to",
-			"raise strcks)"
+			"To destroy the",
+			"purple",
+			"monsters, I",
+			"must brew a",
+			"purple potion."
 			]
 		],
 
-		"3-6" : [
+		"2-1" : [
 			[
-			"The jath",
-			"are mazzy,",
-			"I mustn't",
-			"let them bleach",
-			"the pot!"
-			] ,
-			[
-			"(Press RB",
-			"or dick",
-			"outside the",
-			"sloard to",
-			"raise strcks)"
+			"I can use a",
+			"gold potion to",
+			"destroy the",
+			"monster's",
+			"armor."
 			]
 		],
 
-		"4-4" : [
+		"2-2" : [
 			[
-			"The jath",
-			"are mazzy,",
-			"I mustn't",
-			"let them bleach",
-			"the pot!"
+			"To brew a gold",
+			"potion, I must",
+			"stack three",
+			"gold blocks on",
+			"top of a white"
 			] ,
 			[
-			"(Press RB",
-			"or dick",
-			"outside the",
-			"sloard to",
-			"raise strcks)"
+			"flask.",
+			"",
+			"",
+			"",
+			""
+			]
+		],
+
+		"2-3" : [
+			[
+			"I must destroy",
+			"the armor of a",
+			"stack of",
+			"white blocks",
+			"on top of an"
+			] ,
+			[
+			"empty flask.",
+			"Only then can",
+			"I brew a red",
+			"potion.",
+			""
+			]
+		],
+
+		"1-4" : [
+			[
+			"To brew a white",
+			"potion, I must",
+			"stack three",
+			"white blocks",
+			"on top of an"
+			] ,
+			[
+			"empty flask.",
+			"Only then can",
+			"I brew a red",
+			"potion.",
+			""
+			]
+		],
+
+		"1-4" : [
+			[
+			"To brew a white",
+			"potion, I must",
+			"stack three",
+			"white blocks",
+			"on top of an"
+			] ,
+			[
+			"empty flask.",
+			"Only then can",
+			"I brew a red",
+			"potion.",
+			""
 			]
 		]
 
