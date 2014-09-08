@@ -199,20 +199,6 @@ $def with (name)
       var speech_box
       var speech_pages = []
       var speech_page_num = 0
-      var speech_box_1 = [
-        new MenuItem(speech_box,"The monsters",function() {return}),
-        new MenuItem(speech_box,"are rising,",function() {return}),
-        new MenuItem(speech_box,"I mustn't",function() {return}),
-        new MenuItem(speech_box,"let them reach",function() {return}),
-        new MenuItem(speech_box,"the top!",function() {return})
-        ]
-      var speech_box_2 = [
-        new MenuItem(speech_box,"(Press L",function() {return}),
-        new MenuItem(speech_box,"or click",function() {return}),
-        new MenuItem(speech_box,"outside the",function() {return}),
-        new MenuItem(speech_box,"board to",function() {return}),
-        new MenuItem(speech_box,"raise stacks)",function() {return})
-        ]
 
       var speech_box_timer = 0
       var star_time
@@ -357,7 +343,7 @@ $def with (name)
           marathon_data = new MenuBox("",marathon_data,screen_data.x,screen_data.y + screen_data.height + 1,150 + ITEM_WIDTH*2,marathon_data_items)
           marathon_data.index = -1
 
-          player_level = marathon_level_debug
+          player_level = 1
           player_stage = 6
 
           // start timer immediately
@@ -532,12 +518,12 @@ $def with (name)
         }
 
         // wizard speech box
-        speech_box = new MenuBox("",speech_box,0,player.wizard.y - player.wizard.height * 2, 4*ITEM_WIDTH+15,speech_box_2)
+        speech_box = new MenuBox("",speech_box,0,player.wizard.y - player.wizard.height * 2, 4*ITEM_WIDTH+15,[])
 
         console.log("speech_pages = ")
         console.dir(speech_pages)
 
-        if (speech_pages.length > 0 || sprint) {
+        if (speech_pages.length > 0) {
           speech_box.items = speech_pages[0]
           speech_box.active = true
         } else
@@ -2329,9 +2315,10 @@ $def with (name)
             }
 
             if (marathon) {
-              var type_color_string = randomization_array[marathon_level-1].pop()
-              randomization_array[marathon_level-1].push(type_color_string)
-              fisherYates(randomization_array[marathon_level-1])
+              var marathon_level_mod = (marathon_level-1) % raise_count_level.length
+              var type_color_string = randomization_array[marathon_level_mod].pop()
+              randomization_array[marathon_level_mod].push(type_color_string)
+              fisherYates(randomization_array[marathon_level_mod])
             } else if (sprint) {
               var type_color_string = sprint_randomization.pop()
               sprint_randomization.push(type_color_string)
@@ -2499,11 +2486,9 @@ $def with (name)
           console.log("raising stack with raise_count = " + raise_count)
 
           if (marathon && !marathon_debug) {
-            if (raise_count == raise_count_level[marathon_level-1]) {
-              if (marathon_level < ITEM_PROBS["0|0"].length) {
-                raise_count = 0
-                marathon_level++
-              }
+            if (raise_count == raise_count_level[(marathon_level-1) % raise_count_level.length]) {
+              raise_count = 0
+              marathon_level++
             }
           } else if (sprint) {
             if (raise_count >= sprint_data.game["depth"]) {
