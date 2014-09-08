@@ -501,7 +501,7 @@ $def with (name)
         }
 
         // get speech pages from sprints.json file
-        if (sprints != undefined && sprints["speech"] != undefined)
+        if (sprints != undefined && sprints["speech"] != undefined && !marathon)
           var this_level_speech = sprints["speech"][(player_level + "-" + player_stage)]
         if (this_level_speech != undefined) {
 
@@ -532,6 +532,7 @@ $def with (name)
         if (speech_pages.length > 0) {
           speech_box.items = speech_pages[0]
           speech_box.active = true
+          speech_box.setup(speech_box.x,speech_box.y,speech_box.width)
         } else
           speech_box.active = false
 
