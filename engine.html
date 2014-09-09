@@ -13,8 +13,12 @@ $def with (name)
   </head>
 <body>
 
+  <div>NOTE TO PLAYTESTERS: your progress and gameplay is being recorded.
+    <br>
+    Please take <a href="https://www.surveymonkey.com/s/XQPYT28" target="_blank">this survey</a> when your are done.
+  </div>
   <a id="muteButton" href="#" onClick="toggleMute()" style="visibility:hidden;float:right">Sound: On</a>
-  <canvas id="gameScreen" width=600 height=500 style="position:fixed; top:10px; margin-top:10px"></canvas>
+  <canvas id="gameScreen" width=600 height=500 style="position:fixed; top:50px; margin-top:10px"></canvas>
   <br>
   <div id="progressButtons" margin="100">
     <div id="saveData" hidden="true">Data to save comes from here.</div>
@@ -3434,7 +3438,7 @@ $def with (name)
             if (winlose_delay <= 0) {
               if (marathon && game_end == "L") {
                 score_sheet_data.draw()
-                if (game_end != "W")
+                if (game_end != "W" && !marathon)
                   winlose_data.draw()
               }
               if (replay == null) {
@@ -6215,8 +6219,8 @@ $def with (name)
 
           }))
           main_menu_items[main_menu_items.length-1].description
-            = "Brew potions to destroy robots. Clear\n" +
-            "all robots from the board to advance to\n" +
+            = "Brew potions to destroy monsters. Clear\n" +
+            "all monsters from the board to advance to\n" +
             "the next puzzle."
           main_menu_items.push(new MenuItem(main_menu,"Marathon Mode",function() {
             level_edit = false
@@ -6226,7 +6230,7 @@ $def with (name)
             jaws.start(Game)
           }))
           main_menu_items[main_menu_items.length-1].description
-            = "Brew potions to destroy robots.\n" +
+            = "Brew potions to destroy monsters.\n" +
             "Stacks rise toward the top of the board.\n" +
             "Try to survive and beat your high score!"
 
@@ -6489,21 +6493,21 @@ $def with (name)
           }))
         help_menu_items[help_menu_items.length-1].description
           = "Click items to grab them.\n"
-          + "While holding, click the board to drop an\n"
+          + "While grabbing, click the board to drop an\n"
           + "item or click on held items to drop them.\n"
           + "Right click to grab/drop a whole stack."
         help_menu_items.push(new MenuItem(help_menu, "Scoring", function() {return}))
         help_menu_items[help_menu_items.length-1].description
-          = "Melting blocks gives you 1 point.\n"
-          + "Brewing potions gives you 1 point.\n"
+          = "Melting blocks and brewing potions give you\n"
+          + "1 point. Destroying monsters, 2 points.\n"
           + "Clear stacks of monsters to multiply your score.\n"
           + "Perform chains to exponentiate your score.\n"
         help_menu_items.push(new MenuItem(help_menu, "Misc.", function() {return}))
         help_menu_items[help_menu_items.length-1].description
-          = "CTRL+Z to undo your last move in Puzzle Mode.\n"
-          + "(no stars can be earned if you undo)\n"
-          + "Press L or click outside of the board\n"
-          + "to make the stacks rise in Action Mode."
+          = "Press CTRL+Z to undo your last move.\n"
+          + "(You can't undo in Marathon Mode.)\n"
+          + "Press L (or click outside of the board)\n"
+          + "to make the stacks rise in Marathon Mode."
         var help_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 200, help_menu_items)
         help_menu.back = this.back
 

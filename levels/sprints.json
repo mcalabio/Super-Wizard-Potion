@@ -126,16 +126,9 @@
 			[
 			"To brew a gold",
 			"potion, I must",
-			"stack three",
-			"gold blocks on",
-			"top of a white"
-			] ,
-			[
-			"potion.",
-			"",
-			"",
-			"",
-			""
+			"stack 3 gold",
+			"blocks over",
+			"a white potion."
 			]
 		],
 
@@ -145,14 +138,7 @@
 			"the armor of a",
 			"stack of",
 			"monsters with",
-			"one gold"
-			] ,
-			[
-			"potion.",
-			"",
-			"",
-			"",
-			""
+			"1 gold potion."
 			]
 		],
 
@@ -189,15 +175,18 @@
 		"4-1" : [
 			[
 			"Where am I?",
-			"I have an",
-			"overwhelming",
-			"feeling I've",
-			""
-			] ,
-			[
-			"been here",
-			"before.",
 			"",
+			"",
+			"",
+			""
+			]
+		],
+
+		"4-2" : [
+			[
+			"If only I",
+			"had more",
+			"space...",
 			"",
 			""
 			]
@@ -219,13 +208,13 @@
 			"are rising,",
 			"I mustn't let",
 			"them reach",
-			"the top!"
+			"the top..."
 			] ,
 			[
-			"But I must",
-			"reach the next",
-			"cauldron!",
-			"",
+			"... but I",
+			"must reach",
+			"the cauldron",
+			"below!",
 			""
 			] ,
 			[
@@ -243,13 +232,13 @@
 			"are rising,",
 			"I mustn't let",
 			"them reach",
-			"the top!"
+			"the top..."
 			] ,
 			[
-			"But I must",
-			"reach the next",
-			"cauldron!",
-			"",
+			"... but I",
+			"must reach",
+			"the cauldron",
+			"below!",
 			""
 			] ,
 			[
@@ -267,13 +256,13 @@
 			"are rising,",
 			"I mustn't let",
 			"them reach",
-			"the top!"
+			"the top..."
 			] ,
 			[
-			"But I must",
-			"reach the next",
-			"cauldron!",
-			"",
+			"... but I",
+			"must reach",
+			"the cauldron",
+			"below!",
 			""
 			] ,
 			[
@@ -291,13 +280,13 @@
 			"are rising,",
 			"I mustn't let",
 			"them reach",
-			"the top!"
+			"the top..."
 			] ,
 			[
-			"I will soon",
-			"achieve my ",
-			"immortality!",
-			"",
+			"... but I",
+			"must reach",
+			"the cauldron",
+			"below!",
 			""
 			] ,
 			[
