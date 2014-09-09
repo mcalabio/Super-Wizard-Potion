@@ -28,6 +28,7 @@ $def with (name)
   <script>
 
     // CONSTANTS
+    var VERSION = "2014-09-09"
     var SLOW = 10
     var FAST = 60
     var BOARD_WIDTH = 6
@@ -5260,7 +5261,7 @@ $def with (name)
     function updateSaveAndCookie() {
       // update player_save data
       var player_save = $("saveData")
-      player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress) + "|" + player_uid + "|" + JSON.stringify(player_path)
+      player_save.innerHTML = "SuperWizardPotionSave|" + player_name + "|" + JSON.stringify(player_progress) + "|" + JSON.stringify(star_progress) + "|" + JSON.stringify(marathon_progress) + "|" + player_uid + "|" + VERSION
       // update cookie save
       setCookie("player_save",player_save.innerHTML,360000)
     }
@@ -7145,6 +7146,21 @@ $def with (name)
       }
     }
 
+    function oldCookie(level_data) {
+
+      // clear progress
+      var cleared_progress = clearProgress(level_data)
+      player_progress = cleared_progress[0]
+      star_progress = cleared_progress[1]
+
+      // generate unique id for this player
+      player_uid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+          return v.toString(16);
+      });
+      console.log(player_uid)
+    }
+
     jaws.onload = function() {
       console.log("Bugs: need to check if there's enough flasks for lose condition")
       jaws.unpack()
@@ -7156,14 +7172,6 @@ $def with (name)
 
       console.log("loading levels")
 
-      testNewton(function(data) {
-
-          console.log("wayne newton attained!")
-          var newton_data = JSON.parse(data)
-          console.dir(newton_data)
-
-      })
-
       loadLevels(function(data) {
 
         level_data = JSON.parse(data)
@@ -7173,6 +7181,8 @@ $def with (name)
           console.log("cookie loaded")
           console.log(cookie_save.toString())
           var open_data = cookie_save.split("|")
+          console.log("cookie open_data = ")
+          console.dir(open_data)
           if (open_data[0] == "SuperWizardPotionSave") {
 
             console.log("open_data = ")
@@ -7186,26 +7196,22 @@ $def with (name)
             star_progress = loaded_progress[1]
             marathon_progress = JSON.parse(open_data[4])
             player_uid = open_data[5]
-            player_path = parseInt(JSON.parse(open_data[6]))
             if (player_path == undefined || player_path < 0)
               player_path = 3 // fix old cookies
 
             name_entered = true
+
+            if (open_data[6] == undefined || open_data[6] != VERSION) {
+              oldCookie(level_data)
+              name_entered = false
+            }
+
           }
         } else {
           console.log("failed to load cookie data")
 
-          // clear progress
-          var cleared_progress = clearProgress(level_data)
-          player_progress = cleared_progress[0]
-          star_progress = cleared_progress[1]
+          oldCookie(level_data)
 
-          // generate unique id for this player
-          player_uid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-              var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
-              return v.toString(16);
-          });
-          console.log(player_uid)
         }
 
         // sprints
