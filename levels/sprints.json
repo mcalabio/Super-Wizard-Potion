@@ -222,6 +222,13 @@
 			"the top!"
 			] ,
 			[
+			"But I must",
+			"reach the next",
+			"cauldron!",
+			"",
+			""
+			] ,
+			[
 			"(Raise stacks",
 			"by pressing L",
 			"or clicking",
@@ -237,6 +244,13 @@
 			"I mustn't let",
 			"them reach",
 			"the top!"
+			] ,
+			[
+			"But I must",
+			"reach the next",
+			"cauldron!",
+			"",
+			""
 			] ,
 			[
 			"(Raise stacks",
@@ -256,6 +270,13 @@
 			"the top!"
 			] ,
 			[
+			"But I must",
+			"reach the next",
+			"cauldron!",
+			"",
+			""
+			] ,
+			[
 			"(Raise stacks",
 			"by pressing L",
 			"or clicking",
@@ -264,13 +285,20 @@
 			]
 		],
 
-		"4-6" : [
+		"4-4" : [
 			[
 			"The monsters",
 			"are rising,",
 			"I mustn't let",
 			"them reach",
 			"the top!"
+			] ,
+			[
+			"I will soon",
+			"achieve my ",
+			"immortality!",
+			"",
+			""
 			] ,
 			[
 			"(Raise stacks",
