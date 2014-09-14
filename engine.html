@@ -35,7 +35,7 @@ $def with (name)
   <script>
 
     // CONSTANTS
-    var VERSION = "2014-09-14"
+    var VERSION = "2014-09-14a"
     var SLOW = 10
     var FAST = 60
     var BOARD_WIDTH = 6
@@ -1700,7 +1700,7 @@ $def with (name)
                 // warp to puzzle potion's stage
                 player_stage = (!level_edit) ? item.puzzle_stage : player_stage
                 if (item.type ==3) {
-                  player_stage = 6
+                  player_stage = 5
                   player.board.puzzleClear()
 
                   player_level = item.puzzle_stage
@@ -2667,7 +2667,7 @@ $def with (name)
           for (var s=0; s < BOARD_WIDTH; s++) {
             this.stacks.push(new Stack(this,0,s))
             var this_stack = this.stacks[s]
-            if (s <= player_progress[player_level][0]) {
+            if (s <= player_progress[player_level][0] && s!= 5) {
               var this_item = new Item(this_stack,1,5,s,-1)
               this_item.puzzle_stage = s + 1
               this_stack.next_random_item = this_item
@@ -6344,7 +6344,7 @@ $def with (name)
 
           // set unlocked cauldrons to be active
           this_level.active = false
-          if (player_progress[i-1][0] >= 6 || i == 1)
+          if (player_progress[i-1][0] >= 5 || i == 1)
             this_level.active = true
 
           level_select_menu.items.push(this_level)
