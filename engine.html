@@ -35,7 +35,7 @@ $def with (name)
   <script>
 
     // CONSTANTS
-    var VERSION = "2014-09-09"
+    var VERSION = "2014-09-14"
     var SLOW = 10
     var FAST = 60
     var BOARD_WIDTH = 6
@@ -75,7 +75,7 @@ $def with (name)
       WHITE : 7
     }
 
-    var thanks_for_coming = "Thanks for playing! Stay tuned for more puzzles! If you have friends that you think might also be interested in play-testing, please direct them to us."
+    var thanks_for_coming = "Thanks for playing! Please try out Marathon Mode if you haven't already! If you have friends that you think might also be interested in play-testing, please direct them to us."
 
     // PROBABILITIES FOR
     // GENERATING RANDOM ITEMS IN MARATHON
@@ -3314,8 +3314,8 @@ $def with (name)
           if (player_progress[player_level][0] < player_stage) {
             player_progress[player_level][0] = parseInt(player_stage)
             // unlock marathon mode
-            if (player_level == 2 && player_stage == 6)
-              window.alert("You have unlocked Marathon Mode! You can get to it in the main menu.")
+            // if (player_level == 2 && player_stage == 6)
+            //   window.alert("You have unlocked Marathon Mode! You can get to it in the main menu.")
           }
 
 
@@ -3715,13 +3715,21 @@ $def with (name)
           console.log("removing (" + old_item.type + ") of color (" + old_item.color + ")" + " with chain = " + old_item.chain + ", y = " + old_item.y)
 
           if (old_item.type == 2 && this.board.lastRobot(old_item)) {
-            var this_potion = new Item(this,1,5,this.x,old_item.y)
-            this_potion.puzzle_stage = player_stage + 1
-            this.items.splice(old_item.y,0,this_potion)
-            // potion falls after spawn
-            this_potion.sprite.y = this.board.posy(old_item.y)
             game_end = "W"
             this.board.puzzleClear()
+            if (player_stage == 5) {
+
+              var this_cauldron = new Item(this,3,EMPTY,this.x,old_item.y)
+              this.items.splice(old_item.y,0,this_cauldron)
+              //potionfalls after spawn
+              this_cauldron.sprite.y = this.board.posy(old_item.y)
+            } else {
+              var this_potion = new Item(this,1,5,this.x,old_item.y)
+              this_potion.puzzle_stage = player_stage + 1
+              this.items.splice(old_item.y,0,this_potion)
+              // potion falls after spawn
+              this_potion.sprite.y = this.board.posy(old_item.y)
+            }
           } else {
             // remove old item from items array
             this.items.splice(old_item.y,1)
