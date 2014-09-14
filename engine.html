@@ -35,7 +35,7 @@ $def with (name)
   <script>
 
     // CONSTANTS
-    var VERSION = "2014-09-14a"
+    var VERSION = "2014-09-14c"
     var SLOW = 10
     var FAST = 60
     var BOARD_WIDTH = 6
@@ -1700,7 +1700,6 @@ $def with (name)
                 // warp to puzzle potion's stage
                 player_stage = (!level_edit) ? item.puzzle_stage : player_stage
                 if (item.type ==3) {
-                  player_stage = 5
                   player.board.puzzleClear()
 
                   player_level = item.puzzle_stage
@@ -3716,7 +3715,8 @@ $def with (name)
 
           if (old_item.type == 2 && this.board.lastRobot(old_item)) {
             game_end = "W"
-            this.board.puzzleClear()
+            if (player_stage < 5)
+              this.board.puzzleClear()
             if (player_stage == 5) {
 
               var this_cauldron = new Item(this,3,EMPTY,this.x,old_item.y)
