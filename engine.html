@@ -35,7 +35,7 @@ $def with (name)
   <script>
 
     // CONSTANTS
-    var VERSION = "2014-09-14a"
+    var VERSION = "2014-09-14c"
     var SLOW = 10
     var FAST = 60
     var BOARD_WIDTH = 6
@@ -1700,8 +1700,6 @@ $def with (name)
                 // warp to puzzle potion's stage
                 player_stage = (!level_edit) ? item.puzzle_stage : player_stage
                 if (item.type ==3) {
-                  player_stage = 5
-                  player.board.puzzleClear()
 
                   player_level = item.puzzle_stage
                   player_stage = 0
@@ -3183,7 +3181,7 @@ $def with (name)
 
             if (game_end == "W") {
 
-              this.puzzleClear()
+              this.puzzleClear(player_level,player_stage)
 
             } else if (game_end == "L") {
 
@@ -3300,31 +3298,33 @@ $def with (name)
           screen_data.index = 1
         }
 
-        this.puzzleClear = function() {
+        this.puzzleClear = function(level,stage) {
+
+          window.alert(level + "-" + stage)
 
           // update star progress
           if (!player_undid)
-            player.new_stars = updateStarProgress(player,player_level,player_stage,star_time,star_score,winlose_data)
+            player.new_stars = updateStarProgress(player,level,stage,star_time,star_score,winlose_data)
 
           player.stars = starTotal()
           player_data.items[0].text = ""
           // player_data.items[0].text = "  x " + player.stars
 
           // update player progress
-          if (player_progress[player_level][0] < player_stage) {
-            player_progress[player_level][0] = parseInt(player_stage)
+          if (player_progress[level][0] < stage) {
+            player_progress[level][0] = parseInt(stage)
             // unlock marathon mode
-            // if (player_level == 2 && player_stage == 6)
+            // if (level == 2 && stage == 6)
             //   window.alert("You have unlocked Marathon Mode! You can get to it in the main menu.")
           }
 
 
 
           // update best time and score for this level-stage
-          var this_level_progress = player_progress[player_level][1]
-          var this_stage_progress = this_level_progress[player_stage.toString()]
+          var this_level_progress = player_progress[level][1]
+          var this_stage_progress = this_level_progress[stage.toString()]
           if (this_stage_progress == undefined) // create new array if stage newly beaten
-            this_stage_progress = this_level_progress[player_stage.toString()] = ["99:99",0]
+            this_stage_progress = this_level_progress[stage.toString()] = ["99:99",0]
           if (player.timer.clock_text < this_stage_progress[0]) {
             this_stage_progress[0] = player.timer.clock_text
             // if (puzzle_data != undefined)
@@ -3716,7 +3716,7 @@ $def with (name)
 
           if (old_item.type == 2 && this.board.lastRobot(old_item)) {
             game_end = "W"
-            this.board.puzzleClear()
+            this.board.puzzleClear(player_level,player_stage)
             if (player_stage == 5) {
 
               var this_cauldron = new Item(this,3,EMPTY,this.x,old_item.y)
