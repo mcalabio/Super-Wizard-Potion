@@ -254,7 +254,7 @@ $def with (name)
       var largest_stack_size = 0
       var sprint_rises = 0
 
-      var background = new jaws.Sprite({x:0,y:0,image:"./static/images/backgrounds/CAULDRON_" +  
+      var background = new jaws.Sprite({x:0,y:0,image:"./static/images/backgrounds/CAULDRON_" +
           ((player_level == 2) ?
           1 : 1 )
           + ".gif",anchor:"left"})
@@ -425,7 +425,7 @@ $def with (name)
             var board_string = ""
             for (var s = 0; s < BOARD_WIDTH; s++) {
               board_string += stacks_string[s]
-              board_string += "\n"    
+              board_string += "\n"
             }
 
             player.board.fillLevel(player_level,player_stage)
@@ -1057,7 +1057,7 @@ $def with (name)
           }
           if (speech_box.active) {
 
-            if (speech_box_timer % SPEECH_LENGTH == 0) {              
+            if (speech_box_timer % SPEECH_LENGTH == 0) {
 
               speech_box.items = speech_pages[speech_page_num]
 
@@ -3300,8 +3300,6 @@ $def with (name)
 
         this.puzzleClear = function(level,stage) {
 
-          window.alert(level + "-" + stage)
-
           // update star progress
           if (!player_undid)
             player.new_stars = updateStarProgress(player,level,stage,star_time,star_score,winlose_data)
@@ -3390,7 +3388,7 @@ $def with (name)
             this.player.y = 0
           } else if (sprint && sprint_data != undefined && sprint_rises < sprint_data.game["height"]) {
             this.raiseStacks()
-            sprint_rises++            
+            sprint_rises++
             raise_count = 0
           }
 
