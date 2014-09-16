@@ -136,6 +136,11 @@ $def with (name)
     var splash_audio
     var melt_audio
     var white_audio
+    var oh_yes
+    var believe
+    var zonkus
+    var shred
+    var thank_you
     // background music
     var background_music = new Array()
     var menu_music
@@ -144,6 +149,7 @@ $def with (name)
     var cauldron3a_music
     var cauldron3b_music
     var win_music
+    var marathon_music
     setupHowls()
 
     var cookie_save = getCookie("player_save")
@@ -246,7 +252,7 @@ $def with (name)
 
       // check if this is the ending
       if (player_level == 3 && player_stage == 6) {
-        replay = {"136":[3,0,"move_x",1],"156":[4,0,"move_x",-1],"166":[3,0,"move_x",-1],"177":[2,0,"move_x",-1],"198":[1,0,"grab",3],"205":[1,0,"move_x",1],"210":[2,0,"move_x",1],"235":[3,0,"move_x",-1],"244":[2,0,"drop",3],"251":[2,4,"move_x",1],"258":[3,4,"move_x",1],"264":[4,4,"move_y",-1],"270":[4,3,"grab",2],"274":[4,3,"move_x",-1],"282":[3,3,"move_x",-1],"328":[2,3,"move_x",-1],"336":[1,3,"drop",2],"374":[1,0,"move_y",1],"384":[1,1,"move_y",1],"402":[1,2,"move_x",1],"410":[2,2,"grab",5],"417":[2,2,"move_x",-1],"429":[1,2,"drop",1],"439":[1,2,"move_x",1],"451":[2,2,"drop",1],"462":[2,2,"move_x",-1],"487":[1,2,"drop",1],"496":[1,2,"move_x",1],"564":[2,2,"drop",2],"579":[2,3,"move_x",-1],"598":[1,3,"move_x",1],"611":[2,3,"move_x",1],"622":[3,3,"grab",4],"646":[3,3,"drop",4],"669":[3,0,"move_x",1],"684":[4,0,"grab",3],"700":[4,0,"move_x",-1],"708":[3,0,"drop",1],"715":[3,0,"move_x",1],"727":[4,0,"drop",1],"734":[4,0,"move_x",-1],"741":[3,0,"drop",1],"748":[3,5,"move_x",1],"756":[4,5,"move_x",1],"762":[5,5,"move_y",-1],"771":[5,4,"move_y",-1],"781":[5,3,"grab",3],"786":[5,3,"move_x",-1],"790":[4,3,"drop",1],"797":[4,3,"move_x",1],"799":[5,3,"drop",2],"805":[5,3,"move_x",-1],"812":[4,3,"move_x",-1],"826":[3,3,"move_y",-1],"837":[3,2,"grab",4],"841":[3,2,"move_x",1],"846":[4,2,"drop",1],"852":[4,2,"move_x",-1],"857":[3,2,"drop",3],"864":[3,2,"move_x",1],"870":[4,2,"move_x",1],"876":[5,2,"grab",5],"883":[5,2,"move_x",-1],"892":[4,2,"move_x",-1],"902":[3,2,"drop",1],"910":[3,2,"drop",1],"912":[3,2,"move_x",-1],"926":[2,2,"drop",1],"936":[2,2,"move_x",1],"944":[3,2,"drop",1],"951":[3,2,"move_x",-1],"961":[2,2,"drop",1],"968":[2,6,"move_x",-1],"994":[1,6,"move_x",-1],"1046":[0,6,"grab",4],"1098":[0,6,"move_x",1],"1106":[2,6,"drop",1],"1141":[2,6,"drop",1],"1150":[2,6,"move_x",1],"1170":[3,6,"drop",1],"1175":[3,6,"move_x",-1],"1183":[2,6,"drop",1],"1195":[2,8,"move_x",-1],"1206":[1,8,"grab",2],"1220":[2,8,"drop",1],"1234":[2,8,"move_x",1],"1259":[3,8,"move_x",1],"1278":[4,8,"drop",1],"1340":[4,3,"grab",1],"1355":[4,3,"move_x",-1],"1368":[3,3,"drop",1],"1381":[3,9,"move_x",-1],"1389":[2,9,"move_x",-1],"1427":[1,9,"grab",1],"1439":[1,9,"move_x",1],"1462":[2,9,"drop",1],"stack_queue":[[],[],[],[],[],[]]} 
+        replay = {"136":[3,0,"move_x",1],"156":[4,0,"move_x",-1],"166":[3,0,"move_x",-1],"177":[2,0,"move_x",-1],"198":[1,0,"grab",3],"205":[1,0,"move_x",1],"210":[2,0,"move_x",1],"235":[3,0,"move_x",-1],"244":[2,0,"drop",3],"251":[2,4,"move_x",1],"258":[3,4,"move_x",1],"264":[4,4,"move_y",-1],"270":[4,3,"grab",2],"274":[4,3,"move_x",-1],"282":[3,3,"move_x",-1],"328":[2,3,"move_x",-1],"336":[1,3,"drop",2],"374":[1,0,"move_y",1],"384":[1,1,"move_y",1],"402":[1,2,"move_x",1],"410":[2,2,"grab",5],"417":[2,2,"move_x",-1],"429":[1,2,"drop",1],"439":[1,2,"move_x",1],"451":[2,2,"drop",1],"462":[2,2,"move_x",-1],"487":[1,2,"drop",1],"496":[1,2,"move_x",1],"564":[2,2,"drop",2],"579":[2,3,"move_x",-1],"598":[1,3,"move_x",1],"611":[2,3,"move_x",1],"622":[3,3,"grab",4],"646":[3,3,"drop",4],"669":[3,0,"move_x",1],"684":[4,0,"grab",3],"700":[4,0,"move_x",-1],"708":[3,0,"drop",1],"715":[3,0,"move_x",1],"727":[4,0,"drop",1],"734":[4,0,"move_x",-1],"741":[3,0,"drop",1],"748":[3,5,"move_x",1],"756":[4,5,"move_x",1],"762":[5,5,"move_y",-1],"771":[5,4,"move_y",-1],"781":[5,3,"grab",3],"786":[5,3,"move_x",-1],"790":[4,3,"drop",1],"797":[4,3,"move_x",1],"799":[5,3,"drop",2],"805":[5,3,"move_x",-1],"812":[4,3,"move_x",-1],"826":[3,3,"move_y",-1],"837":[3,2,"grab",4],"841":[3,2,"move_x",1],"846":[4,2,"drop",1],"852":[4,2,"move_x",-1],"857":[3,2,"drop",3],"864":[3,2,"move_x",1],"870":[4,2,"move_x",1],"876":[5,2,"grab",5],"883":[5,2,"move_x",-1],"892":[4,2,"move_x",-1],"902":[3,2,"drop",1],"910":[3,2,"drop",1],"912":[3,2,"move_x",-1],"926":[2,2,"drop",1],"936":[2,2,"move_x",1],"944":[3,2,"drop",1],"951":[3,2,"move_x",-1],"961":[2,2,"drop",1],"968":[2,6,"move_x",-1],"994":[1,6,"move_x",-1],"1046":[0,6,"grab",4],"1098":[0,6,"move_x",1],"1106":[2,6,"drop",1],"1141":[2,6,"drop",1],"1150":[2,6,"move_x",1],"1170":[3,6,"drop",1],"1175":[3,6,"move_x",-1],"1183":[2,6,"drop",1],"1195":[2,8,"move_x",-1],"1206":[1,8,"grab",2],"1220":[2,8,"drop",1],"1234":[2,8,"move_x",1],"1259":[3,8,"move_x",1],"1278":[4,8,"drop",1],"1340":[4,3,"grab",1],"1355":[4,3,"move_x",-1],"1368":[3,3,"drop",1],"1381":[3,9,"move_x",-1],"1389":[2,9,"move_x",-1],"1427":[1,9,"grab",1],"1439":[1,9,"move_x",1],"1462":[2,9,"drop",1],"1522":[3,0,"move_x",1],"stack_queue":[[],[],[],[],[],[]]} 
       }
 
 
@@ -952,7 +958,13 @@ $def with (name)
         }
 
         // play background music
-        if (player_level == 1) {
+        if (marathon) {
+          if (!marathon_music.playing) {
+            stopBackgroundMusic()
+            marathon_music.play()
+            marathon_music.playing = true
+          }
+        } else if (player_level == 1) {
           if (!cauldron1_music.playing) {
             stopBackgroundMusic()
             cauldron1_music.play()
@@ -2777,7 +2789,7 @@ $def with (name)
           for (var s=0; s < BOARD_WIDTH; s++) {
             this.stacks.push(new Stack(this,0,s))
             var this_stack = this.stacks[s]
-            if (s <= player_progress[player_level][0] && s!= 5) {
+            if (s <= player_progress[player_level][0] && (player_level==3)?(true):(s!=5) ) {
               var this_item = new Item(this_stack,1,5,s,-1)
               this_item.puzzle_stage = s + 1
               this_stack.next_random_item = this_item
@@ -4577,6 +4589,14 @@ $def with (name)
         this.speed = 1
         this.deathcounter = 60
 
+        // sound effects for chains
+        if (this.chain == 2 || this.chain == 3)
+          oh_yes.play()
+        else if (this.chain == 4 || this.chain == 6)
+          believe.play()
+        else if (this.chain == 5 || this.chain > 6)
+          zonkus.play()
+
         var action_offset = (item.action_combo || (item.type==2 && item.sandwich)) ? -80 : 0
 
         this.index = stack.board.effects.length
@@ -4836,13 +4856,18 @@ $def with (name)
           console.log("replay_actions = " + replay_actions)
           console.log("replay_length = " + replay_length)
 
-          if (replay_actions >= replay_length) {
+          if (replay_actions >= replay_length - 1) {
             replay_menu.active = true
             replay_menu.index = (replay_index < replay_records.length - 1) ? (replay_index + 1) : replay_index
             replay_menu.controls(replay_menu)
             jaws.on_keydown(["esc"], function() {
               jaws.start(MainMenu)
             })
+            if (player_level == 3 && player_stage == 6)
+              stopBackgroundMusic()
+              menu_music.play()
+              menu_music.playing = true
+              jaws.start(MainMenu)
           }
         }
       }
@@ -5232,6 +5257,39 @@ $def with (name)
           loop:false
       })
       background_music.push(win_music)
+      marathon_music = new Howl({
+          urls: ["./static/bgm/marathon.mp3","./static/bgm/marathon.ogg"],
+          volume:.5,
+          loop:true
+      })
+      marathon_music.playing = false
+      background_music.push(marathon_music)
+
+      oh_yes = new Howl({
+        urls: ["./static/sfx/ohyes.mp3","./static/sfx/ohyes.ogg"],
+        volume:.5,
+        loop:false
+      })
+      believe = new Howl({
+        urls: ["./static/sfx/yougottabelieve.mp3","./static/sfx/yougottabelieve.ogg"],
+        volume:.5,
+        loop:false
+      })
+      zonkus = new Howl({
+        urls: ["./static/sfx/zonku.mp3","./static/sfx/zonku.ogg"],
+        volume:.5,
+        loop:false
+      })
+      shred = new Howl({
+        urls: ["./static/sfx/shred.mp3","./static/sfx/shred.ogg"],
+        volume:.5,
+        loop:false
+      })
+      thank_you = new Howl({
+        urls: ["./static/sfx/thankyou.mp3","./static/sfx/thankyou.ogg"],
+        volume:.5,
+        loop:false
+      })
 
       // // set onpause callback for each howl object
        for (var i = 0; i < sound_effects.length; i++) {
