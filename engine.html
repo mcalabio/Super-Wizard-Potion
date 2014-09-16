@@ -35,7 +35,7 @@ $def with (name)
   <script>
 
     // CONSTANTS
-    var VERSION = "2014-09-14c"
+    var VERSION = "2014-09-16a"
     var SLOW = 10
     var FAST = 60
     var BOARD_WIDTH = 6
@@ -109,7 +109,7 @@ $def with (name)
     var level_edit_play = false
     var puzzle_mode_active = true
     var marathon_mode_active = true
-    var level_editor_active = true
+    var level_editor_active = false
     var change_name_active = false
     var replay_mode_active = false
     var marathon = false
@@ -2789,7 +2789,9 @@ $def with (name)
           for (var s=0; s < BOARD_WIDTH; s++) {
             this.stacks.push(new Stack(this,0,s))
             var this_stack = this.stacks[s]
-            if (s <= player_progress[player_level][0] && (player_level==3)?(true):(s!=5) ) {
+            if (s <= player_progress[player_level][0]) {
+              if (player_level < 3 && s==5)
+                continue
               var this_item = new Item(this_stack,1,5,s,-1)
               this_item.puzzle_stage = s + 1
               this_stack.next_random_item = this_item
