@@ -124,7 +124,7 @@ $def with (name)
     var latest_edit
     var pause = false
     var main_menu_auto = undefined
-    var mute = true
+    var mute = false
     var sound_effects = new Array()
     var paused_sound_effects = new Array()
     var playing_sound_effects = new Array()
@@ -137,7 +137,13 @@ $def with (name)
     var melt_audio
     var white_audio
     // background music
-    var bg_music
+    var background_music = new Array()
+    var menu_music
+    var cauldron1_music
+    var cauldron2_music
+    var cauldron3a_music
+    var cauldron3b_music
+    var win_music
     setupHowls()
 
     var cookie_save = getCookie("player_save")
@@ -943,6 +949,37 @@ $def with (name)
           background.height = 25
           background.x = centerWhatever(background.width,0,600)
           background.y = centerWhatever(background.height,0,500)
+        }
+
+        // play background music
+        if (player_level == 1) {
+          if (!cauldron1_music.playing) {
+            stopBackgroundMusic()
+            cauldron1_music.play()
+            cauldron1_music.playing = true
+          }
+        } else if (player_level == 2) {
+          if (!cauldron2_music.playing) {
+            stopBackgroundMusic()
+            cauldron2_music.play()
+            cauldron2_music.playing = true
+          }
+        } else if (player_level == 3) {
+
+          if (player_stage == 0 || player_stage == 1 || player_stage == 6) {
+            if (!cauldron3a_music.playing) {
+              stopBackgroundMusic()
+              cauldron3a_music.play()
+              cauldron3a_music.playing = true
+            }
+          } else {
+            if (!cauldron3b_music.playing) {
+              stopBackgroundMusic()
+              cauldron3b_music.play()
+              cauldron3b_music.playing = true
+            }
+          }
+
         }
 
         jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
@@ -3802,6 +3839,8 @@ $def with (name)
                 this.items.splice(old_item.y,0,this_cauldron)
                 //potionfalls after spawn
                 this_cauldron.sprite.y 
+                stopBackgroundMusic()
+                win_music.play()
               } else {
                 var this_potion = new Item(this,1,5,this.x,old_item.y)
                 this_potion.puzzle_stage = 6
@@ -3887,9 +3926,9 @@ $def with (name)
             // // stop sound effects
              if (old_item.type == 1) {
                console.log("stop sound effect")
-               console.dir(old_item.break_audio)
-               break_audio.stop()
-               removeFromPlayingSounds(break_audio)
+               // console.dir(old_item.break_audio)
+               // break_audio.stop()
+               // removeFromPlayingSounds(break_audio)
                if (old_item.chain > 1)
                  this.board.effects.push(new ChainEffect(this,old_item))
              }
@@ -4044,12 +4083,12 @@ $def with (name)
             this_flask.sprite.dy = this_flask.stack.board.posy(this_flask.y)
 
             // stop flask's sound effects
-             break_audio.stop()
-             removeFromPlayingSounds(break_audio)
+             // break_audio.stop()
+             // removeFromPlayingSounds(break_audio)
 
             // // play robot breaking sound effects
-             if (!mute)
-               break_audio.play()
+             // if (!mute)
+             //   break_audio.play()
 
 
 
@@ -4483,11 +4522,11 @@ $def with (name)
                   this.stack.board.flask_count[this.color]++
 
                   // play sound effect for unstable reaction
-                  break_audio.stop()
-                  removeFromPlayingSounds(break_audio)
+                  // break_audio.stop()
+                  // removeFromPlayingSounds(break_audio)
                   console.log("brewing unstable potion")
-                  if (!mute)
-                    break_audio.play()
+                  // if (!mute)
+                  //   break_audio.play()
                 }
 
               }
@@ -4510,7 +4549,7 @@ $def with (name)
             jaws.context.lineWidth = 10
             jaws.context.fillStyle =  "White"
             jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-            jaws.context.fillText((this.puzzle_stage < 6)?this.puzzle_stage:"\u221E", this.sprite.x + 15, this.sprite.y + 35)
+            jaws.context.fillText((this.puzzle_stage < 6)?this.puzzle_stage:"\u03BB", this.sprite.x + 15, this.sprite.y + 35)
           }
         }
       }
@@ -5126,19 +5165,19 @@ $def with (name)
       })
       sound_effects.push(drop_sound)
       // flask sound effects
-      break_audio = new Howl({
-        urls: ["./static/sfx/robot_death.mp3","./static/sfx/robot_death.ogg"],
-        volume:.25
-      })
-      sound_effects.push(break_audio)
+      // break_audio = new Howl({
+      //   urls: ["./static/sfx/robot_death.mp3","./static/sfx/robot_death.ogg"],
+      //   volume:.25
+      // })
+      // sound_effects.push(break_audio)
       brew_audio = new Howl({
         urls: ["./static/sfx/brew.mp3","./static/sfx/brew.ogg"],
-        volume:.2
+        volume:.1
       })
       sound_effects.push(brew_audio)
       splash_audio = new Howl({
           urls: ["./static/sfx/break.mp3","./static/sfx/break.ogg"],
-          volume:1
+          volume:.7
         })
       sound_effects.push(splash_audio)
       melt_audio = new Howl({
@@ -5148,15 +5187,51 @@ $def with (name)
       sound_effects.push(melt_audio)
       white_audio = new Howl({
           urls: ["./static/sfx/white3.mp3","./static/sfx/white3.ogg"],
-          volume:.5
+          volume:.35
       })
       sound_effects.push(white_audio)
 
-      bg_music = new Howl({
+      menu_music = new Howl({
+          urls: ["./static/bgm/jesu_loop.mp3","./static/bgm/jesu_loop.ogg"],
+          volume:.4,
+          loop:true
+      })
+      menu_music.playing = false
+      background_music.push(menu_music)
+      cauldron1_music = new Howl({
           urls: ["./static/bgm/cemetery.mp3","./static/bgm/cemetery.ogg"],
           volume:.5,
           loop:true
       })
+      cauldron1_music.playing = false
+      background_music.push(cauldron1_music)
+      cauldron2_music = new Howl({
+          urls: ["./static/bgm/hell.mp3","./static/bgm/hell.ogg"],
+          volume:.5,
+          loop:true
+      })
+      cauldron2_music.playing = false
+      background_music.push(cauldron2_music)
+      cauldron3a_music = new Howl({
+          urls: ["./static/bgm/babyA.mp3","./static/bgm/babyA.ogg"],
+          volume:.7,
+          loop:true
+      })
+      cauldron3a_music.playing = false
+      background_music.push(cauldron3a_music)
+      cauldron3b_music = new Howl({
+          urls: ["./static/bgm/babyB.mp3","./static/bgm/babB.ogg"],
+          volume:.7,
+          loop:true
+      })
+      cauldron3b_music.playing = false
+      background_music.push(cauldron3b_music)
+      win_music = new Howl({
+          urls: ["./static/bgm/win.mp3","./static/bgm/win.ogg"],
+          volume:.15,
+          loop:false
+      })
+      background_music.push(win_music)
 
       // // set onpause callback for each howl object
        for (var i = 0; i < sound_effects.length; i++) {
@@ -5196,11 +5271,11 @@ $def with (name)
       sound_effects.push(drop_sound)
 
       // flask sound effects
-      break_audio = new jaws.Audio({
-        volume:.25
-      })
-      break_audio.setAudio("./static/sfx/robot_death.wav")
-      sound_effects.push(break_audio)
+      // break_audio = new jaws.Audio({
+      //   volume:.25
+      // })
+      // break_audio.setAudio("./static/sfx/robot_death.wav")
+      // sound_effects.push(break_audio)
 
       brew_audio = new jaws.Audio({
         volume:.2
@@ -5259,6 +5334,16 @@ $def with (name)
       paused_sound_effects = new Array()
     }
 
+    function stopBackgroundMusic() {
+
+      for (var i = 0; i < background_music.length; i++) {
+        var this_song = background_music[i]
+        this_song.stop()
+        this_song.playing = false
+      }
+
+    }
+
     function removeFromPlayingSounds(this_sound) {
       var index = 0
       for (var j = 0; j < playing_sound_effects; j++) {
@@ -5279,6 +5364,20 @@ $def with (name)
         $("muteButton").innerHTML = "Sound: Off"
         mute = true
       }
+    }
+
+    function arraysEqual(a, b) {
+      if (a === b) return true;
+      if (a == null || b == null) return false;
+      if (a.length != b.length) return false;
+
+      // If you don't care about the order of the elements inside
+      // the array, you should sort both arrays here.
+
+      for (var i = 0; i < a.length; ++i) {
+        if (a[i] !== b[i]) return false;
+      }
+      return true;
     }
 
     function fisherYates ( myArray ) {
@@ -6760,14 +6859,18 @@ $def with (name)
         level_edit_play = false
         console.log("player progress")
         console.dir(player_progress)
-      }
 
-      if (!bg_music.playing && !mute) {
-        bg_music.play()
-        bg_music.playing = true
+        var something_playing = false
+        for (var i = 0; i < background_music.length; i++) {
+          var this_song = background_music[i]
+          if (this_song.playing)
+            something_playing = true
+        }
+        if (!something_playing) {
+          menu_music.play()
+          menu_music.playing = true
+        }
       }
-      console.log("bg_music = ")
-      console.dir(bg_music)
 
       this.update = function() {
 
