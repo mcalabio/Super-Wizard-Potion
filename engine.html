@@ -35,7 +35,7 @@ $def with (name)
   <script>
 
     // CONSTANTS
-    var VERSION = "2014-09-14c"
+    var VERSION = "2014-09-16a"
     var SLOW = 10
     var FAST = 60
     var BOARD_WIDTH = 6
@@ -51,18 +51,19 @@ $def with (name)
     var ROB_SCORE = 2
     var WINLOSE_DELAY = 60
     var DEATH_COUNTER_START = 40
+    var BG_SCALE = 1.2
 
 
-    var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE")
+    var COLORS = new Array("RED","GREEN","PURPLE","BLUE","YELLOW","ORANGE","EMPTY","WHITE","UNSTABLE","WIZARD")
     var TYPES = new Array("BLOCK","POTION","ROBOT","CAULDRON")
     var RED = 0
     var GREEN = 1
     var PURPLE = 2
     var BLUE = 3
     var GOLD = 4
-    var UNSTABLE = COLORS.length - 1
-    var WHITE = COLORS.length - 2
-    var EMPTY = COLORS.length - 3
+    var UNSTABLE = COLORS.length - 2
+    var WHITE = COLORS.length - 3
+    var EMPTY = COLORS.length - 4
 
     var COLOR = {
       RED : 0,
@@ -123,7 +124,7 @@ $def with (name)
     var latest_edit
     var pause = false
     var main_menu_auto = undefined
-    var mute = true
+    var mute = false
     var sound_effects = new Array()
     var paused_sound_effects = new Array()
     var playing_sound_effects = new Array()
@@ -135,8 +136,20 @@ $def with (name)
     var splash_audio
     var melt_audio
     var white_audio
+    var oh_yes
+    var believe
+    var zonkus
+    var shred
+    var thank_you
     // background music
-    var bg_music
+    var background_music = new Array()
+    var menu_music
+    var cauldron1_music
+    var cauldron2_music
+    var cauldron3a_music
+    var cauldron3b_music
+    var win_music
+    var marathon_music
     setupHowls()
 
     var cookie_save = getCookie("player_save")
@@ -237,6 +250,14 @@ $def with (name)
 
       var replay_length = 0
 
+      // check if this is the ending
+      if (player_level == 3 && player_stage == 6) {
+        replay = {"136":[3,0,"move_x",1],"156":[4,0,"move_x",-1],"166":[3,0,"move_x",-1],"177":[2,0,"move_x",-1],"198":[1,0,"grab",3],"205":[1,0,"move_x",1],"210":[2,0,"move_x",1],"235":[3,0,"move_x",-1],"244":[2,0,"drop",3],"251":[2,4,"move_x",1],"258":[3,4,"move_x",1],"264":[4,4,"move_y",-1],"270":[4,3,"grab",2],"274":[4,3,"move_x",-1],"282":[3,3,"move_x",-1],"328":[2,3,"move_x",-1],"336":[1,3,"drop",2],"374":[1,0,"move_y",1],"384":[1,1,"move_y",1],"402":[1,2,"move_x",1],"410":[2,2,"grab",5],"417":[2,2,"move_x",-1],"429":[1,2,"drop",1],"439":[1,2,"move_x",1],"451":[2,2,"drop",1],"462":[2,2,"move_x",-1],"487":[1,2,"drop",1],"496":[1,2,"move_x",1],"564":[2,2,"drop",2],"579":[2,3,"move_x",-1],"598":[1,3,"move_x",1],"611":[2,3,"move_x",1],"622":[3,3,"grab",4],"646":[3,3,"drop",4],"669":[3,0,"move_x",1],"684":[4,0,"grab",3],"700":[4,0,"move_x",-1],"708":[3,0,"drop",1],"715":[3,0,"move_x",1],"727":[4,0,"drop",1],"734":[4,0,"move_x",-1],"741":[3,0,"drop",1],"748":[3,5,"move_x",1],"756":[4,5,"move_x",1],"762":[5,5,"move_y",-1],"771":[5,4,"move_y",-1],"781":[5,3,"grab",3],"786":[5,3,"move_x",-1],"790":[4,3,"drop",1],"797":[4,3,"move_x",1],"799":[5,3,"drop",2],"805":[5,3,"move_x",-1],"812":[4,3,"move_x",-1],"826":[3,3,"move_y",-1],"837":[3,2,"grab",4],"841":[3,2,"move_x",1],"846":[4,2,"drop",1],"852":[4,2,"move_x",-1],"857":[3,2,"drop",3],"864":[3,2,"move_x",1],"870":[4,2,"move_x",1],"876":[5,2,"grab",5],"883":[5,2,"move_x",-1],"892":[4,2,"move_x",-1],"902":[3,2,"drop",1],"910":[3,2,"drop",1],"912":[3,2,"move_x",-1],"926":[2,2,"drop",1],"936":[2,2,"move_x",1],"944":[3,2,"drop",1],"951":[3,2,"move_x",-1],"961":[2,2,"drop",1],"968":[2,6,"move_x",-1],"994":[1,6,"move_x",-1],"1046":[0,6,"grab",4],"1098":[0,6,"move_x",1],"1106":[2,6,"drop",1],"1141":[2,6,"drop",1],"1150":[2,6,"move_x",1],"1170":[3,6,"drop",1],"1175":[3,6,"move_x",-1],"1183":[2,6,"drop",1],"1195":[2,8,"move_x",-1],"1206":[1,8,"grab",2],"1220":[2,8,"drop",1],"1234":[2,8,"move_x",1],"1259":[3,8,"move_x",1],"1278":[4,8,"drop",1],"1340":[4,3,"grab",1],"1355":[4,3,"move_x",-1],"1368":[3,3,"drop",1],"1381":[3,9,"move_x",-1],"1389":[2,9,"move_x",-1],"1427":[1,9,"grab",1],"1439":[1,9,"move_x",1],"1462":[2,9,"drop",1],"1522":[3,0,"move_x",1],"stack_queue":[[],[],[],[],[],[]]} 
+      }
+
+
+
+
       // sprint mode
       if (player_stage > 0 && !marathon) {
         sprint_data = (sprints != undefined) ? sprints[player_level + "-" + player_stage] : undefined
@@ -254,10 +275,20 @@ $def with (name)
       var largest_stack_size = 0
       var sprint_rises = 0
 
+<<<<<<< HEAD
       var background = new jaws.Sprite({x:0,y:0,image:"./static/images/backgrounds/CAULDRON_" +
           ((player_level == 2) ?
           1 : 1 )
+=======
+      var background = new jaws.Sprite({x:0,y:0,image:"./static/images/backgrounds/CAULDRON_" +  ((player_level -1) % 3 + 1)
           + ".gif",anchor:"left"})
+      var backbackground = new jaws.Sprite({x:0,y:0,image:"./static/images/backgrounds/CAULDRON_" +  ((player_level -2) % 3 + 1)
+>>>>>>> dev
+          + ".gif",anchor:"left"})
+      if (player_level == 3 && player_stage == 6)
+        backbackground = new jaws.Sprite({x:0,y:0,image:"./static/images/backgrounds/CAULDRON_3.gif",anchor:"left"})
+      var background_animating = false
+      var background_animating_done = false
 
       /*  Called once when a game state is activated. Use it for one-time setup code. */
       this.setup = function() {
@@ -277,7 +308,7 @@ $def with (name)
 
         // setup player data in a menu box
         player_data = new MenuBox(
-          (replay == null) ? player_name : replay_records[replay_index]["name"], // title
+          (replay == null) ? player_name : (player_level == 3 && player_stage == 6) ? player_name : replay_records[replay_index]["name"], // title
           screen_data,
           player.board.board.x + player.board.board.width + ITEM_WIDTH,
           player.board.board.y,
@@ -326,7 +357,8 @@ $def with (name)
         console.log("creating box for screen data")
 
         // Player Controls
-        player.controls()
+        if (!(player_level == 3 && player_stage == 6))
+          player.controls()
 
         // fill up the level with items
         // and setup screen data for marathon
@@ -923,6 +955,51 @@ $def with (name)
         console.log("player_name = " + player_name)
         console.log("live_info = " + live_info)
 
+        // background animation for stage 0
+        if ((player_level > 1 && player_stage == 0) || (player_level == 3 && player_stage == 6)) {
+          background.width = 30
+          background.height = 25
+          background.x = centerWhatever(background.width,0,600)
+          background.y = centerWhatever(background.height,0,500)
+        }
+
+        // play background music
+        if (marathon) {
+          if (!marathon_music.playing) {
+            stopBackgroundMusic()
+            marathon_music.play()
+            marathon_music.playing = true
+          }
+        } else if (player_level == 1) {
+          if (!cauldron1_music.playing) {
+            stopBackgroundMusic()
+            cauldron1_music.play()
+            cauldron1_music.playing = true
+          }
+        } else if (player_level == 2) {
+          if (!cauldron2_music.playing) {
+            stopBackgroundMusic()
+            cauldron2_music.play()
+            cauldron2_music.playing = true
+          }
+        } else if (player_level == 3) {
+
+          if (player_stage == 0 || player_stage == 1 || player_stage == 6) {
+            if (!cauldron3a_music.playing) {
+              stopBackgroundMusic()
+              cauldron3a_music.play()
+              cauldron3a_music.playing = true
+            }
+          } else {
+            if (!cauldron3b_music.playing) {
+              stopBackgroundMusic()
+              cauldron3b_music.play()
+              cauldron3b_music.playing = true
+            }
+          }
+
+        }
+
         jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
         jaws.preventDefaultKeys(["w", "s", "a", "d", "k"])
 
@@ -1023,6 +1100,54 @@ $def with (name)
           }
         }
 
+        if (marathon) {
+
+          if (raise_count_total > 0 && raise_count_total%5 == 0 && !background_animating_done && !background_animating) {
+            // window.alert(((raise_count_total/5)%3+1) + " - " + ((raise_count_total/5-1)%3+1))
+            background = new jaws.Sprite({x:0,y:0,image:"./static/images/backgrounds/CAULDRON_" +  ((raise_count_total/5)%3+1) + ".gif",anchor:"left"})
+            background.width = 25
+            background.height = 30
+            background.x = centerWhatever(background.width,0,600)
+            background.y = centerWhatever(background.height,0,500)
+            backbackground = new jaws.Sprite({x:0,y:0,image:"./static/images/backgrounds/CAULDRON_" +  ((raise_count_total/5-1)%3+1) + ".gif",anchor:"left"})
+            background_animating = true
+          }
+
+
+
+        }
+
+        // background animation for stage 0
+        if (player_level == 3 && player_stage == 6) {
+          if (background.width > 600 || background.height > 500) {
+            background.width = background.width * (1.5 - 1)
+            background.height = background.height * (1.5 - 1)
+            background.x = centerWhatever(background.width,0,600)
+            background.y = centerWhatever(background.height,0,500)
+          } else if (background.width < 600 || background.height < 500) {
+            background.width = background.width * 1.5
+            background.height = background.height * 1.5
+            background.x = centerWhatever(background.width,0,600)
+            background.y = centerWhatever(background.height,0,500)
+          }
+        } else if ((background_animating && !background_animating_done) || (player_level > 1 && player_stage == 0 && game_end == "") ) {
+
+          if (background.width > 600 || background.height > 500) {
+            background.width = 600
+            background.height = 500
+            background.x = centerWhatever(background.width,0,600)
+            background.y = centerWhatever(background.height,0,500)
+            background_animating = false
+            background_animating_done = true
+          } else if (background.width < 600 || background.height < 500) {
+            background.width = background.width * BG_SCALE
+            background.height = background.height * BG_SCALE
+            background.x = centerWhatever(background.width,0,600)
+            background.y = centerWhatever(background.height,0,500)
+          }
+
+        }
+
         live_info.innerHTML = jaws.game_loop.fps + " fps. Player: " + parseInt(player.x) + "/" + parseInt(player.y) + ". "
         live_info.innerHTML += "Viewport: " + parseInt(viewport.x) + "/" + parseInt(viewport.y) + "."
 
@@ -1033,9 +1158,11 @@ $def with (name)
         jaws.clear()
 
         // background
-        if (!level_edit)
+        if (!level_edit) {
+          if ((marathon && raise_count_total >= 5) || (player_level > 1 && game_end == ""))
+            backbackground.draw()
           background.draw()
-        else {
+        } else {
           jaws.context.fillStyle = 'Black' //PURPLE_HEX
           jaws.context.fillRect(0,0,600,500)
           jaws.context.fillStyle = PURPLE_HEX
@@ -2524,8 +2651,11 @@ $def with (name)
           }
 
           // update screen data
-          if (marathon)
+          if (marathon) {
             screen_data.items[0].text = raise_count_total
+            if (raise_count_total%5 == 1) 
+              background_animating_done = false
+          }
 
           Y_SPEED = SLOW
 
@@ -2665,7 +2795,9 @@ $def with (name)
           for (var s=0; s < BOARD_WIDTH; s++) {
             this.stacks.push(new Stack(this,0,s))
             var this_stack = this.stacks[s]
-            if (s <= player_progress[player_level][0] && s!= 5) {
+            if (s <= player_progress[player_level][0]) {
+              if (player_level < 3 && s==5)
+                continue
               var this_item = new Item(this_stack,1,5,s,-1)
               this_item.puzzle_stage = s + 1
               this_stack.next_random_item = this_item
@@ -3030,6 +3162,12 @@ $def with (name)
 
         // check if the player has reached a win/lose condition and act accordingly
         this.checkWinLose = function() {
+
+          if (player_level == 3 && player_stage == 6) {
+            console.log("player replay data")
+            console.log(JSON.stringify(player.replay_data))
+            return
+          }
 
           if (marathon || sprint)
             return
@@ -3716,11 +3854,20 @@ $def with (name)
             game_end = "W"
             this.board.puzzleClear(player_level,player_stage)
             if (player_stage == 5) {
-
-              var this_cauldron = new Item(this,3,EMPTY,this.x,old_item.y)
-              this.items.splice(old_item.y,0,this_cauldron)
-              //potionfalls after spawn
-              this_cauldron.sprite.y = this.board.posy(old_item.y)
+              if (player_level < 3) {
+                var this_cauldron = new Item(this,3,EMPTY,this.x,old_item.y)
+                this.items.splice(old_item.y,0,this_cauldron)
+                //potionfalls after spawn
+                this_cauldron.sprite.y 
+                stopBackgroundMusic()
+                win_music.play()
+              } else {
+                var this_potion = new Item(this,1,5,this.x,old_item.y)
+                this_potion.puzzle_stage = 6
+                this.items.splice(old_item.y,0,this_potion)
+                // potion falls after spawn
+                this_potion.sprite.y = this.board.posy(old_item.y)
+              }
             } else {
               var this_potion = new Item(this,1,5,this.x,old_item.y)
               this_potion.puzzle_stage = player_stage + 1
@@ -3799,9 +3946,9 @@ $def with (name)
             // // stop sound effects
              if (old_item.type == 1) {
                console.log("stop sound effect")
-               console.dir(old_item.break_audio)
-               break_audio.stop()
-               removeFromPlayingSounds(break_audio)
+               // console.dir(old_item.break_audio)
+               // break_audio.stop()
+               // removeFromPlayingSounds(break_audio)
                if (old_item.chain > 1)
                  this.board.effects.push(new ChainEffect(this,old_item))
              }
@@ -3918,6 +4065,8 @@ $def with (name)
               death_color = "YELLOW"
             else if (this_robot.color == 2 || this_robot.color == 5)
               death_color = "PURPLE"
+            else if (this_robot.color == 9) 
+              death_color = "WIZARD"
 
             // update sprite data
             this_robot.sprite = new jaws.Sprite({x:this_robot.stack.board.posx(this_robot.x), y:this_robot.stack.board.posy(this_robot.y), anchor: "left"})
@@ -3954,12 +4103,12 @@ $def with (name)
             this_flask.sprite.dy = this_flask.stack.board.posy(this_flask.y)
 
             // stop flask's sound effects
-             break_audio.stop()
-             removeFromPlayingSounds(break_audio)
+             // break_audio.stop()
+             // removeFromPlayingSounds(break_audio)
 
             // // play robot breaking sound effects
-             if (!mute)
-               break_audio.play()
+             // if (!mute)
+             //   break_audio.play()
 
 
 
@@ -4223,7 +4372,7 @@ $def with (name)
 
         // set appropriate sprite for this item
         if (this.type == 0) {
-          this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y),image:"./static/images/" + COLORS[color] + ".gif",anchor:"left"})
+          this.sprite = new jaws.Sprite({x:this.stack.board.posx(x),y:this.stack.board.posy(y),image:"./static/images/" + COLORS[color] + ((color==9)?"_BLOCK":"") + ".gif",anchor:"left"})
           board.block_count[color] += 1
         } else if (this.type == 1) {
 
@@ -4393,11 +4542,11 @@ $def with (name)
                   this.stack.board.flask_count[this.color]++
 
                   // play sound effect for unstable reaction
-                  break_audio.stop()
-                  removeFromPlayingSounds(break_audio)
+                  // break_audio.stop()
+                  // removeFromPlayingSounds(break_audio)
                   console.log("brewing unstable potion")
-                  if (!mute)
-                    break_audio.play()
+                  // if (!mute)
+                  //   break_audio.play()
                 }
 
               }
@@ -4420,7 +4569,7 @@ $def with (name)
             jaws.context.lineWidth = 10
             jaws.context.fillStyle =  "White"
             jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-            jaws.context.fillText(this.puzzle_stage, this.sprite.x + 15, this.sprite.y + 35)
+            jaws.context.fillText((this.puzzle_stage < 6)?this.puzzle_stage:"\u03BB", this.sprite.x + 15, this.sprite.y + 35)
           }
         }
       }
@@ -4447,6 +4596,14 @@ $def with (name)
         this.item = item
         this.speed = 1
         this.deathcounter = 60
+
+        // sound effects for chains
+        if (this.chain == 2 || this.chain == 3)
+          oh_yes.play()
+        else if (this.chain == 4 || this.chain == 6)
+          believe.play()
+        else if (this.chain == 5 || this.chain > 6)
+          zonkus.play()
 
         var action_offset = (item.action_combo || (item.type==2 && item.sandwich)) ? -80 : 0
 
@@ -4707,13 +4864,18 @@ $def with (name)
           console.log("replay_actions = " + replay_actions)
           console.log("replay_length = " + replay_length)
 
-          if (replay_actions >= replay_length) {
+          if (replay_actions >= replay_length - 1) {
             replay_menu.active = true
             replay_menu.index = (replay_index < replay_records.length - 1) ? (replay_index + 1) : replay_index
             replay_menu.controls(replay_menu)
             jaws.on_keydown(["esc"], function() {
               jaws.start(MainMenu)
             })
+            if (player_level == 3 && player_stage == 6)
+              stopBackgroundMusic()
+              menu_music.play()
+              menu_music.playing = true
+              jaws.start(MainMenu)
           }
         }
       }
@@ -5036,19 +5198,19 @@ $def with (name)
       })
       sound_effects.push(drop_sound)
       // flask sound effects
-      break_audio = new Howl({
-        urls: ["./static/sfx/robot_death.mp3","./static/sfx/robot_death.ogg"],
-        volume:.25
-      })
-      sound_effects.push(break_audio)
+      // break_audio = new Howl({
+      //   urls: ["./static/sfx/robot_death.mp3","./static/sfx/robot_death.ogg"],
+      //   volume:.25
+      // })
+      // sound_effects.push(break_audio)
       brew_audio = new Howl({
         urls: ["./static/sfx/brew.mp3","./static/sfx/brew.ogg"],
-        volume:.2
+        volume:.1
       })
       sound_effects.push(brew_audio)
       splash_audio = new Howl({
           urls: ["./static/sfx/break.mp3","./static/sfx/break.ogg"],
-          volume:1
+          volume:.7
         })
       sound_effects.push(splash_audio)
       melt_audio = new Howl({
@@ -5058,14 +5220,83 @@ $def with (name)
       sound_effects.push(melt_audio)
       white_audio = new Howl({
           urls: ["./static/sfx/white3.mp3","./static/sfx/white3.ogg"],
-          volume:.5
+          volume:.35
       })
       sound_effects.push(white_audio)
 
-      bg_music = new Howl({
+      menu_music = new Howl({
+          urls: ["./static/bgm/jesu_loop.mp3","./static/bgm/jesu_loop.ogg"],
+          volume:.4,
+          loop:true
+      })
+      menu_music.playing = false
+      background_music.push(menu_music)
+      cauldron1_music = new Howl({
           urls: ["./static/bgm/cemetery.mp3","./static/bgm/cemetery.ogg"],
           volume:.5,
           loop:true
+      })
+      cauldron1_music.playing = false
+      background_music.push(cauldron1_music)
+      cauldron2_music = new Howl({
+          urls: ["./static/bgm/hell.mp3","./static/bgm/hell.ogg"],
+          volume:.5,
+          loop:true
+      })
+      cauldron2_music.playing = false
+      background_music.push(cauldron2_music)
+      cauldron3a_music = new Howl({
+          urls: ["./static/bgm/babyA.mp3","./static/bgm/babyA.ogg"],
+          volume:.7,
+          loop:true
+      })
+      cauldron3a_music.playing = false
+      background_music.push(cauldron3a_music)
+      cauldron3b_music = new Howl({
+          urls: ["./static/bgm/babyB.mp3","./static/bgm/babB.ogg"],
+          volume:.7,
+          loop:true
+      })
+      cauldron3b_music.playing = false
+      background_music.push(cauldron3b_music)
+      win_music = new Howl({
+          urls: ["./static/bgm/win.mp3","./static/bgm/win.ogg"],
+          volume:.15,
+          loop:false
+      })
+      background_music.push(win_music)
+      marathon_music = new Howl({
+          urls: ["./static/bgm/marathon.mp3","./static/bgm/marathon.ogg"],
+          volume:.5,
+          loop:true
+      })
+      marathon_music.playing = false
+      background_music.push(marathon_music)
+
+      oh_yes = new Howl({
+        urls: ["./static/sfx/ohyes.mp3","./static/sfx/ohyes.ogg"],
+        volume:.5,
+        loop:false
+      })
+      believe = new Howl({
+        urls: ["./static/sfx/yougottabelieve.mp3","./static/sfx/yougottabelieve.ogg"],
+        volume:.5,
+        loop:false
+      })
+      zonkus = new Howl({
+        urls: ["./static/sfx/zonku.mp3","./static/sfx/zonku.ogg"],
+        volume:.5,
+        loop:false
+      })
+      shred = new Howl({
+        urls: ["./static/sfx/shred.mp3","./static/sfx/shred.ogg"],
+        volume:.5,
+        loop:false
+      })
+      thank_you = new Howl({
+        urls: ["./static/sfx/thankyou.mp3","./static/sfx/thankyou.ogg"],
+        volume:.5,
+        loop:false
       })
 
       // // set onpause callback for each howl object
@@ -5106,11 +5337,11 @@ $def with (name)
       sound_effects.push(drop_sound)
 
       // flask sound effects
-      break_audio = new jaws.Audio({
-        volume:.25
-      })
-      break_audio.setAudio("./static/sfx/robot_death.wav")
-      sound_effects.push(break_audio)
+      // break_audio = new jaws.Audio({
+      //   volume:.25
+      // })
+      // break_audio.setAudio("./static/sfx/robot_death.wav")
+      // sound_effects.push(break_audio)
 
       brew_audio = new jaws.Audio({
         volume:.2
@@ -5169,6 +5400,16 @@ $def with (name)
       paused_sound_effects = new Array()
     }
 
+    function stopBackgroundMusic() {
+
+      for (var i = 0; i < background_music.length; i++) {
+        var this_song = background_music[i]
+        this_song.stop()
+        this_song.playing = false
+      }
+
+    }
+
     function removeFromPlayingSounds(this_sound) {
       var index = 0
       for (var j = 0; j < playing_sound_effects; j++) {
@@ -5189,6 +5430,20 @@ $def with (name)
         $("muteButton").innerHTML = "Sound: Off"
         mute = true
       }
+    }
+
+    function arraysEqual(a, b) {
+      if (a === b) return true;
+      if (a == null || b == null) return false;
+      if (a.length != b.length) return false;
+
+      // If you don't care about the order of the elements inside
+      // the array, you should sort both arrays here.
+
+      for (var i = 0; i < a.length; ++i) {
+        if (a[i] !== b[i]) return false;
+      }
+      return true;
     }
 
     function fisherYates ( myArray ) {
@@ -6670,14 +6925,18 @@ $def with (name)
         level_edit_play = false
         console.log("player progress")
         console.dir(player_progress)
-      }
 
-      if (!bg_music.playing && !mute) {
-        bg_music.play()
-        bg_music.playing = true
+        var something_playing = false
+        for (var i = 0; i < background_music.length; i++) {
+          var this_song = background_music[i]
+          if (this_song.playing)
+            something_playing = true
+        }
+        if (!something_playing) {
+          menu_music.play()
+          menu_music.playing = true
+        }
       }
-      console.log("bg_music = ")
-      console.dir(bg_music)
 
       this.update = function() {
 
@@ -7193,10 +7452,16 @@ $def with (name)
       console.log(player_uid)
     }
 
+    function centerWhatever(this_width,container_x,container_width) {
+
+      return container_x + (container_width/2) - (this_width/2)
+
+    }
+
     jaws.onload = function() {
       console.log("Bugs: need to check if there's enough flasks for lose condition")
       jaws.unpack()
-      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/images/CAULDRON.gif","./static/images/WIZARD.gif","./static/images/backgrounds/CAULDRON_1.gif","./static/images/backgrounds/CAULDRON_2.gif"]
+      var assets_array = ["./static/images/CURSOR.gif","./static/images/STAR.gif","./static/images/STAR_BORDER.gif","./static/images/STAR_SHADOW.gif","./static/images/LOCK.gif","./static/images/BLUE.gif","./static/images/GREEN.gif","./static/images/RED.gif","./static/images/YELLOW.gif","./static/images/PURPLE.gif","./static/images/WHITE.gif","./static/images/ORANGE.gif","./static/images/POTION_EMPTY.gif","./static/images/POTION_BLUE.gif","./static/images/POTION_GREEN.gif","./static/images/POTION_RED.gif","./static/images/POTION_YELLOW.gif","./static/images/POTION_PURPLE.gif","./static/images/POTION_WHITE.gif","./static/images/POTION_ORANGE.gif","./static/images/POTION_SPRITES.gif","./static/images/ROBOT_RED.gif","./static/images/ROBOT_WHITE.gif","./static/images/ROBOT_YELLOW.gif","./static/images/ROBOT_PURPLE.gif","./static/images/ROBOT_GREEN.gif","./static/images/ROBOT_BLUE.gif","./static/images/ROBOT_ORANGE.gif","./static/images/ROBOT_RED_DEATH.gif","./static/images/ROBOT_YELLOW_DEATH.gif","./static/images/ROBOT_PURPLE_DEATH.gif","./static/images/ROBOT_RED_SPLASH.gif","./static/images/ROBOT_BLUE_SPLASH.gif","./static/images/ROBOT_YELLOW_SPLASH.gif","./static/images/ROBOT_GREEN_SPLASH.gif","./static/images/ROBOT_PURPLE_SPLASH.gif","./static/images/ROBOT_ORANGE_SPLASH.gif","./static/images/POTION_SPLASH.gif","./static/images/BOARD.gif","./static/images/CHAIN.gif","./static/images/MENUBOX_SPRITES.gif","./static/images/ARROWS.gif","./static/images/CAULDRON.gif","./static/images/WIZARD.gif","./static/images/WIZARD_BLOCK.gif","./static/images/POTION_WIZARD.gif","./static/images/ROBOT_WIZARD.gif","./static/images/ROBOT_WIZARD_DEATH.gif","./static/images/ROBOT_WIZARD_SPLASH.gif","./static/images/backgrounds/CAULDRON_1.gif","./static/images/backgrounds/CAULDRON_2.gif","./static/images/backgrounds/CAULDRON_3.gif"]
 
       // "./static/sfx/grab.wav","./static/sfx/drop.wav","./static/sfx/robot_death.wav","./static/sfx/brew.wav","./static/sfx/break.wav","./static/sfx/melt1.wav","./static/sfx/white3.wav"
 
