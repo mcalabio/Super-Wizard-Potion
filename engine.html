@@ -11,17 +11,29 @@ $def with (name)
     <link type="text/css" rel="stylesheet" href="./static/style.css" />
     <title>Super Wizard Potion</title>
   </head>
-<body>
-
-  <div>NOTE TO PLAYTESTERS: your progress and gameplay is being recorded.
-    <br>
-    Please take <a href="https://www.surveymonkey.com/s/XQPYT28" target="_blank">this survey</a> when your are done.
-    <a id="muteButton" href="#" onClick="toggleMute()" style="visibility:visible;float:right">Sound: On</a>
+<body style="position:absolute;left:200">
+<br>
+<div>
+  <div style="font:bold 20pt Menu Text">Super Wizard Potion<div style="font:bold 12pt Menu Text; position:fixed; top:33; left:515">beta v0.1</div></div>
+  <div style="position:fixed"> created by Mark Calabio and Kris Calabio</div>
+  <a id="muteButton" href="#" onClick="toggleMute()" style="position:fixed;visibility:visible;left:700">Sound: On</a>
+  <img src="./static/images/web/wizard.gif" style="position:fixed; top:0; left:0">
+  <div style="position:fixed;top:65;left:815">
+    <img src="./static/images/web/arrows.gif"> <br>
+    move cursor <br><br>
+    <img src="./static/images/web/space.gif"> <br>
+    grab/drop item,<br>confirm menu<br><br>
+    <img src="./static/images/web/c.gif"> <br>
+    grab/drop stack <br><br>
+    <img src="./static/images/web/shift.gif"> <br>
+    raise stacks (Marathon) <br><br>
+    <img src="./static/images/web/esc.gif"> <br>
+    pause menu,<br>back menu
   </div>
+</div>
 <br>
 <br>
-<br>
-  <canvas id="gameScreen" width=600 height=500 style="position:fixed; top:50px; margin-top:10px"></canvas>
+  <canvas id="gameScreen" width=600 height=500 style="position:fixed; top:70px; margin-top:10px"></canvas>
   <br>
   <div id="progressButtons" margin="100">
     <div id="saveData" hidden="true">Data to save comes from here.</div>
@@ -30,6 +42,11 @@ $def with (name)
   <div id="live_info"></div>
   <div hidden="true">
     <canvas id="puzzleScreen" width=240 height=400></canvas>
+  </div>
+  <div style="position:fixed; top:575px; margin-top:10px; width:600">NOTE: your progress and gameplay is being recorded for testing purposes.<br>Please give us feedback by taking <a href="https://www.surveymonkey.com/s/XQPYT28" target="_blank">this survey</a>.
+    <br>
+    <br>
+    <center>Plunger Games (c) 2014</center>
   </div>
 
   <script>
@@ -96,7 +113,7 @@ $def with (name)
     var player_name = ""
     var player_uid = ""
     var level_data
-    var player_level = 1
+    var player_level = 0
     var player_stage = 1
     var player_path = 0
     var player_progress = []
@@ -959,41 +976,8 @@ $def with (name)
         }
 
         // play background music
-        if (marathon) {
-          if (!marathon_music.playing) {
-            stopBackgroundMusic()
-            marathon_music.play()
-            marathon_music.playing = true
-          }
-        } else if (player_level == 1) {
-          if (!cauldron1_music.playing) {
-            stopBackgroundMusic()
-            cauldron1_music.play()
-            cauldron1_music.playing = true
-          }
-        } else if (player_level == 2) {
-          if (!cauldron2_music.playing) {
-            stopBackgroundMusic()
-            cauldron2_music.play()
-            cauldron2_music.playing = true
-          }
-        } else if (player_level == 3) {
-
-          if (player_stage == 0 || player_stage == 1 || player_stage == 6) {
-            if (!cauldron3a_music.playing) {
-              stopBackgroundMusic()
-              cauldron3a_music.play()
-              cauldron3a_music.playing = true
-            }
-          } else {
-            if (!cauldron3b_music.playing) {
-              stopBackgroundMusic()
-              cauldron3b_music.play()
-              cauldron3b_music.playing = true
-            }
-          }
-
-        }
+        if (!mute)
+          playBackgroundMusic()
 
         jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
         jaws.preventDefaultKeys(["w", "s", "a", "d", "k"])
@@ -3861,7 +3845,8 @@ $def with (name)
                 //potionfalls after spawn
                 this_cauldron.sprite.y
                 stopBackgroundMusic()
-                win_music.play()
+                if (!mute)
+                  win_music.play()
               } else {
                 var this_potion = new Item(this,1,5,this.x,old_item.y)
                 this_potion.puzzle_stage = 6
@@ -4599,12 +4584,14 @@ $def with (name)
         this.deathcounter = 60
 
         // sound effects for chains
-        if (this.chain == 2 || this.chain == 3)
-          oh_yes.play()
-        else if (this.chain == 4 || this.chain == 6)
-          believe.play()
-        else if (this.chain == 5 || this.chain > 6)
-          zonkus.play()
+        if (!mute) {
+          if (this.chain == 2 || this.chain == 3)
+            oh_yes.play()
+          else if (this.chain == 4 || this.chain == 6)
+            believe.play()
+          else if (this.chain == 5 || this.chain > 6)
+            zonkus.play()
+        }
 
         var action_offset = (item.action_combo || (item.type==2 && item.sandwich)) ? -80 : 0
 
@@ -4874,7 +4861,8 @@ $def with (name)
             })
             if (player_level == 3 && player_stage == 6)
               stopBackgroundMusic()
-              menu_music.play()
+              if (!mute)
+                menu_music.play()
               menu_music.playing = true
               jaws.start(MainMenu)
           }
@@ -5405,10 +5393,73 @@ $def with (name)
 
       for (var i = 0; i < background_music.length; i++) {
         var this_song = background_music[i]
-        this_song.stop()
+        if (this_song.playing)
+          this_song.stop()
         this_song.playing = false
       }
 
+    }
+
+    function muteBackgroundMusic(mute_this) {
+
+      for (var i = 0; i < background_music.length; i++) {
+        var this_song = background_music[i]
+        if (mute_this)
+          this_song.mute()
+        else
+          this_song.unmute()
+      }
+
+    }
+
+    function playBackgroundMusic() {
+      if (marathon) {
+        if (!marathon_music.playing) {
+          stopBackgroundMusic()
+          if (!mute)
+            marathon_music.play()
+          marathon_music.playing = true
+        }
+      } else if (player_level == 0) {
+        if (!menu_music.playing) {
+          stopBackgroundMusic()
+          if (!mute)
+            menu_music.play()
+          menu_music.playing = true
+        }
+      } else if (player_level == 1) {
+        if (!cauldron1_music.playing) {
+          stopBackgroundMusic()
+          if (!mute)
+            cauldron1_music.play()
+          cauldron1_music.playing = true
+        }
+      } else if (player_level == 2) {
+        if (!cauldron2_music.playing) {
+          stopBackgroundMusic()
+          if (!mute)
+            cauldron2_music.play()
+          cauldron2_music.playing = true
+        }
+      } else if (player_level == 3) {
+
+        if (player_stage == 0 || player_stage == 1 || player_stage == 6) {
+          if (!cauldron3a_music.playing) {
+            stopBackgroundMusic()
+            if (!mute)
+              cauldron3a_music.play()
+            cauldron3a_music.playing = true
+          }
+        } else {
+          if (!cauldron3b_music.playing) {
+            stopBackgroundMusic()
+            if (!mute)
+              cauldron3b_music.play()
+            cauldron3b_music.playing = true
+          }
+        }
+
+      }
     }
 
     function removeFromPlayingSounds(this_sound) {
@@ -5427,9 +5478,11 @@ $def with (name)
         $("muteButton").innerHTML = "Sound: On"
         mute = false
         stopSounds()
+        playBackgroundMusic()
       } else {
         $("muteButton").innerHTML = "Sound: Off"
         mute = true
+        stopBackgroundMusic()
       }
     }
 
@@ -6049,8 +6102,8 @@ $def with (name)
           this.arrow_spritesheet = new jaws.SpriteSheet({
             image: "./static/images/ARROWS.gif", frame_size: [20,10]})
 
-          this.up_arrow = new jaws.Sprite({x:this.x + 100, y:this.y + 20, image: this.arrow_spritesheet.frames[0]})
-          this.down_arrow = new jaws.Sprite({x:this.x + 100, y:this.y + 38, image: this.arrow_spritesheet.frames[1]})
+          this.up_arrow = new jaws.Sprite({x:this.x + 100, y:this.y + 20, image: this.arrow_spritesheet.frames[2]})
+          this.down_arrow = new jaws.Sprite({x:this.x + 100, y:this.y + 38, image: this.arrow_spritesheet.frames[3]})
 
           this.up_arrow.height = 15
           this.down_arrow.height = 15
@@ -6945,7 +6998,8 @@ $def with (name)
             something_playing = true
         }
         if (!something_playing) {
-          menu_music.play()
+          if (!mute)
+            menu_music.play()
           menu_music.playing = true
         }
       }
