@@ -12,16 +12,15 @@ $def with (name)
     <title>Super Wizard Potion</title>
   </head>
 <body>
-
-  <div>NOTE TO PLAYTESTERS: your progress and gameplay is being recorded.
-    <br>
-    Please take <a href="https://www.surveymonkey.com/s/XQPYT28" target="_blank">this survey</a> when your are done.
-    <a id="muteButton" href="#" onClick="toggleMute()" style="visibility:visible;float:right">Sound: On</a>
-  </div>
+<br>
+<div>
+  <div style="font:bold 20pt Menu Text">Super Wizard Potion<div style="font:bold 12pt Menu Text; position:fixed; top:33; left:625">beta v0.1</div></div>
+  <div style="position:fixed"> created by Mark Calabio and Kris Calabio</div>
+  <a id="muteButton" href="#" onClick="toggleMute()" style="position:fixed;visibility:visible;left:815">Sound: On</a>
+</div>
 <br>
 <br>
-<br>
-  <canvas id="gameScreen" width=600 height=500 style="position:fixed; top:50px; margin-top:10px"></canvas>
+  <canvas id="gameScreen" width=600 height=500 style="position:fixed; top:70px; margin-top:10px"></canvas>
   <br>
   <div id="progressButtons" margin="100">
     <div id="saveData" hidden="true">Data to save comes from here.</div>
@@ -30,6 +29,10 @@ $def with (name)
   <div id="live_info"></div>
   <div hidden="true">
     <canvas id="puzzleScreen" width=240 height=400></canvas>
+  </div>
+  <div style="position:fixed; top:575px; margin-top:10px">PLAYTESTERS: your progress and gameplay is being recorded.
+    <br>
+    Please take <a href="https://www.surveymonkey.com/s/XQPYT28" target="_blank">this survey</a> when your are done.
   </div>
 
   <script>
@@ -96,13 +99,14 @@ $def with (name)
     var player_name = ""
     var player_uid = ""
     var level_data
-    var player_level = 1
+    var player_level = 0
     var player_stage = 1
     var player_path = 0
     var player_progress = []
     var star_progress = []
     var marathon_progress = ["00:00",0]
     var control_scheme = 1
+    var mouse_disabled = true
     var game_mode = 1
     var game_record = ""
     var level_edit = false
@@ -958,41 +962,8 @@ $def with (name)
         }
 
         // play background music
-        if (marathon) {
-          if (!marathon_music.playing) {
-            stopBackgroundMusic()
-            marathon_music.play()
-            marathon_music.playing = true
-          }
-        } else if (player_level == 1) {
-          if (!cauldron1_music.playing) {
-            stopBackgroundMusic()
-            cauldron1_music.play()
-            cauldron1_music.playing = true
-          }
-        } else if (player_level == 2) {
-          if (!cauldron2_music.playing) {
-            stopBackgroundMusic()
-            cauldron2_music.play()
-            cauldron2_music.playing = true
-          }
-        } else if (player_level == 3) {
-
-          if (player_stage == 0 || player_stage == 1 || player_stage == 6) {
-            if (!cauldron3a_music.playing) {
-              stopBackgroundMusic()
-              cauldron3a_music.play()
-              cauldron3a_music.playing = true
-            }
-          } else {
-            if (!cauldron3b_music.playing) {
-              stopBackgroundMusic()
-              cauldron3b_music.play()
-              cauldron3b_music.playing = true
-            }
-          }
-
-        }
+        if (!mute)
+          playBackgroundMusic()
 
         jaws.context.mozImageSmoothingEnabled = false;  // non-blurry, blocky retro scaling
         jaws.preventDefaultKeys(["w", "s", "a", "d", "k"])
@@ -1308,7 +1279,7 @@ $def with (name)
 
           })
 
-          jaws.on_keydown(["l"], function() {
+          jaws.on_keydown(["l","shift"], function() {
             if ((marathon || sprint) && !player.board.stacksBreaking()) {
               if (player.board.stacksFull()) {
                 if (player.suicide_raise) {
@@ -1476,12 +1447,15 @@ $def with (name)
           })
 
           var shift = false
-          jaws.on_keydown(["shift"], function () {
-            shift = true
-          })
-          jaws.on_keyup(["shift"], function () {
-            shift = false
-          })
+
+          if (level_edit) {
+            jaws.on_keydown(["shift"], function () {
+              shift = true
+            })
+            jaws.on_keyup(["shift"], function () {
+              shift = false
+            })
+          }
 
           jaws.on_keydown(["z"], function() {
             if (ctrl)
@@ -1934,6 +1908,9 @@ $def with (name)
         }
 
         this.clickAction = function(click_coordinates,right_click) {
+
+          if (mouse_disabled)
+            return
 
           var click_x = click_coordinates[0]
           var click_y = click_coordinates[1]
@@ -3854,7 +3831,8 @@ $def with (name)
                 //potionfalls after spawn
                 this_cauldron.sprite.y 
                 stopBackgroundMusic()
-                win_music.play()
+                if (!mute)
+                  win_music.play()
               } else {
                 var this_potion = new Item(this,1,5,this.x,old_item.y)
                 this_potion.puzzle_stage = 6
@@ -4592,12 +4570,14 @@ $def with (name)
         this.deathcounter = 60
 
         // sound effects for chains
-        if (this.chain == 2 || this.chain == 3)
-          oh_yes.play()
-        else if (this.chain == 4 || this.chain == 6)
-          believe.play()
-        else if (this.chain == 5 || this.chain > 6)
-          zonkus.play()
+        if (!mute) {
+          if (this.chain == 2 || this.chain == 3)
+            oh_yes.play()
+          else if (this.chain == 4 || this.chain == 6)
+            believe.play()
+          else if (this.chain == 5 || this.chain > 6)
+            zonkus.play()
+        }
 
         var action_offset = (item.action_combo || (item.type==2 && item.sandwich)) ? -80 : 0
 
@@ -4867,7 +4847,8 @@ $def with (name)
             })
             if (player_level == 3 && player_stage == 6)
               stopBackgroundMusic()
-              menu_music.play()
+              if (!mute)
+                menu_music.play()
               menu_music.playing = true
               jaws.start(MainMenu)
           }
@@ -5398,10 +5379,73 @@ $def with (name)
 
       for (var i = 0; i < background_music.length; i++) {
         var this_song = background_music[i]
-        this_song.stop()
+        if (this_song.playing)
+          this_song.stop()
         this_song.playing = false
       }
 
+    }
+
+    function muteBackgroundMusic(mute_this) {
+
+      for (var i = 0; i < background_music.length; i++) {
+        var this_song = background_music[i]
+        if (mute_this)
+          this_song.mute()
+        else
+          this_song.unmute()
+      }
+
+    }    
+
+    function playBackgroundMusic() {
+      if (marathon) {
+        if (!marathon_music.playing) {
+          stopBackgroundMusic()
+          if (!mute)
+            marathon_music.play()
+          marathon_music.playing = true
+        }
+      } else if (player_level == 0) {
+        if (!menu_music.playing) {
+          stopBackgroundMusic()
+          if (!mute)
+            menu_music.play()
+          menu_music.playing = true
+        }        
+      } else if (player_level == 1) {
+        if (!cauldron1_music.playing) {
+          stopBackgroundMusic()
+          if (!mute)
+            cauldron1_music.play()
+          cauldron1_music.playing = true
+        }
+      } else if (player_level == 2) {
+        if (!cauldron2_music.playing) {
+          stopBackgroundMusic()
+          if (!mute)
+            cauldron2_music.play()
+          cauldron2_music.playing = true
+        }
+      } else if (player_level == 3) {
+
+        if (player_stage == 0 || player_stage == 1 || player_stage == 6) {
+          if (!cauldron3a_music.playing) {
+            stopBackgroundMusic()
+            if (!mute)
+              cauldron3a_music.play()
+            cauldron3a_music.playing = true
+          }
+        } else {
+          if (!cauldron3b_music.playing) {
+            stopBackgroundMusic()
+            if (!mute)
+              cauldron3b_music.play()
+            cauldron3b_music.playing = true
+          }
+        }
+
+      }
     }
 
     function removeFromPlayingSounds(this_sound) {
@@ -5420,9 +5464,11 @@ $def with (name)
         $("muteButton").innerHTML = "Sound: On"
         mute = false
         stopSounds()
+        playBackgroundMusic()
       } else {
         $("muteButton").innerHTML = "Sound: Off"
         mute = true
+        stopBackgroundMusic()
       }
     }
 
@@ -6042,8 +6088,8 @@ $def with (name)
           this.arrow_spritesheet = new jaws.SpriteSheet({
             image: "./static/images/ARROWS.gif", frame_size: [20,10]})
 
-          this.up_arrow = new jaws.Sprite({x:this.x + 100, y:this.y + 20, image: this.arrow_spritesheet.frames[0]})
-          this.down_arrow = new jaws.Sprite({x:this.x + 100, y:this.y + 38, image: this.arrow_spritesheet.frames[1]})
+          this.up_arrow = new jaws.Sprite({x:this.x + 100, y:this.y + 20, image: this.arrow_spritesheet.frames[2]})
+          this.down_arrow = new jaws.Sprite({x:this.x + 100, y:this.y + 38, image: this.arrow_spritesheet.frames[3]})
 
           this.up_arrow.height = 15
           this.down_arrow.height = 15
@@ -6089,6 +6135,11 @@ $def with (name)
 
       // provide coordinates of clicks with respect to menu item index
       this.menuCoordinates = function(x,y,right_click) {
+
+        if (mouse_disabled) {
+          this.mouse_inside = false
+          return this.index
+        }
 
         // find click coordinates with respect to board's top-left position in canvas
         var menu_x = x - this.x
@@ -6256,6 +6307,8 @@ $def with (name)
         })
 
         jaws.on_keydown(["left_mouse_button"], function() {
+          if (mouse_disabled)
+            return
 
           if (menu.scrolling) {
 
@@ -6303,6 +6356,8 @@ $def with (name)
       this.update = function() {
 
         if (this.scrolling) {
+          if (mouse_disabled)
+            return
           // update arrow sprites
           for (var s=0; s < this.arrow_sprites.length; s++) {
             var this_sprite = this.arrow_sprites[s]
@@ -6757,15 +6812,17 @@ $def with (name)
           + "Press SPACE (or J) to grab items.\n"
           + "While grabbing, SPACE (or J) drops an item.\n"
           + "Press C (or K) to grab/drop a whole stack."
-        help_menu_items.push(new MenuItem(help_menu, "Mouse Control", function() {
-          menus.push(mouse_menu)
-          active_menu = mouse_menu.parent.setActiveMenu(mouse_menu,active_menu)
-          }))
-        help_menu_items[help_menu_items.length-1].description
-          = "Click items to grab them.\n"
-          + "While grabbing, click the board to drop an\n"
-          + "item or click on held items to drop them.\n"
-          + "Right click to grab/drop a whole stack."
+        if (!mouse_disabled) {
+          help_menu_items.push(new MenuItem(help_menu, "Mouse Control", function() {
+            menus.push(mouse_menu)
+            active_menu = mouse_menu.parent.setActiveMenu(mouse_menu,active_menu)
+            }))
+          help_menu_items[help_menu_items.length-1].description
+            = "Click items to grab them.\n"
+            + "While grabbing, click the board to drop an\n"
+            + "item or click on held items to drop them.\n"
+            + "Right click to grab/drop a whole stack."
+        }
         help_menu_items.push(new MenuItem(help_menu, "Scoring", function() {return}))
         help_menu_items[help_menu_items.length-1].description
           = "Melting blocks and brewing potions give you\n"
@@ -6776,8 +6833,8 @@ $def with (name)
         help_menu_items[help_menu_items.length-1].description
           = "Press CTRL+Z to undo your last move.\n"
           + "(You can't undo in Marathon Mode.)\n"
-          + "Press L (or click outside of the board)\n"
-          + "to make the stacks rise in Marathon Mode."
+          + "Press L (or SHIFT) to make\n"
+          + "the stacks rise in Marathon Mode."
         var help_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 200, help_menu_items)
         help_menu.back = this.back
 
@@ -6927,7 +6984,8 @@ $def with (name)
             something_playing = true
         }
         if (!something_playing) {
-          menu_music.play()
+          if (!mute)
+            menu_music.play()
           menu_music.playing = true
         }
       }
