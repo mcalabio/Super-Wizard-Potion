@@ -103,6 +103,7 @@ $def with (name)
     var star_progress = []
     var marathon_progress = ["00:00",0]
     var control_scheme = 1
+    var mouse_disabled = true
     var game_mode = 1
     var game_record = ""
     var level_edit = false
@@ -1308,7 +1309,7 @@ $def with (name)
 
           })
 
-          jaws.on_keydown(["l"], function() {
+          jaws.on_keydown(["l","shift"], function() {
             if ((marathon || sprint) && !player.board.stacksBreaking()) {
               if (player.board.stacksFull()) {
                 if (player.suicide_raise) {
@@ -1476,12 +1477,15 @@ $def with (name)
           })
 
           var shift = false
-          jaws.on_keydown(["shift"], function () {
-            shift = true
-          })
-          jaws.on_keyup(["shift"], function () {
-            shift = false
-          })
+
+          if (level_edit) {
+            jaws.on_keydown(["shift"], function () {
+              shift = true
+            })
+            jaws.on_keyup(["shift"], function () {
+              shift = false
+            })
+          }
 
           jaws.on_keydown(["z"], function() {
             if (ctrl)
@@ -1934,6 +1938,9 @@ $def with (name)
         }
 
         this.clickAction = function(click_coordinates,right_click) {
+
+          if (mouse_disabled)
+            return
 
           var click_x = click_coordinates[0]
           var click_y = click_coordinates[1]
@@ -6090,6 +6097,11 @@ $def with (name)
       // provide coordinates of clicks with respect to menu item index
       this.menuCoordinates = function(x,y,right_click) {
 
+        if (mouse_disabled) {
+          this.mouse_inside = false
+          return this.index
+        }
+
         // find click coordinates with respect to board's top-left position in canvas
         var menu_x = x - this.x
         var menu_y = y - this.y
@@ -6256,6 +6268,8 @@ $def with (name)
         })
 
         jaws.on_keydown(["left_mouse_button"], function() {
+          if (mouse_disabled)
+            return
 
           if (menu.scrolling) {
 
@@ -6303,6 +6317,8 @@ $def with (name)
       this.update = function() {
 
         if (this.scrolling) {
+          if (mouse_disabled)
+            return
           // update arrow sprites
           for (var s=0; s < this.arrow_sprites.length; s++) {
             var this_sprite = this.arrow_sprites[s]
@@ -6757,15 +6773,17 @@ $def with (name)
           + "Press SPACE (or J) to grab items.\n"
           + "While grabbing, SPACE (or J) drops an item.\n"
           + "Press C (or K) to grab/drop a whole stack."
-        help_menu_items.push(new MenuItem(help_menu, "Mouse Control", function() {
-          menus.push(mouse_menu)
-          active_menu = mouse_menu.parent.setActiveMenu(mouse_menu,active_menu)
-          }))
-        help_menu_items[help_menu_items.length-1].description
-          = "Click items to grab them.\n"
-          + "While grabbing, click the board to drop an\n"
-          + "item or click on held items to drop them.\n"
-          + "Right click to grab/drop a whole stack."
+        if (!mouse_disabled) {
+          help_menu_items.push(new MenuItem(help_menu, "Mouse Control", function() {
+            menus.push(mouse_menu)
+            active_menu = mouse_menu.parent.setActiveMenu(mouse_menu,active_menu)
+            }))
+          help_menu_items[help_menu_items.length-1].description
+            = "Click items to grab them.\n"
+            + "While grabbing, click the board to drop an\n"
+            + "item or click on held items to drop them.\n"
+            + "Right click to grab/drop a whole stack."
+        }
         help_menu_items.push(new MenuItem(help_menu, "Scoring", function() {return}))
         help_menu_items[help_menu_items.length-1].description
           = "Melting blocks and brewing potions give you\n"
@@ -6776,8 +6794,8 @@ $def with (name)
         help_menu_items[help_menu_items.length-1].description
           = "Press CTRL+Z to undo your last move.\n"
           + "(You can't undo in Marathon Mode.)\n"
-          + "Press L (or click outside of the board)\n"
-          + "to make the stacks rise in Marathon Mode."
+          + "Press L (or shift) to make\n"
+          + "the stacks rise in Marathon Mode."
         var help_menu = new MenuBox("",main_menu,main_menu.x + main_menu.width + 1, main_menu.y + 40, 200, help_menu_items)
         help_menu.back = this.back
 
