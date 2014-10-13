@@ -5410,11 +5410,7 @@ $def with (name)
           this_song.unmute()
       }
 
-<<<<<<< HEAD
-    }    
-=======
     }
->>>>>>> origin/master
 
     function playBackgroundMusic() {
       if (marathon) {
@@ -5430,11 +5426,7 @@ $def with (name)
           if (!mute)
             menu_music.play()
           menu_music.playing = true
-<<<<<<< HEAD
-        }        
-=======
         }
->>>>>>> origin/master
       } else if (player_level == 1) {
         if (!cauldron1_music.playing) {
           stopBackgroundMusic()
@@ -6473,7 +6465,7 @@ $def with (name)
             jaws.context.lineWidth = 10
             jaws.context.fillStyle =  (this_item.color == undefined) ? ((this.index == i) ? ((this_item.locked) ? "Brown" : "Red") : ((this_item.locked) ? "Grey" : "White")) : this_item.color
             jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-            jaws.context.fillText(this_item, this.x + 20, this.y + 20 * (i + 1 + j) + 10)
+            jaws.context.fillText(this_item.text, this.x + 20, this.y + 20 * (i + 1 + j) + 10)
 
             // draw this menu item's sprites
             for (var s=0; s < this_item.sprites.length; s++) {
