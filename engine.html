@@ -6575,6 +6575,19 @@ $def with (name)
             "Stacks rise toward the top of the board.\n" +
             "Try to survive and beat your high score!"
 
+          main_menu_items.push(new MenuItem(main_menu,"Leaderboard",function() {
+            level_edit = false
+            marathon = false
+            replay = null
+            marathon_level = marathon_level_debug
+            player_level = 1
+            jaws.start(LeaderBoard)
+          }))
+          main_menu_items[main_menu_items.length-1].description
+            = "Check out the competition for\n" +
+            "Marathon Mode!\n" +
+            ""
+
           var marathon_menu_item = main_menu_items[main_menu_items.length-1]
           marathon_menu_item.star_lock = MARATHON_STAR_LOCK
           marathon_menu_item.locked = (starTotal() >= marathon_menu_item.star_lock) ? false : true
@@ -6620,9 +6633,9 @@ $def with (name)
 
         main_menu_items[0].active = puzzle_mode_active
         main_menu_items[1].active = marathon_mode_active
-        main_menu.items[2].active = change_name_active // set change name to be active
-        main_menu.items[3].active = level_editor_active // set level editor to be active
-        main_menu.items[6].active = replay_mode_active // set replay mode to be active
+        main_menu.items[3].active = change_name_active // set change name to be active
+        main_menu.items[4].active = level_editor_active // set level editor to be active
+        main_menu.items[7].active = replay_mode_active // set replay mode to be active
 
         // unlock marathon mode after cauldron 2
         if (player_progress[2][0] >= 6)
@@ -6920,6 +6933,13 @@ $def with (name)
             player_level = 1
             player_stage = 1
             main_menu_auto = undefined
+
+            // generate unique id for this player
+            player_uid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+                return v.toString(16);
+            });
+
             jaws.start(PlayerNameState)
           }))
           reset_menu_items.push(new MenuItem(reset_menu, "No", function() {
@@ -7115,7 +7135,7 @@ $def with (name)
               level_record.draw()
             }
           }
-        } else if (menus[0].index == 6 && menus[1] != undefined) {
+        } else if (menus[0].index == 7 && menus[1] != undefined) {
 
           // replay record data
           replay_record_box.setup(menus[1].x,menus[1].y+menus[1].height, 230)
@@ -7130,6 +7150,95 @@ $def with (name)
 
       }
 
+    }
+
+    function LeaderBoard() {
+      var leaderboard_box = new MenuBox("Leaderboard",leaderboard_box,0,0,300,[],false,false)
+      var records
+      var marathon_records = {}
+      var leaders = []
+      this.setup = function() {
+
+        getRecords( function(data) {
+          console.log("records!")
+          records = JSON.parse(data)
+          
+          // go through each record and grab marathon records
+          for (var key in records) {
+            if (records.hasOwnProperty(key)) {
+              console.log("key " + key)
+              console.dir(records[key])
+              var this_record = records[key]
+              if (this_record["puzzle"].indexOf("MRTHN") > -1) {
+                if (marathon_records[this_record["uid"]] == undefined)
+                  marathon_records[this_record["uid"]] = this_record
+                else (marathon_records[this_record["uid"]]["score"] < this_record["score"])
+                  marathon_records[this_record["uid"]] = this_record
+              }
+            }
+          }
+
+          // push all these records into an ordered array
+          for (var key in marathon_records) {
+            leaders.push(marathon_records[key])
+          }
+
+          leaders.sort(function(a,b){
+            return b["score"] - a["score"]
+          })
+
+          console.log("marathon records")
+          console.dir(marathon_records)
+
+        })
+
+        jaws.on_keydown(["enter","space","esc"], function () {
+          jaws.start(MainMenu)
+        })
+
+      }
+
+      this.draw = function() {
+
+
+        jaws.context.clearRect(0,0,jaws.width,jaws.height)
+
+        jaws.context.fillStyle = "Black"
+        jaws.context.fillRect(0,0,jaws.width,jaws.height)
+
+        leaderboard_box.draw()
+
+        // draw menu items
+        var this_x = 25
+        var this_y = 50
+
+        // print leader names
+        for (var i=0; i < leaders.length; i++) {
+
+          var this_item = leaders[i]
+
+          jaws.context.font = MENU_FONT
+          jaws.context.lineWidth = 10
+          jaws.context.fillStyle =  "White"
+          jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+          jaws.context.fillText((i+1) + "." + this_item["name"], this_x + 20, this_y + 20 * (i + 1) + 10)
+
+        }
+
+        // print leader scores
+        for (var i=0; i < leaders.length; i++) {
+
+          var this_item = leaders[i]
+
+          jaws.context.font = MENU_FONT
+          jaws.context.lineWidth = 10
+          jaws.context.fillStyle =  "White"
+          jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
+          jaws.context.fillText(this_item["score"], this_x + 250, this_y + 20 * (i + 1) + 10)
+
+        }
+
+      }
     }
 
     function PlayerNameState() {
