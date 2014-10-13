@@ -43,10 +43,7 @@ $def with (name)
   <div hidden="true">
     <canvas id="puzzleScreen" width=240 height=400></canvas>
   </div>
-  <div style="position:fixed; top:575px; margin-top:10px">PLAYTESTERS: your progress and gameplay is being recorded.
-    <br>
-    Please take <a href="https://www.surveymonkey.com/s/XQPYT28" target="_blank">this survey</a> when your are done.
-    <br>
+  <div style="position:fixed; top:575px; margin-top:10px; width:600">NOTE: your progress and gameplay is being recorded for testing purposes.<br>Please give us feedback by taking <a href="https://www.surveymonkey.com/s/XQPYT28" target="_blank">this survey</a>.
     <br>
     <br>
     <center>Plunger Games (c) 2014</center>
@@ -6466,7 +6463,7 @@ $def with (name)
             jaws.context.lineWidth = 10
             jaws.context.fillStyle =  (this_item.color == undefined) ? ((this.index == i) ? ((this_item.locked) ? "Brown" : "Red") : ((this_item.locked) ? "Grey" : "White")) : this_item.color
             jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-            jaws.context.fillText(this_item.text, this.x + 20, this.y + 20 * (i + 1 + j) + 10)
+            jaws.context.fillText(this_item, this.x + 20, this.y + 20 * (i + 1 + j) + 10)
 
             // draw this menu item's sprites
             for (var s=0; s < this_item.sprites.length; s++) {
