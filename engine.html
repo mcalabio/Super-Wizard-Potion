@@ -107,6 +107,7 @@ $def with (name)
     var SPEECH_LENGTH = 300 // frames
 
     // GLOBALS
+    var trip_speed = 1.1
     var X_SPEED = SLOW
     var Y_SPEED = FAST
     var name_entered = false
@@ -1099,13 +1100,15 @@ $def with (name)
         // background animation for stage 0
         if (player_level == 3 && player_stage == 6) {
           if (background.width > 600 || background.height > 500) {
-            background.width = background.width * (1.5 - 1)
-            background.height = background.height * (1.5 - 1)
+            // background.width -= background.width * trip_speed
+            // background.height -= background.height * trip_speed
+            background.width -= background.width * (trip_speed - 1)
+            background.height -= background.height * (trip_speed - 1)
             background.x = centerWhatever(background.width,0,600)
             background.y = centerWhatever(background.height,0,500)
           } else if (background.width < 600 || background.height < 500) {
-            background.width = background.width * 1.5
-            background.height = background.height * 1.5
+            background.width = background.width * trip_speed
+            background.height = background.height * trip_speed
             background.x = centerWhatever(background.width,0,600)
             background.y = centerWhatever(background.height,0,500)
           }
@@ -6868,7 +6871,7 @@ $def with (name)
         help_menu.back = this.back
 
         if (starTotal() <= 0)
-          main_menu.index = 4
+          main_menu.index = 5
 
         // save menu
         var save_menu_items = new Array()
