@@ -7172,7 +7172,7 @@ $def with (name)
               if (this_record["puzzle"].indexOf("MRTHN") > -1) {
                 if (marathon_records[this_record["uid"]] == undefined)
                   marathon_records[this_record["uid"]] = this_record
-                else (marathon_records[this_record["uid"]]["score"] < this_record["score"])
+                else if (marathon_records[this_record["uid"]]["score"] < this_record["score"])
                   marathon_records[this_record["uid"]] = this_record
               }
             }
