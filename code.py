@@ -40,7 +40,7 @@ class engine:
 			f.write(record)
 			f.close()
 			web.debug("check git remote")
-			git.remote(v=True)
+			web.debug( git.remote(v=True) )
 			web.debug("git commiting")
 			git.commit(a=True, m="'new record added'")
 			web.debug("git pushing")
