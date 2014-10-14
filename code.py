@@ -42,7 +42,7 @@ class engine:
 			web.debug("git commiting")
 			git.commit(a=True, m="'new record added'")
 			web.debug("git pushing")
-			git.push()
+			git.push("origin", "master")
 
 			return record
 
