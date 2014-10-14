@@ -7,6 +7,10 @@ import os
 from binascii import a2b_base64
 from git import *
 
+repo = Repo(".")
+assert repo.bare == False
+git = repo.git
+
 render = web.template.render('.')
 
 urls = (
