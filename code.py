@@ -1,8 +1,11 @@
+#!/usr/bin/env python
+
 import web
 import sys
 import json
 import os
 from binascii import a2b_base64
+from git import *
 
 render = web.template.render('.')
 
@@ -32,6 +35,8 @@ class engine:
 			f.seek(-1,2)
 			f.write(record)
 			f.close()
+			git.commit(a=True, m="'new record added'")
+			git.push()
 
 			return record
 
