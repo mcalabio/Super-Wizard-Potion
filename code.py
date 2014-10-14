@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 import web
 import sys
 import json
@@ -40,8 +39,6 @@ class engine:
 			f.seek(-1,2)
 			f.write(record)
 			f.close()
-			web.debug("check git remote")
-			web.debug( git.remote(v=True) )
 			web.debug("git commiting")
 			git.commit(a=True, m="'new record added'")
 			web.debug("git pushing")
