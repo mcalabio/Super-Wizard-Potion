@@ -15,9 +15,12 @@ $def with (name)
 <br>
 <div>
   <div style="font:bold 20pt Menu Text">Super Wizard Potion<div style="font:bold 12pt Menu Text; position:fixed; top:33; left:515">beta v0.1</div></div>
-  <div style="position:fixed"> created by Mark Calabio and Kris Calabio</div>
+  <div style="position:fixed"> created by Mark Calabio and Kris Calabio - made with <a href="http://jawsjs.com/" target="_blank">Jaws.js</a></div>
   <a id="muteButton" href="#" onClick="toggleMute()" style="position:fixed;visibility:visible;left:700">Sound: On</a>
   <img src="./static/images/web/wizard.gif" style="position:fixed; top:0; left:0">
+  <div style="position:fixed; top:200; left:0; width:200">
+  Want to see more games from us? Buy us a burrito, and we'll give you a digital copy of the soundtrack.<br>
+   <a href="https://zangderak.bandcamp.com/album/super-wizard-potion-ost" target="_blank"><img src="https://s1.bcbits.com/img/buttons/bandcamp_60x23_black.png"></a></div>
   <div style="position:fixed;top:65;left:815">
     <img src="./static/images/web/arrows.gif"> <br>
     move cursor <br><br>
@@ -5039,9 +5042,26 @@ $def with (name)
         Y_SPEED = FAST
         player.cursor_speed = Y_SPEED
 
+        // find the last grab
+        var pop_count = 2
+        var hand_stack = undo_hand[undo_hand.length-pop_count]
+        while (hand_stack[3] != "\n") {
+          pop_count++
+          hand_stack = undo_hand[undo_hand.length-pop_count]
+        }
+        pop_count -= 2
+        console.log("pre pop count = " + pop_count)
+        if (pop_count < 0)
+          pop_count = 1
+
+        console.log("pop count = " + pop_count)
+
         if (undo_hand.length > 0)
           undo_hand.pop()
-        var player_state = undo_hand.pop()
+
+        var player_state
+        for (var p = 0; p < pop_count; p++)
+          player_state = undo_hand.pop()
         player.x = player_state[0]
         player.y = player_state[1]
         player.hand.level = player_state[2]
@@ -5079,7 +5099,9 @@ $def with (name)
 
         if (undo_board.length > 0)
           undo_board.pop()
-        var board_state = undo_board.pop()
+        var board_state
+        for (var p = 0; p < pop_count; p++)
+          board_state = undo_board.pop()
 
         player.board.clearBoard()
         player.board.fillLevel(player_level,player_stage,board_state)
