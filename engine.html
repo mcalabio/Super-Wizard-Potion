@@ -7216,7 +7216,7 @@ $def with (name)
         var this_y = 50
 
         // print leader names
-        for (var i=0; i < leaders.length; i++) {
+        for (var i=0; i < leaders.length && i < 10; i++) {
 
           var this_item = leaders[i]
 
@@ -7224,12 +7224,12 @@ $def with (name)
           jaws.context.lineWidth = 10
           jaws.context.fillStyle =  "White"
           jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-          jaws.context.fillText((i+1) + "." + this_item["name"], this_x + 20, this_y + 20 * (i + 1) + 10)
+          jaws.context.fillText(((i < 9)?" ":"") + (i+1) + "." + this_item["name"], this_x + 20, this_y + 20 * (i + 1) + 10)
 
         }
 
         // print leader scores
-        for (var i=0; i < leaders.length; i++) {
+        for (var i=0; i < leaders.length && i < 10; i++) {
 
           var this_item = leaders[i]
 
@@ -7237,7 +7237,7 @@ $def with (name)
           jaws.context.lineWidth = 10
           jaws.context.fillStyle =  "White"
           jaws.context.strokeStyle =  "rgba(200,200,200,0.0)"
-          jaws.context.fillText(this_item["score"], this_x + 250, this_y + 20 * (i + 1) + 10)
+          jaws.context.fillText("\u03BB " + this_item["score"], this_x + 225, this_y + 20 * (i + 1) + 10)
 
         }
 
