@@ -316,7 +316,7 @@ $def with (name)
         console.dir("jaws.context = " + jaws.context.strokeRect)
 
         // reset cauldron timer
-        if (player_stage == 1)
+        if (player_stage == 0 || player_stage == 1 || marathon) 
           cauldron_ticker = 0
 
         // initialize player
@@ -328,7 +328,7 @@ $def with (name)
           screen_data,
           player.board.board.x + player.board.board.width + ITEM_WIDTH,
           player.board.board.y,
-          160,
+          140,
           [new MenuItem(screen_data,"",function(){return})]
           // [new MenuItem(screen_data,"  x " + player.stars,function(){return})]
         )
@@ -4893,6 +4893,9 @@ $def with (name)
 
         // increment the ticker and count the seconds and minutes
         this.update = function() {
+
+          if (player_stage == 0)
+            return
 
           if (replay != null && (game_end == "" || game_end == "W")) {
             replayAction(this.frame_ticker)
